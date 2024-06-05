@@ -733,18 +733,6 @@ class HikkaSettingsMod(loader.Module):
 
     @loader.command()
     async def weburl(self, message: Message, force: bool = False):
-        if "LAVHOST" in os.environ:
-            form = await self.inline.form(
-                self.strings("lavhost_web"),
-                message=message,
-                reply_markup={
-                    "text": self.strings("web_btn"),
-                    "url": await main.hikka.web.get_url(proxy_pass=False),
-                },
-                gif="https://t.me/hikari_assets/28",
-            )
-            return
-
         if (
             not force
             and not message.is_private

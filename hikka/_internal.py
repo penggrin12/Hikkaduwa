@@ -45,10 +45,6 @@ def restart():
 
     print("🔄 Restarting...")
 
-    if "LAVHOST" in os.environ:
-        os.system("lavhost restart")
-        return
-
     os.environ["HIKKA_DO_NOT_RESTART"] = "1"
 
     signal.signal(signal.SIGTERM, get_startup_callback())

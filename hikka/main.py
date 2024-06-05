@@ -83,7 +83,6 @@ IS_TERMUX = "com.termux" in os.environ.get("PREFIX", "")
 IS_CODESPACES = "CODESPACES" in os.environ
 IS_RAILWAY = "RAILWAY" in os.environ
 IS_GOORM = "GOORM" in os.environ
-IS_LAVHOST = "LAVHOST" in os.environ
 IS_WSL = False
 with contextlib.suppress(Exception):
     from platform import uname

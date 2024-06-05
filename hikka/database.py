@@ -11,10 +11,10 @@ import logging
 import os
 import time
 
-try:
-    import redis
-except ImportError:
-    pass
+# try:
+#     import redis
+# except ImportError:
+#     pass
 
 
 import typing

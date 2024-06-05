@@ -66,4 +66,7 @@ else:
     if "HIKKA_DO_NOT_RESTART" in os.environ:
         del os.environ["HIKKA_DO_NOT_RESTART"]
 
-    main.hikka.main()  # Execute main function
+    try:
+        main.hikka.main()  # Execute main function
+    except KeyboardInterrupt:
+        pass

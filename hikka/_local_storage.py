@@ -71,7 +71,7 @@ class LocalStorage:
             )
             return
 
-        with open(self._get_path(repo, module_name), "w") as f:
+        with open(self._get_path(repo, module_name), "w", encoding="utf-8") as f:
             f.write(module_code)
 
         logger.debug("Saved module %s from %s to local cache.", module_name, repo)
@@ -85,7 +85,7 @@ class LocalStorage:
         """
         path = self._get_path(repo, module_name)
         if os.path.isfile(path):
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 return f.read()
 
         return None

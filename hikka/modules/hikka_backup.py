@@ -185,7 +185,7 @@ class HikkaBackupMod(loader.Module):
             for root, _, files in os.walk(loader.LOADED_MODULES_DIR):
                 for file in files:
                     if file.endswith(f"{self.tg_id}.py"):
-                        with open(os.path.join(root, file), "rb") as f:
+                        with open(os.path.join(root, file), "rb", encoding="utf-8") as f:
                             zipf.writestr(file, f.read())
                             mods_quantity += 1
 
@@ -218,7 +218,7 @@ class HikkaBackupMod(loader.Module):
                 file.name = "mods.zip"
 
                 with zipfile.ZipFile(file) as zf:
-                    with zf.open("db_mods.json", "r") as modules:
+                    with zf.open("db_mods.json", "r", encoding="utf-8") as modules:
                         db_mods = json.loads(modules.read().decode())
                         if isinstance(db_mods, dict) and all(
                             (
@@ -235,7 +235,7 @@ class HikkaBackupMod(loader.Module):
                             continue
 
                         path = loader.LOADED_MODULES_PATH / Path(name).name
-                        with zf.open(name, "r") as module:
+                        with zf.open(name, "r", encoding="utf-8") as module:
                             path.write_bytes(module.read())
             except Exception:
                 logger.exception("Unable to restore modules")

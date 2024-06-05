@@ -157,7 +157,7 @@ def get_config_key(key: str) -> typing.Union[str, bool]:
     :return: Value of config key or `False`, if it doesn't exist
     """
     try:
-        return json.loads(CONFIG_PATH.read_text()).get(key, False)
+        return json.loads(CONFIG_PATH.read_text(encoding="utf-8")).get(key, False)
     except FileNotFoundError:
         return False
 
@@ -171,7 +171,7 @@ def save_config_key(key: str, value: str) -> bool:
     """
     try:
         # Try to open our newly created json config
-        config = json.loads(CONFIG_PATH.read_text())
+        config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     except FileNotFoundError:
         # If it doesn't exist, just default config to none
         # It won't cause problems, bc after new save
@@ -393,7 +393,7 @@ class Hikka:
                 api_id, api_hash = (
                     line.strip()
                     for line in (Path(BASE_DIR) / "api_token.txt")
-                    .read_text()
+                    .read_text(encoding="utf-8")
                     .splitlines()
                 )
                 save_config_key("api_id", int(api_id))

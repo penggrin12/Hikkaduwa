@@ -212,7 +212,7 @@ class Evaluator(loader.Module):
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.cpp")
-            with open(file, "w") as f:
+            with open(file, "w", encoding="utf-8") as f:
                 f.write(code)
 
             try:
@@ -271,7 +271,7 @@ class Evaluator(loader.Module):
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.js")
-            with open(file, "w") as f:
+            with open(file, "w", encoding="utf-8") as f:
                 f.write(code)
 
             try:
@@ -315,7 +315,7 @@ class Evaluator(loader.Module):
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.php")
-            with open(file, "w") as f:
+            with open(file, "w", encoding="utf-8") as f:
                 f.write(f"<?php {code} ?>")
 
             try:
@@ -359,7 +359,7 @@ class Evaluator(loader.Module):
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.rb")
-            with open(file, "w") as f:
+            with open(file, "w", encoding="utf-8") as f:
                 f.write(code)
 
             try:

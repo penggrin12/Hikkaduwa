@@ -39,11 +39,7 @@ from .._internal import restart
 from ..tl_cache import CustomTelegramClient
 from ..version import __version__
 
-DATA_DIR = (
-    "/data"
-    if "DOCKER" in os.environ
-    else os.path.normpath(os.path.join(utils.get_base_dir(), ".."))
-)
+DATA_DIR = os.path.normpath(os.path.join(utils.get_base_dir(), ".."))
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +79,6 @@ class Web:
             "vds": "https://github.com/hikariatama/assets/raw/master/waning-crescent-moon_1f318.png",
             "lavhost": "https://github.com/hikariatama/assets/raw/master/victory-hand_270c-fe0f.png",
             "termux": "https://github.com/hikariatama/assets/raw/master/smiling-face-with-sunglasses_1f60e.png",
-            "docker": "https://github.com/hikariatama/assets/raw/master/spouting-whale_1f433.png",
         }[
             (
                 "lavhost"
@@ -91,8 +86,6 @@ class Web:
                 else (
                     "termux"
                     if "com.termux" in os.environ.get("PREFIX", "")
-                    else "docker"
-                    if "DOCKER" in os.environ
                     else "vds"
                 )
             )

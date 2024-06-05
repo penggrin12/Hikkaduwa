@@ -74,18 +74,13 @@ except ImportError:
 else:
     web_available = True
 
-BASE_DIR = (
-    "/data"
-    if "DOCKER" in os.environ
-    else os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 BASE_PATH = Path(BASE_DIR)
 CONFIG_PATH = BASE_PATH / "config.json"
 
 IS_TERMUX = "com.termux" in os.environ.get("PREFIX", "")
 IS_CODESPACES = "CODESPACES" in os.environ
-IS_DOCKER = "DOCKER" in os.environ
 IS_RAILWAY = "RAILWAY" in os.environ
 IS_GOORM = "GOORM" in os.environ
 IS_LAVHOST = "LAVHOST" in os.environ
@@ -204,11 +199,8 @@ def save_config_key(key: str, value: str) -> bool:
 def gen_port(cfg: str = "port", no8080: bool = False) -> int:
     """
     Generates random free port in case of VDS.
-    In case of Docker, also return 8080, as it's already exposed by default.
     :returns: Integer value of generated port
     """
-    if "DOCKER" in os.environ and not no8080:
-        return 8080
 
     # But for own server we generate new free port, and assign to it
     if port := get_config_key(cfg):

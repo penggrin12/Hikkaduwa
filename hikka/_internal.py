@@ -29,12 +29,7 @@ def get_startup_callback() -> callable:
 
 def die():
     """Platform-dependent way to kill the current process group"""
-    if "DOCKER" in os.environ:
-        sys.exit(0)
-    else:
-        # This one is actually better, because it kills all subprocesses
-        # but it can't be used inside the Docker
-        os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
+    os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
 
 
 def restart():
@@ -56,12 +51,7 @@ def restart():
 
     os.environ["HIKKA_DO_NOT_RESTART"] = "1"
 
-    if "DOCKER" in os.environ:
-        atexit.register(get_startup_callback())
-    else:
-        # This one is requried for better way of killing to work properly,
-        # since we kill the process group using unix signals
-        signal.signal(signal.SIGTERM, get_startup_callback())
+    signal.signal(signal.SIGTERM, get_startup_callback())
 
     die()
 

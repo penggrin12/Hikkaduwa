@@ -911,9 +911,6 @@ def get_named_platform() -> str:
     if main.IS_RAILWAY:
         return "🚂 Railway"
 
-    if main.IS_DOCKER:
-        return "🐳 Docker"
-
     if main.IS_TERMUX:
         return "🕶 Termux"
 
@@ -937,9 +934,6 @@ def get_platform_emoji() -> str:
             "<emoji document_id=5195045669324201904>🌘</emoji>",
         )
     )
-
-    if main.IS_DOCKER:
-        return BASE.format(5298554256603752468)
 
     if main.IS_LAVHOST:
         return BASE.format(5301078610747074753)

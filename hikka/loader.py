@@ -252,11 +252,7 @@ MODULES_NAME = "modules"
 ru_keys = 'ёйцукенгшщзхъфывапролджэячсмитьбю.Ё"№;%:?ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,'
 en_keys = "`qwertyuiop[]asdfghjkl;'zxcvbnm,./~@#$%^&QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?"
 
-BASE_DIR = (
-    "/data"
-    if "DOCKER" in os.environ
-    else os.path.normpath(os.path.join(utils.get_base_dir(), ".."))
-)
+BASE_DIR = os.path.normpath(os.path.join(utils.get_base_dir(), ".."))
 
 LOADED_MODULES_DIR = os.path.join(BASE_DIR, "loaded_modules")
 LOADED_MODULES_PATH = Path(LOADED_MODULES_DIR)

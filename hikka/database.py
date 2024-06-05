@@ -106,7 +106,7 @@ class Database(dict):
     def read(self):
         """Read database and stores it in self"""
         try:
-            self.update(**json.loads(self._db_file.read_text()))
+            self.update(**json.loads(self._db_file.read_text(encoding="utf-8")))
         except json.decoder.JSONDecodeError:
             logger.warning("Database read failed! Creating new one...")
         except FileNotFoundError:

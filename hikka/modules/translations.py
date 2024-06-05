@@ -28,18 +28,10 @@ class Translations(loader.Module):
 
     def _get_flag(self, lang: str) -> str:
         emoji_flags = {
-            "🇬🇧": "<emoji document_id=6323589145717376403>🇬🇧</emoji>",
-            "🇺🇿": "<emoji document_id=6323430017179059570>🇺🇿</emoji>",
-            "🇷🇺": "<emoji document_id=6323139226418284334>🇷🇺</emoji>",
-            "🇮🇹": "<emoji document_id=6323471399188957082>🇮🇹</emoji>",
-            "🇩🇪": "<emoji document_id=6320817337033295141>🇩🇪</emoji>",
-            "🇪🇸": "<emoji document_id=6323315062379382237>🇪🇸</emoji>",
-            "🇹🇷": "<emoji document_id=6321003171678259486>🇹🇷</emoji>",
-            "🇰🇿": "<emoji document_id=6323135275048371614>🇰🇿</emoji>",
-            "🥟": "<emoji document_id=5382337996123020810>🥟</emoji>",
+            "🇬🇧": "<emoji document_id=6323589145717376403>🇬🇧</emoji>"
         }
 
-        lang2country = {"en": "🇬🇧", "tt": "🥟", "kk": "🇰🇿"}
+        lang2country = {"en": "🇬🇧"}
 
         lang = lang2country.get(lang) or utils.get_lang_flag(lang)
         return emoji_flags.get(lang, lang)

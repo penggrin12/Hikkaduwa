@@ -18,7 +18,7 @@ import typing
 from io import BytesIO
 from sys import version_info
 
-import git
+# import git
 
 try:
     from PIL import Image

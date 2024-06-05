@@ -13,8 +13,8 @@ import sys
 import time
 import typing
 
-import git
-from git import GitCommandError, Repo
+# import git
+# from git import GitCommandError, Repo
 from hikkatl.extensions.html import CUSTOM_EMOJIS
 from hikkatl.tl.functions.messages import (
     GetDialogFiltersRequest,
@@ -137,25 +137,26 @@ class UpdaterMod(loader.Module):
         restart()
 
     async def download_common(self):
-        try:
-            repo = Repo(os.path.dirname(utils.get_base_dir()))
-            origin = repo.remote("origin")
-            r = origin.pull()
-            new_commit = repo.head.commit
-            for info in r:
-                if info.old_commit:
-                    for d in new_commit.diff(info.old_commit):
-                        if d.b_path == "requirements.txt":
-                            return True
-            return False
-        except git.exc.InvalidGitRepositoryError:
-            repo = Repo.init(os.path.dirname(utils.get_base_dir()))
-            origin = repo.create_remote("origin", self.config["GIT_ORIGIN_URL"])
-            origin.fetch()
-            repo.create_head("master", origin.refs.master)
-            repo.heads.master.set_tracking_branch(origin.refs.master)
-            repo.heads.master.checkout(True)
-            return False
+        # try:
+        #     repo = Repo(os.path.dirname(utils.get_base_dir()))
+        #     origin = repo.remote("origin")
+        #     r = origin.pull()
+        #     new_commit = repo.head.commit
+        #     for info in r:
+        #         if info.old_commit:
+        #             for d in new_commit.diff(info.old_commit):
+        #                 if d.b_path == "requirements.txt":
+        #                     return True
+        #     return False
+        # except git.exc.InvalidGitRepositoryError:
+        #     repo = Repo.init(os.path.dirname(utils.get_base_dir()))
+        #     origin = repo.create_remote("origin", self.config["GIT_ORIGIN_URL"])
+        #     origin.fetch()
+        #     repo.create_head("master", origin.refs.master)
+        #     repo.heads.master.set_tracking_branch(origin.refs.master)
+        #     repo.heads.master.checkout(True)
+        #     return False
+        return False
 
     @staticmethod
     def req_common():
@@ -182,36 +183,37 @@ class UpdaterMod(loader.Module):
 
     @loader.command()
     async def update(self, message: Message):
-        try:
-            args = utils.get_args_raw(message)
-            current = utils.get_git_hash()
-            upcoming = next(
-                git.Repo().iter_commits(f"origin/{version.branch}", max_count=1)
-            ).hexsha
-            if (
-                "-f" in args
-                or not self.inline.init_complete
-                or not await self.inline.form(
-                    message=message,
-                    text=(
-                        self.strings("update_confirm").format(
-                            current, current[:8], upcoming, upcoming[:8]
-                        )
-                        if upcoming != current
-                        else self.strings("no_update")
-                    ),
-                    reply_markup=[
-                        {
-                            "text": self.strings("btn_update"),
-                            "callback": self.inline_update,
-                        },
-                        {"text": self.strings("cancel"), "action": "close"},
-                    ],
-                )
-            ):
-                raise
-        except Exception:
-            await self.inline_update(message)
+        # try:
+        #     args = utils.get_args_raw(message)
+        #     current = utils.get_git_hash()
+        #     upcoming = next(
+        #         git.Repo().iter_commits(f"origin/{version.branch}", max_count=1)
+        #     ).hexsha
+        #     if (
+        #         "-f" in args
+        #         or not self.inline.init_complete
+        #         or not await self.inline.form(
+        #             message=message,
+        #             text=(
+        #                 self.strings("update_confirm").format(
+        #                     current, current[:8], upcoming, upcoming[:8]
+        #                 )
+        #                 if upcoming != current
+        #                 else self.strings("no_update")
+        #             ),
+        #             reply_markup=[
+        #                 {
+        #                     "text": self.strings("btn_update"),
+        #                     "callback": self.inline_update,
+        #                 },
+        #                 {"text": self.strings("cancel"), "action": "close"},
+        #             ],
+        #         )
+        #     ):
+        #         raise
+        # except Exception:
+        #     await self.inline_update(message)
+        return # TODO: prompt something
 
     async def inline_update(
         self,
@@ -222,25 +224,25 @@ class UpdaterMod(loader.Module):
         if hard:
             os.system(f"cd {utils.get_base_dir()} && cd .. && git reset --hard HEAD")
 
-        try:
-            with contextlib.suppress(Exception):
-                msg_obj = await utils.answer(msg_obj, self.strings("downloading"))
+        # try:
+        with contextlib.suppress(Exception):
+            msg_obj = await utils.answer(msg_obj, self.strings("downloading"))
 
-            req_update = await self.download_common()
+        req_update = await self.download_common()
 
-            with contextlib.suppress(Exception):
-                msg_obj = await utils.answer(msg_obj, self.strings("installing"))
+        with contextlib.suppress(Exception):
+            msg_obj = await utils.answer(msg_obj, self.strings("installing"))
 
-            if req_update:
-                self.req_common()
+        if req_update:
+            self.req_common()
 
-            await self.restart_common(msg_obj)
-        except GitCommandError:
-            if not hard:
-                await self.inline_update(msg_obj, True)
-                return
+        await self.restart_common(msg_obj)
+        # except GitCommandError:
+        #     if not hard:
+        #         await self.inline_update(msg_obj, True)
+        #         return
 
-            logger.critical("Got update loop. Update manually via .terminal")
+        #     logger.critical("Got update loop. Update manually via .terminal")
 
     @loader.command()
     async def source(self, message: Message):

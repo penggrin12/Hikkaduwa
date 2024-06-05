@@ -41,7 +41,7 @@ import typing
 from datetime import timedelta
 from urllib.parse import urlparse
 
-import git
+# import git
 import grapheme
 import hikkatl
 import requests
@@ -1208,10 +1208,11 @@ def get_git_hash() -> typing.Union[str, bool]:
     Get current Hikka git hash
     :return: Git commit hash
     """
-    try:
-        return git.Repo().head.commit.hexsha
-    except Exception:
-        return False
+    # try:
+    #     return git.Repo().head.commit.hexsha
+    # except Exception:
+    #     return False
+    return False
 
 
 def get_commit_url() -> str:
@@ -1219,13 +1220,14 @@ def get_commit_url() -> str:
     Get current Hikka git commit url
     :return: Git commit url
     """
-    try:
-        hash_ = get_git_hash()
-        return (
-            f'<a href="https://github.com/hikariatama/Hikka/commit/{hash_}">#{hash_[:7]}</a>'
-        )
-    except Exception:
-        return "Unknown"
+    # try:
+    #     hash_ = get_git_hash()
+    #     return (
+    #         f'<a href="https://github.com/hikariatama/Hikka/commit/{hash_}">#{hash_[:7]}</a>'
+    #     )
+    # except Exception:
+    #     return "Unknown"
+    return "Unknown"
 
 
 def is_serializable(x: typing.Any, /) -> bool:

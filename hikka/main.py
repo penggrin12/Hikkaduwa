@@ -736,20 +736,20 @@ class Hikka:
     async def _badge(self, client: CustomTelegramClient):
         """Call the badge in shell"""
         try:
-            import git
+            # import git
 
-            repo = git.Repo()
+            # repo = git.Repo()
 
-            build = utils.get_git_hash()
-            diff = repo.git.log([f"HEAD..origin/{version.branch}", "--oneline"])
-            upd = "Update required" if diff else "Up-to-date"
+            # build = utils.get_git_hash()
+            # diff = repo.git.log([f"HEAD..origin/{version.branch}", "--oneline"])
+            # upd = "Update required" if diff else "Up-to-date"
 
             logo = (
                 "█ █ █ █▄▀ █▄▀ ▄▀█\n"
                 "█▀█ █ █ █ █ █ █▀█\n\n"
-                f"• Build: {build[:7]}\n"
+                # f"• Build: {build[:7]}\n"
                 f"• Version: {'.'.join(list(map(str, list(__version__))))}\n"
-                f"• {upd}\n"
+                # f"• {upd}\n"
             )
 
             if not self.omit_log:
@@ -759,11 +759,16 @@ class Hikka:
                     if self.web and hasattr(self.web, "url")
                     else ""
                 )
+                # logging.debug(
+                #     "\n🌘 Hikka %s #%s (%s) started\n%s",
+                #     ".".join(list(map(str, list(__version__)))),
+                #     build[:7],
+                #     upd,
+                #     web_url,
+                # )
                 logging.debug(
-                    "\n🌘 Hikka %s #%s (%s) started\n%s",
+                    "\n🌘 Hikka %s started\n%s",
                     ".".join(list(map(str, list(__version__)))),
-                    build[:7],
-                    upd,
                     web_url,
                 )
                 self.omit_log = True
@@ -771,14 +776,21 @@ class Hikka:
             await client.hikka_inline.bot.send_animation(
                 logging.getLogger().handlers[0].get_logid_by_client(client.tg_id),
                 "https://github.com/hikariatama/assets/raw/master/hikka_banner.mp4",
+                # caption=(
+                #     "🌘 <b>Hikka {} started!</b>\n\n🌳 <b>GitHub commit SHA: <a"
+                #     ' href="https://github.com/hikariatama/Hikka/commit/{}">{}</a></b>\n✊'
+                #     " <b>Update status: {}</b>\n<b>{}</b>".format(
+                #         ".".join(list(map(str, list(__version__)))),
+                #         build,
+                #         build[:7],
+                #         upd,
+                #         web_url,
+                #     )
+                # ),
                 caption=(
-                    "🌘 <b>Hikka {} started!</b>\n\n🌳 <b>GitHub commit SHA: <a"
-                    ' href="https://github.com/hikariatama/Hikka/commit/{}">{}</a></b>\n✊'
-                    " <b>Update status: {}</b>\n<b>{}</b>".format(
+                    "🌘 <b>Hikka {} started!</b>\n<b>{}</b>"
+                    .format(
                         ".".join(list(map(str, list(__version__)))),
-                        build,
-                        build[:7],
-                        upd,
                         web_url,
                     )
                 ),

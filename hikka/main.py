@@ -142,12 +142,12 @@ def get_app_name() -> str:
     return app_name
 
 
-try:
-    import uvloop
+# try:
+#     import uvloop
 
-    uvloop.install()
-except Exception:
-    pass
+#     uvloop.install()
+# except Exception:
+#     pass
 
 
 def run_config():

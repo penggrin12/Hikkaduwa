@@ -13,9 +13,8 @@ import time
 
 try:
     import redis
-except ImportError as e:
-    if "RAILWAY" in os.environ:
-        raise e
+except ImportError:
+    pass
 
 
 import typing

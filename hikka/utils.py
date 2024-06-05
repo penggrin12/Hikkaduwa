@@ -893,29 +893,11 @@ def get_named_platform() -> str:
     """
     from . import main
 
-    with contextlib.suppress(Exception):
-        if os.path.isfile("/proc/device-tree/model"):
-            with open("/proc/device-tree/model") as f:
-                model = f.read()
-                if "Orange" in model:
-                    return f"🍊 {model}"
-
-                return f"🍇 {model}" if "Raspberry" in model else f"❓ {model}"
-
     if main.IS_WSL:
         return "🍀 WSL"
 
-    if main.IS_GOORM:
-        return "🦾 GoormIDE"
-
-    if main.IS_RAILWAY:
-        return "🚂 Railway"
-
     if main.IS_TERMUX:
         return "🕶 Termux"
-
-    if main.IS_CODESPACES:
-        return "🐈‍⬛ Codespaces"
 
     return "📻 VDS"
 
@@ -935,17 +917,8 @@ def get_platform_emoji() -> str:
         )
     )
 
-    if main.IS_GOORM:
-        return BASE.format(5298947740032573902)
-
-    if main.IS_CODESPACES:
-        return BASE.format(5194976881127989720)
-
     if main.IS_TERMUX:
         return BASE.format(5193051778001673828)
-
-    if main.IS_RAILWAY:
-        return BASE.format(5199607521593007466)
 
     return BASE.format(5192765204898783881)
 

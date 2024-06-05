@@ -47,17 +47,7 @@ class Quickstart(loader.Module):
             3,
         )
 
-        self.text = (
-            lambda: self.strings("base")
-            + (
-                "\n"
-                + (
-                    self.strings("railway")
-                    if "RAILWAY" in os.environ
-                    else ""
-                )
-            ).rstrip()
-        )
+        self.text = lambda: self.strings("base")
 
         if self.get("no_msg"):
             return

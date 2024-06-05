@@ -34,9 +34,6 @@ class TokenObtainment(InlineUnit):
 
             await fw_protect()
 
-            await m.delete()
-            await r.delete()
-
             if self._db.get("hikka.inline", "custom_bot", False):
                 username = self._db.get("hikka.inline", "custom_bot").strip("@")
                 username = f"@{username}"
@@ -65,8 +62,6 @@ class TokenObtainment(InlineUnit):
                 logger.debug("<< %s", r.raw_text)
 
                 await fw_protect()
-                await m.delete()
-                await r.delete()
 
             try:
                 await fw_protect()
@@ -86,9 +81,6 @@ class TokenObtainment(InlineUnit):
                 logger.debug("<< %s", r.raw_text)
 
             await fw_protect()
-
-            await m.delete()
-            await r.delete()
 
         return await self._assert_token(False)
 
@@ -126,9 +118,6 @@ class TokenObtainment(InlineUnit):
 
             await fw_protect()
 
-            await m.delete()
-            await r.delete()
-
             if not hasattr(r, "reply_markup") or not hasattr(r.reply_markup, "rows"):
                 await conv.cancel_all()
 
@@ -162,21 +151,12 @@ class TokenObtainment(InlineUnit):
 
                     if revoke_token:
                         await fw_protect()
-                        await m.delete()
-                        await r.delete()
-
-                        await fw_protect()
 
                         m = await conv.send_message("/revoke")
                         r = await conv.get_response()
 
                         logger.debug(">> %s", m.raw_text)
                         logger.debug("<< %s", r.raw_text)
-
-                        await fw_protect()
-
-                        await m.delete()
-                        await r.delete()
 
                         await fw_protect()
 
@@ -192,9 +172,6 @@ class TokenObtainment(InlineUnit):
                     self._token = token
 
                     await fw_protect()
-
-                    await m.delete()
-                    await r.delete()
 
                     for msg in [
                         "/setinline",
@@ -212,11 +189,6 @@ class TokenObtainment(InlineUnit):
 
                         logger.debug(">> %s", m.raw_text)
                         logger.debug("<< %s", r.raw_text)
-
-                        await fw_protect()
-
-                        await m.delete()
-                        await r.delete()
 
                     try:
                         await fw_protect()
@@ -236,11 +208,6 @@ class TokenObtainment(InlineUnit):
 
                         logger.debug(">> %s", m.raw_text)
                         logger.debug("<< %s", r.raw_text)
-
-                    await fw_protect()
-
-                    await m.delete()
-                    await r.delete()
 
                     return True
 

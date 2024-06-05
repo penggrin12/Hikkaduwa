@@ -65,13 +65,7 @@ from .tl_cache import CustomTelegramClient
 from .translations import Translator
 from .version import __version__
 
-try:
-    from .web import core
-except ImportError:
-    web_available = False
-    logging.exception("Unable to import web")
-else:
-    web_available = True
+web_available = False
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -226,7 +220,6 @@ def parse_arguments() -> dict:
         type=int,
     )
     parser.add_argument("--phone", "-p", action="append")
-    parser.add_argument("--no-web", dest="disable_web", action="store_true")
     parser.add_argument(
         "--qr-login",
         dest="qr_login",
@@ -344,6 +337,8 @@ class Hikka:
         self._get_api_token()
         self._get_proxy()
 
+        self.web = None  # maybe some modules use this..?
+
     def _get_proxy(self):
         """
         Get proxy tuple from --proxy-host, --proxy-port and --proxy-secret
@@ -424,37 +419,15 @@ class Hikka:
 
         self.api_token = api_token
 
-    def _init_web(self):
-        """Initialize web"""
-        if (
-            not web_available
-            or getattr(self.arguments, "disable_web", False)
-            or IS_TERMUX
-        ):
-            self.web = None
-            return
-
-        self.web = core.Web(
-            data_root=BASE_DIR,
-            api_token=self.api_token,
-            proxy=self.proxy,
-            connection=self.conn,
-        )
-
     async def _get_token(self):
         """Reads or waits for user to enter API credentials"""
         while self.api_token is None:
             if self.arguments.no_auth:
                 return
-            if self.web:
-                await self.web.start(self.arguments.port, proxy_pass=True)
-                await self._web_banner()
-                await self.web.wait_for_api_token_setup()
-                self.api_token = self.web.api_token
-            else:
-                run_config()
-                importlib.invalidate_caches()
-                self._get_api_token()
+
+            run_config()
+            importlib.invalidate_caches()
+            self._get_api_token()
 
     async def save_client_session(self, client: CustomTelegramClient):
         if hasattr(client, "tg_id"):
@@ -487,34 +460,13 @@ class Hikka:
         client.session = session
         # Set db attribute to this client in order to save
         # custom bot nickname from web
+        # TODO: still needed?
         client.hikka_db = database.Database(client)
         await client.hikka_db.init()
 
-    async def _web_banner(self):
-        """Shows web banner"""
-        logging.info("✅ Web mode ready for configuration")
-        logging.info("🌐 Please visit %s", self.web.url)
-
-    async def wait_for_web_auth(self, token: str) -> bool:
-        """
-        Waits for web auth confirmation in Telegram
-        :param token: Token to wait for
-        :return: True if auth was successful, False otherwise
-        """
-        timeout = 5 * 60
-        polling_interval = 1
-        for _ in range(timeout * polling_interval):
-            await asyncio.sleep(polling_interval)
-
-            for client in self.clients:
-                if client.loader.inline.pop_web_auth_token(token):
-                    return True
-
-        return False
-
     async def _phone_login(self, client: CustomTelegramClient) -> bool:
         phone = input(
-            "\033[0;96mEnter phone: \033[0m"
+            "Enter phone: "
             if IS_TERMUX or self.arguments.tty
             else "Enter phone: "
         )
@@ -530,127 +482,104 @@ class Hikka:
         if self.arguments.no_auth:
             return False
 
-        if not self.web:
-            client = CustomTelegramClient(
-                MemorySession(),
-                self.api_token.ID,
-                self.api_token.HASH,
-                connection=self.conn,
-                proxy=self.proxy,
-                connection_retries=None,
-                device_model=get_app_name(),
-                system_version="Windows 10",
-                app_version=".".join(map(str, __version__)) + " x64",
-                lang_code="en",
-                system_lang_code="en-US",
-            )
-            await client.connect()
+        client = CustomTelegramClient(
+            MemorySession(),
+            self.api_token.ID,
+            self.api_token.HASH,
+            connection=self.conn,
+            proxy=self.proxy,
+            connection_retries=None,
+            device_model=get_app_name(),
+            system_version="Windows 10",
+            app_version=".".join(map(str, __version__)) + " x64",
+            lang_code="en",
+            system_lang_code="en-US",
+        )
+        await client.connect()
 
-            print(
-                (
-                    "\033[0;96m{}\033[0m" if IS_TERMUX or self.arguments.tty else "{}"
-                ).format(
-                    "You can use QR-code to login from another device (your friend's"
-                    " phone, for example)."
-                )
-            )
+        print(
+            "You can use QR-code to login from another device (your friend's"
+            " phone, for example)."
+        )
 
-            if (
-                input(
-                    "\033[0;96mUse QR code? [y/N]: \033[0m"
-                    if IS_TERMUX or self.arguments.tty
-                    else "Use QR code? [y/N]: "
-                ).lower()
-                != "y"
-            ):
-                return await self._phone_login(client)
+        if (
+            input("Use QR code? [y/N]: ").lower() != "y"
+        ):
+            return await self._phone_login(client)
 
-            print("\033[0;96mLoading QR code...\033[0m")
-            qr_login = await client.qr_login()
+        print("Loading QR code...")
+        qr_login = await client.qr_login()
 
-            def print_qr():
-                qr = QRCode()
-                qr.add_data(qr_login.url)
-                print("\033[2J\033[3;1f")
-                qr.print_ascii(invert=True)
-                print("\033[0;96mScan the QR code above to log in.\033[0m")
-                print("\033[0;96mPress Ctrl+C to cancel.\033[0m")
+        def print_qr():
+            qr = QRCode()
+            qr.add_data(qr_login.url)
+            qr.print_ascii(tty=False)
+            print("Scan the QR code above to log in.")
+            print("Press Ctrl+C to cancel.")
 
-            async def qr_login_poll() -> bool:
-                logged_in = False
-                while not logged_in:
+        async def qr_login_poll() -> bool:
+            logged_in = False
+            while not logged_in:
+                try:
+                    logged_in = await qr_login.wait(10)
+                except asyncio.TimeoutError:
                     try:
-                        logged_in = await qr_login.wait(10)
-                    except asyncio.TimeoutError:
-                        try:
-                            await qr_login.recreate()
-                            print_qr()
-                        except SessionPasswordNeededError:
-                            return True
+                        await qr_login.recreate()
+                        print_qr()
                     except SessionPasswordNeededError:
                         return True
-                    except KeyboardInterrupt:
-                        print("\033[2J\033[3;1f")
-                        return None
+                except SessionPasswordNeededError:
+                    return True
+                except KeyboardInterrupt:
+                    return None
 
-                return False
+            return False
 
-            if (qr_logined := await qr_login_poll()) is None:
-                return await self._phone_login(client)
+        if (qr_logined := await qr_login_poll()) is None:
+            return await self._phone_login(client)
 
-            if qr_logined:
-                password = await client(GetPasswordRequest())
-                while True:
-                    _2fa = getpass(
-                        f"\033[0;96mEnter 2FA password ({password.hint}): \033[0m"
-                        if IS_TERMUX or self.arguments.tty
-                        else f"Enter 2FA password ({password.hint}): "
-                    )
-                    try:
-                        await client._on_login(
-                            (
-                                await client(
-                                    CheckPasswordRequest(
-                                        compute_check(password, _2fa.strip())
-                                    )
+        if qr_logined:
+            password = await client(GetPasswordRequest())
+            while True:
+                _2fa = getpass(
+                    f"Enter 2FA password ({password.hint}): "
+                    if IS_TERMUX or self.arguments.tty
+                    else f"Enter 2FA password ({password.hint}): "
+                )
+                try:
+                    await client._on_login(
+                        (
+                            await client(
+                                CheckPasswordRequest(
+                                    compute_check(password, _2fa.strip())
                                 )
-                            ).user
-                        )
-                    except PasswordHashInvalidError:
-                        print("\033[0;91mInvalid 2FA password!\033[0m")
-                    except FloodWaitError as e:
-                        seconds, minutes, hours = (
-                            e.seconds % 3600 % 60,
-                            e.seconds % 3600 // 60,
-                            e.seconds // 3600,
-                        )
-                        seconds, minutes, hours = (
-                            f"{seconds} second(-s)",
-                            f"{minutes} minute(-s) " if minutes else "",
-                            f"{hours} hour(-s) " if hours else "",
-                        )
-                        print(
-                            "\033[0;91mYou got FloodWait error! Please wait"
-                            f" {hours}{minutes}{seconds}\033[0m"
-                        )
-                        return False
-                    else:
-                        break
+                            )
+                        ).user
+                    )
+                except PasswordHashInvalidError:
+                    print("Invalid 2FA password!")
+                except FloodWaitError as e:
+                    seconds, minutes, hours = (
+                        e.seconds % 3600 % 60,
+                        e.seconds % 3600 // 60,
+                        e.seconds // 3600,
+                    )
+                    seconds, minutes, hours = (
+                        f"{seconds} second(-s)",
+                        f"{minutes} minute(-s) " if minutes else "",
+                        f"{hours} hour(-s) " if hours else "",
+                    )
+                    print(
+                        "You got FloodWait error! Please wait"
+                        f" {hours}{minutes}{seconds}"
+                    )
+                    return False
+                else:
+                    break
 
-            print("\033[0;92mLogged in successfully!\033[0m")
-            await self.save_client_session(client)
-            self.clients += [client]
-            return True
-
-        if not self.web.running.is_set():
-            await self.web.start(
-                self.arguments.port,
-                proxy_pass=True,
-            )
-            await self._web_banner()
-
-        await self.web.wait_for_clients_setup()
-
+        print("Logged in successfully!")
+        await self.save_client_session(client)
+        self.clients += [client]
         return True
 
     async def _init_clients(self) -> bool:
@@ -676,10 +605,8 @@ class Hikka:
 
                 await client.start(
                     phone=(
-                        raise_auth
-                        if self.web
-                        else lambda: input(
-                            "\033[0;96mEnter phone: \033[0m"
+                        lambda: input(
+                            "Enter phone: "
                             if IS_TERMUX or self.arguments.tty
                             else "Enter phone: "
                         )
@@ -751,11 +678,6 @@ class Hikka:
 
             if not self.omit_log:
                 print(logo)
-                web_url = (
-                    f"🌐 Web url: {self.web.url}"
-                    if self.web and hasattr(self.web, "url")
-                    else ""
-                )
                 # logging.debug(
                 #     "\n🌘 Hikka %s #%s (%s) started\n%s",
                 #     ".".join(list(map(str, list(__version__)))),
@@ -764,9 +686,8 @@ class Hikka:
                 #     web_url,
                 # )
                 logging.debug(
-                    "\n🌘 Hikka %s started\n%s",
+                    "\n🌘 Hikka %s started",
                     ".".join(list(map(str, list(__version__)))),
-                    web_url,
                 )
                 self.omit_log = True
 
@@ -785,10 +706,9 @@ class Hikka:
                 #     )
                 # ),
                 caption=(
-                    "🌘 <b>Hikka {} started!</b>\n<b>{}</b>"
+                    "🌘 <b>Hikka {} started!</b>"
                     .format(
                         ".".join(list(map(str, list(__version__)))),
-                        web_url,
                     )
                 ),
             )
@@ -857,14 +777,6 @@ class Hikka:
 
         client.pyro_proxy = None  # Will be set later if needed
 
-        if self.web:
-            await self.web.add_loader(client, modules, db)
-            await self.web.start_if_ready(
-                len(self.clients),
-                self.arguments.port,
-                proxy_pass=self.arguments.proxy_pass,
-            )
-
         await self._add_dispatcher(client, modules, db)
 
         await modules.register_all(None)
@@ -878,7 +790,6 @@ class Hikka:
 
     async def _main(self):
         """Main entrypoint"""
-        self._init_web()
         save_config_key("port", self.arguments.port)
         await self._get_token()
 

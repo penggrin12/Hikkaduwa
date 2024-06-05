@@ -806,7 +806,7 @@ class EntityLike(RegExp):
         regex: str,
         flags: typing.Optional[re.RegexFlag],
     ) -> typing.Union[str, int]:
-        value = super()._validate(value, regex=regex, flags=flags)
+        value = RegExp._validate(value, regex=regex, flags=flags)
 
         if value.isdigit():
             if value.startswith("-100"):

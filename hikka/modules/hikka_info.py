@@ -62,6 +62,7 @@ class HikkaInfoMod(loader.Module):
 
         platform = utils.get_named_platform()
 
+        # TODO: add windows emoji
         for emoji, icon in [
             ("🍊", "<emoji document_id=5449599833973203438>🧡</emoji>"),
             ("🍇", "<emoji document_id=5449468596952507859>💜</emoji>"),

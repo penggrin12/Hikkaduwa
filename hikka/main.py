@@ -79,6 +79,7 @@ with contextlib.suppress(Exception):
 
     if "microsoft-standard" in uname().release:
         IS_WSL = True
+IS_WINDOWS = (os.name == "nt") and (not IS_WSL)
 
 # fmt: off
 LATIN_MOCK = [

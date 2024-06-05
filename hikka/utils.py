@@ -898,6 +898,9 @@ def get_named_platform() -> str:
 
     if main.IS_TERMUX:
         return "🕶 Termux"
+    
+    if main.IS_WINDOWS:
+        return "💻 Windows"
 
     return "📻 VDS"
 

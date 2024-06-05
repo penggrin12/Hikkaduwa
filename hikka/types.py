@@ -667,53 +667,6 @@ class Module:
         return lib_obj
 
 
-class DragonModule:
-    """Module is running in compatibility mode with Dragon, so it might be unstable"""
-
-    # fmt: off
-    strings_ru = {"_cls_doc": "Модуль запущен в режиме совместимости с Dragon, поэтому он может быть нестабильным"}
-    strings_de = {"_cls_doc": "Das Modul wird im Dragon-Kompatibilitäts modus ausgeführt, daher kann es instabil sein"}
-    strings_tr = {"_cls_doc": "Modül Dragon uyumluluğu modunda çalıştığı için istikrarsız olabilir"}
-    strings_uz = {"_cls_doc": "Modul Dragon muvofiqligi rejimida ishlamoqda, shuning uchun u beqaror bo'lishi mumkin"}
-    strings_es = {"_cls_doc": "El módulo se ejecuta en modo de compatibilidad con Dragon, por lo que puede ser inestable"}
-    strings_kk = {"_cls_doc": "Модуль Dragon қамтамасыз ету режимінде іске қосылған, сондықтан белсенді емес болуы мүмкін"}
-    strings_tt = {"_clc_doc": "Модуль Dragon белән ярашучанлык режимда эшли башлады, шуңа күрә ул тотрыксыз була ала"}
-    # fmt: on
-
-    def __init__(self):
-        self.name = "Unknown"
-        self.url = None
-        self.commands = {}
-        self.watchers = {}
-        self.hikka_watchers = {}
-        self.inline_handlers = {}
-        self.hikka_inline_handlers = {}
-        self.callback_handlers = {}
-        self.hikka_callback_handlers = {}
-
-    @property
-    def hikka_commands(
-        self,
-    ) -> typing.Dict[str, Command]:
-        return self.commands
-
-    @property
-    def __origin__(self) -> str:
-        return f"<dragon {self.name}>"
-
-    def config_complete(self):
-        pass
-
-    async def client_ready(self):
-        pass
-
-    async def on_unload(self):
-        pass
-
-    async def on_dlmod(self):
-        pass
-
-
 class Library:
     """All external libraries must have a class-inheritant from this class"""
 

@@ -20,7 +20,6 @@ from hikkatl.utils import get_display_name
 from .. import loader, log, main, utils
 from .._internal import fw_protect, restart
 from ..inline.types import InlineCall
-from ..web import core
 
 logger = logging.getLogger(__name__)
 
@@ -694,21 +693,6 @@ class HikkaSettingsMod(loader.Module):
                 ),
             ],
             [
-                (
-                    {
-                        "text": self.strings("disable_debugger"),
-                        "callback": self.inline__setting,
-                        "args": lambda: self._db.set(log.__name__, "debugger", False),
-                    }
-                    if self._db.get(log.__name__, "debugger", False)
-                    else {
-                        "text": self.strings("enable_debugger"),
-                        "callback": self.inline__setting,
-                        "args": (lambda: self._db.set(log.__name__, "debugger", True),),
-                    }
-                ),
-            ],
-            [
                 {
                     "text": self.strings("btn_restart"),
                     "callback": self.inline__restart,
@@ -729,80 +713,6 @@ class HikkaSettingsMod(loader.Module):
             self.strings("inline_settings"),
             message=message,
             reply_markup=self._get_settings_markup(),
-        )
-
-    @loader.command()
-    async def weburl(self, message: Message, force: bool = False):
-        if (
-            not force
-            and not message.is_private
-            and "force_insecure" not in message.raw_text.lower()
-        ):
-            try:
-                if not await self.inline.form(
-                    self.strings("privacy_leak_nowarn").format(self._client.tg_id),
-                    message=message,
-                    reply_markup=[
-                        {
-                            "text": self.strings("btn_yes"),
-                            "callback": self.weburl,
-                            "args": (True,),
-                        },
-                        {"text": self.strings("btn_no"), "action": "close"},
-                    ],
-                    gif="https://i.gifer.com/embedded/download/Z5tS.gif",
-                ):
-                    raise Exception
-            except Exception:
-                await utils.answer(
-                    message,
-                    self.strings("privacy_leak").format(
-                        self._client.tg_id,
-                        utils.escape_html(self.get_prefix()),
-                    ),
-                )
-
-            return
-
-        if not main.hikka.web:
-            main.hikka.web = core.Web(
-                data_root=main.BASE_DIR,
-                api_token=main.hikka.api_token,
-                proxy=main.hikka.proxy,
-                connection=main.hikka.conn,
-            )
-            await main.hikka.web.add_loader(self._client, self.allmodules, self._db)
-            await main.hikka.web.start_if_ready(
-                len(self.allclients),
-                main.hikka.arguments.port,
-                proxy_pass=main.hikka.arguments.proxy_pass,
-            )
-
-        if force:
-            form = message
-            await form.edit(
-                self.strings("opening_tunnel"),
-                reply_markup={"text": "🕔 Wait...", "data": "empty"},
-                gif=(
-                    "https://i.gifer.com/origin/e4/e43e1b221fd960003dc27d2f2f1b8ce1.gif"
-                ),
-            )
-        else:
-            form = await self.inline.form(
-                self.strings("opening_tunnel"),
-                message=message,
-                reply_markup={"text": "🕔 Wait...", "data": "empty"},
-                gif=(
-                    "https://i.gifer.com/origin/e4/e43e1b221fd960003dc27d2f2f1b8ce1.gif"
-                ),
-            )
-
-        url = await main.hikka.web.get_url(proxy_pass=True)
-
-        await form.edit(
-            self.strings("tunnel_opened"),
-            reply_markup={"text": self.strings("web_btn"), "url": url},
-            gif="https://t.me/hikari_assets/48",
         )
 
     @loader.loop(interval=1, autostart=True)

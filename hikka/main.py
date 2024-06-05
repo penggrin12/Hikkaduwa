@@ -775,8 +775,6 @@ class Hikka:
         modules = loader.Modules(client, db, self.clients, translator)
         client.loader = modules
 
-        client.pyro_proxy = None  # Will be set later if needed
-
         await self._add_dispatcher(client, modules, db)
 
         await modules.register_all(None)

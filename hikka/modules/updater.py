@@ -121,9 +121,6 @@ class UpdaterMod(loader.Module):
 
         await self._db.remote_force_save()
 
-        with contextlib.suppress(Exception):
-            await main.hikka.web.stop()
-
         handler = logging.getLogger().handlers[0]
         handler.setLevel(logging.CRITICAL)
 

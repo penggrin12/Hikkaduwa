@@ -32,10 +32,9 @@ from hikkatl.tl.types import Channel, Message
 
 from .. import loader, main, utils
 from .._local_storage import RemoteStorage
-from ..compat import dragon, geek
-from ..compat.pyroproxy import PyroProxyClient
+from ..compat import geek
 from ..inline.types import InlineCall
-from ..types import CoreOverwriteError, CoreUnloadError, DragonModule
+from ..types import CoreOverwriteError, CoreUnloadError
 
 logger = logging.getLogger(__name__)
 
@@ -174,11 +173,6 @@ class LoaderMod(loader.Module):
                     module.__class__.__name__: module.__origin__
                     for module in self.allmodules.modules
                     if module.__origin__.startswith("http")
-                },
-                **{
-                    module.name: module.url
-                    for module in self.allmodules.dragon_modules
-                    if module.url
                 },
             },
         )
@@ -543,18 +537,8 @@ class LoaderMod(loader.Module):
 
             uid = name.replace("%", "%%").replace(".", "%d")
 
-        is_dragon = "@Client.on_message" in doc
-
-        if is_dragon:
-            module_name = f"dragon.modules.{uid}"
-            if not self._client.pyro_proxy:
-                self._client.pyro_proxy = PyroProxyClient(self._client)
-                await self._client.pyro_proxy.start()
-                await self._client.pyro_proxy.dispatcher.start()
-                dragon.apply_compat(self._client)
-        else:
-            module_name = f"hikka.modules.{uid}"
-            doc = geek.compat(doc)
+        module_name = f"hikka.modules.{uid}"
+        doc = geek.compat(doc)
 
         async def core_overwrite(e: CoreOverwriteError):
             nonlocal message
@@ -576,14 +560,9 @@ class LoaderMod(loader.Module):
                 ),
             )
 
-        async with (dragon.import_lock if is_dragon else lambda _: FakeLock())(
-            self._client
-        ):
-            with (
-                self._client.dragon_compat.misc.modules_help.get_notifier
-                if is_dragon
-                else FakeNotifier
-            )() as notifier:
+        # TODO: do we need this lock and notifier?
+        async with lambda _: FakeLock()(self._client):
+            with FakeNotifier() as notifier:
                 try:
                     try:
                         spec = ModuleSpec(
@@ -596,12 +575,8 @@ class LoaderMod(loader.Module):
                             module_name,
                             origin,
                             save_fs=save_fs,
-                            is_dragon=is_dragon,
                         )
 
-                        if is_dragon:
-                            dragon_module, instance = instance
-                            instance.url = url
                     except ImportError as e:
                         logger.info(
                             (
@@ -633,7 +608,6 @@ class LoaderMod(loader.Module):
                                     "sklearn": "scikit-learn",
                                     "pil": "Pillow",
                                     "hikkatl": "Hikka-TL",
-                                    "pyrogram": "Hikka-Pyro",
                                 }.get(e.name.lower(), e.name)
                             ]
 
@@ -862,18 +836,11 @@ class LoaderMod(loader.Module):
                 ):
                     instance.strings.external_strings = transations
 
-                if is_dragon:
-                    instance.name = (
-                        f"Dragon{notifier.modname[0].upper()}{notifier.modname[1:]}"
-                    )
-                    instance.commands = notifier.commands
-                    self.allmodules.register_dragon(dragon_module, instance)
-                else:
-                    for alias, cmd in (
-                        self.lookup("settings").get("aliases", {}).items()
-                    ):
-                        if cmd in instance.commands:
-                            self.allmodules.add_alias(alias, cmd)
+                for alias, cmd in (
+                    self.lookup("settings").get("aliases", {}).items()
+                ):
+                    if cmd in instance.commands:
+                        self.allmodules.add_alias(alias, cmd)
 
             try:
                 modname = instance.strings("name")
@@ -1007,25 +974,17 @@ class LoaderMod(loader.Module):
                 key=lambda x: x[0],
             ):
                 modhelp += "\n{} <code>{}{}</code> {}".format(
-                    (
-                        dragon.DRAGON_EMOJI
-                        if is_dragon
-                        else "<emoji document_id=4971987363145188045>▫️</emoji>"
-                    ),
-                    utils.escape_html(self.get_prefix("dragon" if is_dragon else None)),
+                    "<emoji document_id=4971987363145188045>▫️</emoji>",
+                    utils.escape_html(self.get_prefix()),
                     _name,
                     (
-                        utils.escape_html(fun)
-                        if is_dragon
-                        else (
-                            utils.escape_html(inspect.getdoc(fun))
-                            if fun.__doc__
-                            else self.strings("undoc")
-                        )
+                        utils.escape_html(inspect.getdoc(fun))
+                        if fun.__doc__
+                        else self.strings("undoc")
                     ),
                 )
 
-            if self.inline.init_complete and not is_dragon:
+            if self.inline.init_complete:
                 for _name, fun in sorted(
                     instance.inline_handlers.items(),
                     key=lambda x: x[0],
@@ -1067,25 +1026,20 @@ class LoaderMod(loader.Module):
             await utils.answer(message, self.strings("no_class"))
             return
 
-        instance = self.lookup(args, include_dragon=True)
+        instance = self.lookup(args)
 
         if issubclass(instance.__class__, loader.Library):
             await utils.answer(message, self.strings("cannot_unload_lib"))
             return
 
-        is_dragon = isinstance(instance, DragonModule)
-
-        if is_dragon:
-            worked = [instance.name] if self.allmodules.unload_dragon(instance) else []
-        else:
-            try:
-                worked = await self.allmodules.unload_module(args)
-            except CoreUnloadError as e:
-                await utils.answer(
-                    message,
-                    self.strings("unload_core").format(e.module),
-                )
-                return
+        try:
+            worked = await self.allmodules.unload_module(args)
+        except CoreUnloadError as e:
+            await utils.answer(
+                message,
+                self.strings("unload_core").format(e.module),
+            )
+            return
 
         if not self.allmodules.secure_boot:
             self.set(
@@ -1099,11 +1053,7 @@ class LoaderMod(loader.Module):
 
         msg = (
             self.strings("unloaded").format(
-                (
-                    dragon.DRAGON_EMOJI
-                    if is_dragon
-                    else "<emoji document_id=5784993237412351403>✅</emoji>"
-                ),
+                "<emoji document_id=5784993237412351403>✅</emoji>",
                 ", ".join(
                     [(mod[:-3] if mod.endswith("Mod") else mod) for mod in worked]
                 ),

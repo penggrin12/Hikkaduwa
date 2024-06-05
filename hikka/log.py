@@ -426,8 +426,7 @@ def init():
     )
     logging.getLogger().setLevel(logging.NOTSET)
     logging.getLogger("hikkatl").setLevel(logging.WARNING)
-    logging.getLogger("hikkapyro").setLevel(logging.WARNING)
-    logging.getLogger("matplotlib").setLevel(logging.WARNING)
-    logging.getLogger("aiohttp").setLevel(logging.WARNING)
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)  # ???
+    logging.getLogger("aiohttp").setLevel(logging.WARNING)  # remains from web
     logging.getLogger("aiogram").setLevel(logging.WARNING)
     logging.captureWarnings(True)

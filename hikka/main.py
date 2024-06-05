@@ -59,7 +59,6 @@ from hikkatl.tl.functions.account import GetPasswordRequest
 from hikkatl.tl.functions.auth import CheckPasswordRequest
 
 from . import database, loader, utils, version
-from ._internal import print_banner
 from .dispatcher import CommandDispatcher
 from .qr import QRCode
 from .tl_cache import CustomTelegramClient
@@ -600,7 +599,6 @@ class Hikka:
                 return await self._phone_login(client)
 
             if qr_logined:
-                print_banner("2fa.txt")
                 password = await client(GetPasswordRequest())
                 while True:
                     _2fa = getpass(
@@ -639,7 +637,6 @@ class Hikka:
                     else:
                         break
 
-            print_banner("success.txt")
             print("\033[0;92mLogged in successfully!\033[0m")
             await self.save_client_session(client)
             self.clients += [client]

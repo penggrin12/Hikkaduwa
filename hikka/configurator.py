@@ -29,7 +29,6 @@ def tty_input(text: str, tty: bool) -> str:
 def api_config(tty: typing.Optional[bool] = None):
     """Request API config from user and set"""
     from . import main
-    from ._internal import print_banner
 
     if tty is None:
         print("\033[0;91mThe quick brown fox jumps over the lazy dog\033[0m")

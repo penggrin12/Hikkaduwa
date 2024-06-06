@@ -376,7 +376,7 @@ updater:
     btn_update: "🧭 Update"
     restart_confirm: "❓ <b>Are you sure you want to restart?</b>"
     secure_boot_confirm: "❓ <b>Are you sure you want to restart in secure boot mode?</b>"
-    update_confirm: "❓ <b>Are you sure you want to update?\n\n<a href=\"https://github.com/hikariatama/Hikka/commit/{}\">{}</a> ⤑ <a href=\"https://github.com/hikariatama/Hikka/commit/{}\">{}</a></b>"
+    update_confirm: "❓ <b>Are you sure you want to update?\n\n<a href=\"https://github.com/penggrin12/Hikkaduwa/commit/{}\">{}</a> ⤑ <a href=\"https://github.com/penggrin12/Hikkaduwa/commit/{}\">{}</a></b>"
     no_update: "🚸 <b>You are on the latest version, pull updates anyway?</b>"
     cancel: "🚫 Cancel"
     full_success: "<emoji document_id=5301096082674032190>👍</emoji> <b>Userbot is fully loaded! {}</b>\n<i>Full restart took {}s</i>"

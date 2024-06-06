@@ -157,7 +157,7 @@ class HikkaInfoMod(loader.Module):
                 else {"message": self._render_info(True)}
             ),
             "thumb": (
-                "https://github.com/hikariatama/Hikka/raw/master/assets/hikka_pfp.png"
+                "https://github.com/penggrin12/Hikkaduwa/raw/master/assets/hikka_pfp.png"
             ),
             "reply_markup": self._get_mark(),
         }

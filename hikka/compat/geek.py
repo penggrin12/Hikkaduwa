@@ -31,7 +31,7 @@ def compat(code: str) -> str:
                 r"\1from ..inline.types import \2",
                 re.sub(
                     r"^( *)from \.\.inline import rand[^,]*$",
-                    "\1from ..utils import rand",
+                    r"\1from ..utils import rand",
                     re.sub(
                         r"^( *)from \.\.inline import rand, ?(.+)$",
                         r"\1from ..inline.types import \2\n\1from ..utils import rand",

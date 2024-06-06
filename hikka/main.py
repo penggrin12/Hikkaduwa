@@ -457,11 +457,7 @@ class Hikka:
         await client.hikka_db.init()
 
     async def _phone_login(self, client: CustomTelegramClient) -> bool:
-        phone = input(
-            "Enter phone: "
-            if IS_TERMUX or self.arguments.tty
-            else "Enter phone: "
-        )
+        phone = input("Enter phone: ")
 
         await client.start(phone)
 
@@ -533,11 +529,7 @@ class Hikka:
         if qr_logined:
             password = await client(GetPasswordRequest())
             while True:
-                _2fa = getpass(
-                    f"Enter 2FA password ({password.hint}): "
-                    if IS_TERMUX or self.arguments.tty
-                    else f"Enter 2FA password ({password.hint}): "
-                )
+                _2fa = getpass(f"Enter 2FA password ({password.hint}): ")
                 try:
                     await client._on_login(
                         (
@@ -597,11 +589,7 @@ class Hikka:
 
                 await client.start(
                     phone=(
-                        lambda: input(
-                            "Enter phone: "
-                            if IS_TERMUX or self.arguments.tty
-                            else "Enter phone: "
-                        )
+                        lambda: input("Enter phone: ")
                     )
                 )
                 client.phone = "never gonna give you up"

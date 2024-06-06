@@ -67,9 +67,6 @@ class HikkaSettingsMod(loader.Module):
 
                 await fw_protect()
 
-                await m.delete()
-                await r.delete()
-
         async for dialog in self._client.iter_dialogs(
             None,
             ignore_migrated=True,

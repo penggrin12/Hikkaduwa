@@ -283,6 +283,7 @@ hikka_config:
     remove_item_btn: "➖ Remove item"
     show_hidden: "🚸 Show value"
     hide_value: "🔒 Hide value"
+    settings: "⚙️ Core"
     builtin: "🛰 Built-in"
     external: "🛸 External"
     libraries: "📦 Libraries"

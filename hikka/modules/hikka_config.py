@@ -873,6 +873,10 @@ class HikkaConfigMod(loader.Module):
             reply_markup=[
                 [
                     {
+                        "text": self.strings("settings"),
+                        "callback": self.lookup("HikkaSettings").inline__settings,
+                    },
+                    {
                         "text": self.strings("builtin"),
                         "callback": self.inline__global_config,
                         "kwargs": {"obj_type": True},

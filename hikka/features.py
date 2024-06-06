@@ -1,0 +1,1 @@
+SETTINGS_AS_COMMAND = True

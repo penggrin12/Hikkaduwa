@@ -11,6 +11,8 @@ import os
 import random
 import signal
 import sys
+import subprocess
+from .platform import IS_WINDOWS
 
 
 async def fw_protect():
@@ -26,9 +28,22 @@ def get_startup_callback() -> callable:
         *sys.argv[1:],
     )
 
+def restart_windows_test():
+    # TODO
+    subprocess.run(
+        [sys.executable, "-m", os.path.relpath(os.path.abspath(os.path.dirname(os.path.abspath(__file__))))],
+        stdin=sys.stdin,
+        stdout=sys.stdout,
+        stderr=sys.stderr
+    )
+
 
 def die():
     """Platform-dependent way to kill the current process group"""
+    if IS_WINDOWS:
+        os.kill(os.getpid(), signal.SIGTERM)
+        return
+
     os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
 
 
@@ -47,6 +62,11 @@ def restart():
 
     os.environ["HIKKA_DO_NOT_RESTART"] = "1"
 
-    signal.signal(signal.SIGTERM, get_startup_callback())
+    print("uh")
+
+    if IS_WINDOWS:
+        restart_windows_test()
+    else:
+        signal.signal(signal.SIGTERM, get_startup_callback())
 
     die()

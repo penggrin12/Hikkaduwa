@@ -27,7 +27,6 @@
 import argparse
 import asyncio
 import collections
-import contextlib
 import importlib
 import json
 import logging
@@ -59,6 +58,7 @@ from hikkatl.tl.functions.account import GetPasswordRequest
 from hikkatl.tl.functions.auth import CheckPasswordRequest
 
 from . import database, loader, utils, version
+from .platform import IS_TERMUX, IS_WINDOWS, IS_WSL
 from .dispatcher import CommandDispatcher
 from .qr import QRCode
 from .tl_cache import CustomTelegramClient
@@ -71,15 +71,6 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 BASE_PATH = Path(BASE_DIR)
 CONFIG_PATH = BASE_PATH / "config.json"
-
-IS_TERMUX = "com.termux" in os.environ.get("PREFIX", "")
-IS_WSL = False
-with contextlib.suppress(Exception):
-    from platform import uname
-
-    if "microsoft-standard" in uname().release:
-        IS_WSL = True
-IS_WINDOWS = (os.name == "nt") and (not IS_WSL)
 
 # fmt: off
 LATIN_MOCK = [

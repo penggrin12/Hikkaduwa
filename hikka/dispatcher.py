@@ -37,7 +37,7 @@ from hikkatl import events
 from hikkatl.errors import FloodWaitError, RPCError
 from hikkatl.tl.types import Message
 
-from . import main, security, utils
+from . import main, utils, features
 from .database import Database
 from .loader import Modules
 from .tl_cache import CustomTelegramClient
@@ -117,9 +117,9 @@ class CommandDispatcher:
         self._ratelimit_max_user = db.get(__name__, "ratelimit_max_user", 30)
         self._ratelimit_max_chat = db.get(__name__, "ratelimit_max_chat", 100)
 
-        self.security = security.SecurityManager(client, db)
+        self.security = None  # we still keeping?
 
-        self.check_security = self.security.check
+        self.check_security = lambda: False
         self._me = self._client.hikka_me.id
         self._cached_usernames = [
             (
@@ -136,9 +136,6 @@ class CommandDispatcher:
         self.raw_handlers = []
 
     async def _handle_ratelimit(self, message: Message, func: callable) -> bool:
-        if await self.security.check(message, security.OWNER):
-            return True
-
         func = getattr(func, "__func__", func)
         ret = True
         chat = self._ratelimit_storage_chat[message.chat_id]
@@ -180,91 +177,6 @@ class CommandDispatcher:
 
         return ret
 
-    def _handle_grep(self, message: Message) -> Message:
-        # Allow escaping grep with double stick
-        if "||grep" in message.text or "|| grep" in message.text:
-            message.raw_text = re.sub(r"\|\| ?grep", "| grep", message.raw_text)
-            message.text = re.sub(r"\|\| ?grep", "| grep", message.text)
-            message.message = re.sub(r"\|\| ?grep", "| grep", message.message)
-            return message
-
-        grep = False
-        if not re.search(r".+\| ?grep (.+)", message.raw_text):
-            return message
-
-        grep = re.search(r".+\| ?grep (.+)", message.raw_text).group(1)
-        message.text = re.sub(r"\| ?grep.+", "", message.text)
-        message.raw_text = re.sub(r"\| ?grep.+", "", message.raw_text)
-        message.message = re.sub(r"\| ?grep.+", "", message.message)
-
-        ungrep = False
-
-        if re.search(r"-v (.+)", grep):
-            ungrep = re.search(r"-v (.+)", grep).group(1)
-            grep = re.sub(r"(.+) -v .+", r"\g<1>", grep)
-
-        grep = utils.escape_html(grep).strip() if grep else False
-        ungrep = utils.escape_html(ungrep).strip() if ungrep else False
-
-        old_edit = message.edit
-        old_reply = message.reply
-        old_respond = message.respond
-
-        def process_text(text: str) -> str:
-            nonlocal grep, ungrep
-            res = []
-
-            for line in text.split("\n"):
-                if (
-                    grep
-                    and grep in utils.remove_html(line)
-                    and (not ungrep or ungrep not in utils.remove_html(line))
-                ):
-                    res.append(
-                        utils.remove_html(line, escape=True).replace(
-                            grep, f"<u>{grep}</u>"
-                        )
-                    )
-
-                if not grep and ungrep and ungrep not in utils.remove_html(line):
-                    res.append(utils.remove_html(line, escape=True))
-
-            cont = (
-                (f"contain <b>{grep}</b>" if grep else "")
-                + (" and" if grep and ungrep else "")
-                + ((" do not contain <b>" + ungrep + "</b>") if ungrep else "")
-            )
-
-            if res:
-                text = f"<i>💬 Lines that {cont}:</i>\n" + "\n".join(res)
-            else:
-                text = f"💬 <i>No lines that {cont}</i>"
-
-            return text
-
-        async def my_edit(text, *args, **kwargs):
-            text = process_text(text)
-            kwargs["parse_mode"] = "HTML"
-            return await old_edit(text, *args, **kwargs)
-
-        async def my_reply(text, *args, **kwargs):
-            text = process_text(text)
-            kwargs["parse_mode"] = "HTML"
-            return await old_reply(text, *args, **kwargs)
-
-        async def my_respond(text, *args, **kwargs):
-            text = process_text(text)
-            kwargs["parse_mode"] = "HTML"
-            kwargs.setdefault("reply_to", utils.get_topic(message))
-            return await old_respond(text, *args, **kwargs)
-
-        message.edit = my_edit
-        message.reply = my_reply
-        message.respond = my_respond
-        message.hikka_grepped = True
-
-        return message
-
     async def _handle_command(
         self,
         event: typing.Union[events.NewMessage, events.MessageDeleted],
@@ -273,43 +185,15 @@ class CommandDispatcher:
         if not hasattr(event, "message") or not hasattr(event.message, "message"):
             return False
 
-        prefix = self._db.get(main.__name__, "command_prefix", False) or "."
-        change = str.maketrans(ru_keys + en_keys, en_keys + ru_keys)
-        message = utils.censor(event.message)
-
         if not event.message.message:
             return False
 
-        if (
-            message.out
-            and len(message.message) > 2
-            and (
-                message.message.startswith(prefix * 2)
-                and any(s != prefix for s in message.message)
-                or message.message.startswith(str.translate(prefix * 2, change))
-                and any(s != str.translate(prefix, change) for s in message.message)
-            )
-        ):
-            # Allow escaping commands using .'s
-            if not watcher:
-                await message.edit(
-                    message.message[1:],
-                    parse_mode=lambda s: (
-                        s,
-                        utils.relocate_entities(message.entities, -1, message.message)
-                        or (),
-                    ),
-                )
+        prefix = self._db.get(main.__name__, "command_prefix", False) or "."
+
+        if not event.message.message.startswith(prefix):
             return False
 
-        if (
-            event.message.message.startswith(str.translate(prefix, change))
-            and str.translate(prefix, change) != prefix
-        ):
-            message.message = str.translate(message.message, change)
-            message.text = str.translate(message.text, change)
-        elif not event.message.message.startswith(prefix):
-            return False
+        message = utils.censor(event.message)
 
         if (
             event.sticker
@@ -320,76 +204,34 @@ class CommandDispatcher:
         ):
             return False
 
-        blacklist_chats = self._db.get(main.__name__, "blacklist_chats", [])
-        whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
-        whitelist_modules = self._db.get(main.__name__, "whitelist_modules", [])
-
-        if utils.get_chat_id(message) in blacklist_chats or (
-            whitelist_chats and utils.get_chat_id(message) not in whitelist_chats
-        ):
-            return False
-
-        if not message.message or len(message.message) == 1:
+        if len(message.message) == 1:
             return False  # Message is just the prefix
 
         initiator = getattr(event, "sender_id", 0)
 
-        command = message.message[1:].strip().split(maxsplit=1)[0]
-        tag = command.split("@", maxsplit=1)
-
-        if len(tag) == 2:
-            if tag[1] == "me":
-                if not message.out:
-                    return False
-            elif tag[1].lower() not in self._cached_usernames:
-                return False
-        elif (
-            event.out
-            or event.mentioned
-            and event.message is not None
-            and event.message.message is not None
-            and not any(
-                f"@{username}" not in command.lower()
-                for username in self._cached_usernames
-            )
-        ):
-            pass
-        elif (
-            not event.is_private
-            and not self._db.get(main.__name__, "no_nickname", False)
-            and command not in self._db.get(main.__name__, "nonickcmds", [])
-            and initiator not in self._db.get(main.__name__, "nonickusers", [])
-            and not self.security.check_tsec(initiator, command)
-            and utils.get_chat_id(event)
-            not in self._db.get(main.__name__, "nonickchats", [])
-        ):
+        if initiator != self._me:
             return False
 
-        txt, func = self._modules.dispatch(tag[0])
+        command = message.message[1:].strip().split(maxsplit=1)[0]
 
-        if (
-            not func
-            or not await self._handle_ratelimit(message, func)
-            or not await self.security.check(
-                message,
-                func,
-                usernames=self._cached_usernames,
-            )
-        ):
+        txt, func = self._modules.dispatch(command)
+
+        if not func or not await self._handle_ratelimit(message, func):
             return False
 
         if message.is_channel and message.edit_date and not message.is_group:
-            async for event in self._client.iter_admin_log(
-                utils.get_chat_id(message),
-                limit=10,
-                edit=True,
-            ):
-                if event.action.prev_message.id == message.id:
-                    if event.user_id != self._client.tg_id:
-                        logger.debug("Ignoring edit in channel")
-                        return False
+            if features.WORK_IN_CHANNELS:
+                async for event in self._client.iter_admin_log(
+                    utils.get_chat_id(message),
+                    limit=10,
+                    edit=True,
+                ):
+                    if event.action.prev_message.id == message.id:
+                        if event.user_id != self._client.tg_id:
+                            logger.debug("Ignoring edit in channel")
+                            return False
 
-                    break
+                        break
 
         if (
             message.is_channel
@@ -403,20 +245,8 @@ class CommandDispatcher:
 
         message.message = prefix + txt + message.message[len(prefix + command) :]
 
-        if (
-            f"{str(utils.get_chat_id(message))}.{func.__self__.__module__}"
-            in blacklist_chats
-            or whitelist_modules
-            and f"{utils.get_chat_id(message)}.{func.__self__.__module__}"
-            not in whitelist_modules
-        ):
-            return False
-
         if await self._handle_tags(event, func):
             return False
-
-        if self._db.get(main.__name__, "grep", False) and not watcher:
-            message = self._handle_grep(message)
 
         return message, prefix, txt, func
 
@@ -584,7 +414,8 @@ class CommandDispatcher:
             "contains": lambda: isinstance(m, Message) and func.contains in m.raw_text,
             "filter": lambda: callable(func.filter) and func.filter(m),
             "from_id": lambda: getattr(m, "sender_id", None) == func.from_id,
-            "chat_id": lambda: utils.get_chat_id(m) == (
+            "chat_id": lambda: utils.get_chat_id(m)
+            == (
                 func.chat_id
                 if not str(func.chat_id).startswith("-100")
                 else int(str(func.chat_id)[4:])

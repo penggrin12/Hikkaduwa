@@ -6,7 +6,6 @@
 
 import inspect
 import logging
-import re
 import typing
 from asyncio import Event
 
@@ -253,22 +252,10 @@ class Events(InlineUnit):
                             unit.get("force_me", False)
                             and call.from_user.id == self._me
                         )
-                        or not unit.get("force_me", False)
-                        and (
-                            await self.check_inline_security(
-                                func=unit.get(
-                                    "perms_map",
-                                    lambda: self._client.dispatcher.security._default,
-                                )(),  # we call it so we can get reloaded rights in runtime
-                                user=call.from_user.id,
-                            )
-                            if "message" in unit
-                            else False
-                        )
                     ):
                         pass
                     elif call.from_user.id not in (
-                        self._client.dispatcher.security._owner
+                        [self._client._tg_id]
                         + unit.get("always_allow", [])
                         + button.get("always_allow", [])
                     ):
@@ -299,28 +286,13 @@ class Events(InlineUnit):
                     return result
 
         if call.data in self._custom_map:
-            if (
-                self._custom_map[call.data].get("disable_security", False)
-                or (
-                    self._custom_map[call.data].get("force_me", False)
-                    and call.from_user.id == self._me
-                )
-                or not self._custom_map[call.data].get("force_me", False)
-                and (
-                    await self.check_inline_security(
-                        func=self._custom_map[call.data].get(
-                            "perms_map",
-                            lambda: self._client.dispatcher.security._default,
-                        )(),
-                        user=call.from_user.id,
-                    )
-                    if "message" in self._custom_map[call.data]
-                    else False
-                )
+            if self._custom_map[call.data].get("disable_security", False) or (
+                self._custom_map[call.data].get("force_me", False)
+                and call.from_user.id == self._me
             ):
                 pass
             elif (
-                call.from_user.id not in self._client.dispatcher.security._owner
+                call.from_user.id is not self._client._tg_id
                 and call.from_user.id
                 not in self._custom_map[call.data].get("always_allow", [])
             ):

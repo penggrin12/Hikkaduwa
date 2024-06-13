@@ -152,11 +152,6 @@ class Utils(InlineUnit):
                                     if button.get("force_me", False)
                                     else {}
                                 ),
-                                **(
-                                    {"disable_security": True}
-                                    if button.get("disable_security", False)
-                                    else {}
-                                ),
                             }
                     elif "input" in button:
                         line += [
@@ -238,12 +233,13 @@ class Utils(InlineUnit):
 
     async def check_inline_security(self, *, func: typing.Callable, user: int) -> bool:
         """Checks if user with id `user` is allowed to run function `func`"""
-        return await self._client.dispatcher.security.check(
-            message=None,
-            func=func,
-            user_id=user,
-            inline_cmd=self._reverse_method_lookup(func),
-        )
+        # return await self._client.dispatcher.security.check(
+        #     message=None,
+        #     func=func,
+        #     user_id=user,
+        #     inline_cmd=self._reverse_method_lookup(func),
+        # )
+        return user == self._client._tg_id
 
     def _find_caller_sec_map(self) -> typing.Optional[typing.Callable[[], int]]:
         try:

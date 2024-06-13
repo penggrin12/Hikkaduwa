@@ -80,7 +80,7 @@ class HikkaInfoMod(loader.Module):
 
         return (
             (
-                "<b>🌘 Hikka</b>\n"
+                "<b>🌘 Hikkaduwa</b>\n"
                 if "hikka" not in self.config["custom_message"].lower()
                 else ""
             )
@@ -116,7 +116,7 @@ class HikkaInfoMod(loader.Module):
                         (
                             utils.get_platform_emoji()
                             if self._client.hikka_me.premium and not inline
-                            else "🌘 Hikka"
+                            else "🌘 Hikkaduwa"
                         ),
                         "<emoji document_id=5373141891321699086>😎</emoji>",
                         "<emoji document_id=5469741319330996757>💫</emoji>",

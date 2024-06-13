@@ -490,9 +490,7 @@ class Hikka:
             " phone, for example)."
         )
 
-        if (
-            input("Use QR code? [y/N]: ").lower() != "y"
-        ):
+        if input("Use QR code? [y/N]: ").lower() != "y":
             return await self._phone_login(client)
 
         print("Loading QR code...")
@@ -587,11 +585,7 @@ class Hikka:
                     system_lang_code="en-US",
                 )
 
-                await client.start(
-                    phone=(
-                        lambda: input("Enter phone: ")
-                    )
-                )
+                await client.start(phone=(lambda: input("Enter phone: ")))
                 client.phone = "never gonna give you up"
 
                 self.clients += [client]
@@ -659,14 +653,14 @@ class Hikka:
             if not self.omit_log:
                 print(logo)
                 # logging.debug(
-                #     "\n🌘 Hikka %s #%s (%s) started\n%s",
+                #     "\n🌘 Hikkaduwa %s #%s (%s) started\n%s",
                 #     ".".join(list(map(str, list(__version__)))),
                 #     build[:7],
                 #     upd,
                 #     web_url,
                 # )
                 logging.debug(
-                    "\n🌘 Hikka %s started",
+                    "\n🌘 Hikkaduwa %s started",
                     ".".join(list(map(str, list(__version__)))),
                 )
                 self.omit_log = True
@@ -675,7 +669,7 @@ class Hikka:
             #     logging.getLogger().handlers[0].get_logid_by_client(client.tg_id),
             #     "https://github.com/hikariatama/assets/raw/master/hikka_banner.mp4",
             #     # caption=(
-            #     #     "🌘 <b>Hikka {} started!</b>\n\n🌳 <b>GitHub commit SHA: <a"
+            #     #     "🌘 <b>Hikkaduwa {} started!</b>\n\n🌳 <b>GitHub commit SHA: <a"
             #     #     ' href="https://github.com/hikariatama/Hikka/commit/{}">{}</a></b>\n✊'
             #     #     " <b>Update status: {}</b>\n<b>{}</b>".format(
             #     #         ".".join(list(map(str, list(__version__)))),
@@ -686,7 +680,7 @@ class Hikka:
             #     #     )
             #     # ),
             #     caption=(
-            #         "🌘 <b>Hikka {} started!</b>"
+            #         "🌘 <b>Hikkaduwa {} started!</b>"
             #         .format(
             #             ".".join(list(map(str, list(__version__)))),
             #         )
@@ -695,10 +689,9 @@ class Hikka:
 
             await client.hikka_inline.bot.send_message(
                 logging.getLogger().handlers[0].get_logid_by_client(client.tg_id),
-                "🌘 <b>Hikka {} started!</b>"
-                .format(
+                "🌘 <b>Hikkaduwa {} started!</b>".format(
                     ".".join(list(map(str, list(__version__)))),
-                )
+                ),
             )
 
             logging.debug(

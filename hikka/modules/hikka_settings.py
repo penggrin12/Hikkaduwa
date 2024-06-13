@@ -706,22 +706,21 @@ class HikkaSettingsMod(loader.Module):
                 # kinda hacky
                 {
                     "text": self.lookup("HikkaConfig").strings("back_btn"),
-                    "callback": self.lookup("HikkaConfig").inline__choose_category
+                    "callback": self.lookup("HikkaConfig").inline__choose_category,
                 },
                 {
                     "text": self.lookup("HikkaConfig").strings("close_btn"),
-                    "action": "close"
-                }
+                    "action": "close",
+                },
             ],
         ]
-    
+
     async def inline__settings(
         self,
         call: InlineCall,
     ):
         await call.edit(
-            self.strings("inline_settings"),
-            reply_markup=self._get_settings_markup()
+            self.strings("inline_settings"), reply_markup=self._get_settings_markup()
         )
         # await self.inline.form(
         #     self.strings("inline_settings"),
@@ -730,6 +729,7 @@ class HikkaSettingsMod(loader.Module):
         # )
 
     if features.SETTINGS_AS_COMMAND:
+
         @loader.command()
         async def settings(self, message: Message):
             await self.inline.form(
@@ -864,7 +864,7 @@ class HikkaSettingsMod(loader.Module):
             message,
             self.strings("invoke").format(method, utils.escape_html(result)),
         )
-    
+
     async def blacklistcommon(self, message: Message):
         args = utils.get_args(message)
 
@@ -899,14 +899,12 @@ class HikkaSettingsMod(loader.Module):
                 (
                     utils.get_platform_emoji()
                     if self._client.hikka_me.premium and CUSTOM_EMOJIS
-                    else "🌘 <b>Hikka userbot</b>"
+                    else "🌘 <b>Hikkaduwa userbot</b>"
                 ),
                 *version.__version__,
                 utils.get_commit_url(),
                 f"{hikkatl.__version__} #{hikkatl.tl.alltlobjects.LAYER}",
-                (
-                    "<emoji document_id=5418308381586759720>📴</emoji>"
-                ),
+                ("<emoji document_id=5418308381586759720>📴</emoji>"),
             )
             + (
                 ""

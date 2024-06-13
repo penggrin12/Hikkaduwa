@@ -712,7 +712,7 @@ async def invite_inline_bot(
                 channel=peer,
                 user_id=client.loader.inline.bot_username,
                 admin_rights=ChatAdminRights(ban_users=True),
-                rank="Hikka",
+                rank="Hikkaduwa",
             )
         )
 
@@ -898,7 +898,7 @@ def get_named_platform() -> str:
 
     if main.IS_TERMUX:
         return "🕶 Termux"
-    
+
     if main.IS_WINDOWS:
         return "💻 Windows"
 
@@ -1208,7 +1208,7 @@ def check_url(url: str) -> bool:
 
 def get_git_hash() -> typing.Union[str, bool]:
     """
-    Get current Hikka git hash
+    Get current Hikkaduwa git hash
     :return: Git commit hash
     """
     # try:
@@ -1220,7 +1220,7 @@ def get_git_hash() -> typing.Union[str, bool]:
 
 def get_commit_url() -> str:
     """
-    Get current Hikka git commit url
+    Get current Hikkaduwa git commit url
     :return: Git commit url
     """
     # try:

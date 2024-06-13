@@ -28,13 +28,20 @@ def get_startup_callback() -> callable:
         *sys.argv[1:],
     )
 
+
 def restart_windows_test():
     # TODO
     subprocess.run(
-        [sys.executable, "-m", os.path.relpath(os.path.abspath(os.path.dirname(os.path.abspath(__file__))))],
+        [
+            sys.executable,
+            "-m",
+            os.path.relpath(
+                os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+            ),
+        ],
         stdin=sys.stdin,
         stdout=sys.stdout,
-        stderr=sys.stderr
+        stderr=sys.stderr,
     )
 
 
@@ -51,8 +58,8 @@ def restart():
     if "HIKKA_DO_NOT_RESTART" in os.environ:
         print(
             "Got in a loop, exiting\nYou probably need to manually remove existing"
-            " packages and then restart Hikka. Run `pip uninstall -y telethon"
-            " telethon-mod hikka-tl`, then restart Hikka."
+            " packages and then restart Hikkaduwa. Run `pip uninstall -y telethon"
+            " telethon-mod hikka-tl`, then restart Hikkaduwa."
         )
         sys.exit(0)
 

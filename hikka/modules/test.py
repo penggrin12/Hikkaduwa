@@ -33,11 +33,11 @@ class TestMod(loader.Module):
                 False,
                 (
                     "⚠️ Do not touch, if you don't know what it does!\nBy default,"
-                    " Hikka will try to determine, which client caused logs. E.g. there"
+                    " Hikkaduwa will try to determine, which client caused logs. E.g. there"
                     " is a module TestModule installed on Client1 and TestModule2 on"
                     " Client2. By default, Client2 will get logs from TestModule2, and"
                     " Client1 will get logs from TestModule. If this option is enabled,"
-                    " Hikka will send all logs to Client1 and Client2, even if it is"
+                    " Hikkaduwa will send all logs to Client1 and Client2, even if it is"
                     " not the one that caused the log."
                 ),
                 validator=loader.validators.Boolean(),
@@ -271,7 +271,7 @@ class TestMod(loader.Module):
         chat, _ = await utils.asset_channel(
             self._client,
             "hikka-logs",
-            "🌘 Your Hikka logs will appear in this chat",
+            "🌘 Your Hikkaduwa logs will appear in this chat",
             silent=True,
             invite_bot=True,
             avatar="https://github.com/hikariatama/assets/raw/master/hikka-logs.png",

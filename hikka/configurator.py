@@ -32,7 +32,7 @@ def api_config(tty: typing.Optional[bool] = None):
 
     tty = False
 
-    tty_print("\033[0;95mWelcome to Hikka Userbot!\033[0m", tty)
+    tty_print("\033[0;95mWelcome to Hikkaduwa Userbot!\033[0m", tty)
     tty_print("\033[0;96m1. Go to https://my.telegram.org and login\033[0m", tty)
     tty_print("\033[0;96m2. Click on \033[1;96mAPI development tools\033[0m", tty)
     tty_print(

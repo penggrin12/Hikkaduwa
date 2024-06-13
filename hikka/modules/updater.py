@@ -111,7 +111,7 @@ class UpdaterMod(loader.Module):
                 if self._client.hikka_me.premium
                 and CUSTOM_EMOJIS
                 and isinstance(msg_obj, Message)
-                else "Hikka"
+                else "Hikkaduwa"
             ),
         )
 
@@ -346,7 +346,7 @@ class UpdaterMod(loader.Module):
             )
         except Exception:
             logger.critical(
-                "Can't create Hikka folder. Possible reasons are:\n"
+                "Can't create Hikkaduwa folder. Possible reasons are:\n"
                 "- User reached the limit of folders in Telegram\n"
                 "- User got floodwait\n"
                 "Ignoring error and adding folder addition to ignore list"

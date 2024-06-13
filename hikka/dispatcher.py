@@ -117,9 +117,9 @@ class CommandDispatcher:
         self._ratelimit_max_user = db.get(__name__, "ratelimit_max_user", 30)
         self._ratelimit_max_chat = db.get(__name__, "ratelimit_max_chat", 100)
 
-        self.security = security.SecurityManager(client, db)
+        self.security = None  # we still keeping?
 
-        self.check_security = self.security.check
+        self.check_security = lambda: False
         self._me = self._client.hikka_me.id
         self._cached_usernames = [
             (
@@ -136,9 +136,6 @@ class CommandDispatcher:
         self.raw_handlers = []
 
     async def _handle_ratelimit(self, message: Message, func: callable) -> bool:
-        if await self.security.check(message, security.OWNER):
-            return True
-
         func = getattr(func, "__func__", func)
         ret = True
         chat = self._ratelimit_storage_chat[message.chat_id]
@@ -274,41 +271,12 @@ class CommandDispatcher:
             return False
 
         prefix = self._db.get(main.__name__, "command_prefix", False) or "."
-        change = str.maketrans(ru_keys + en_keys, en_keys + ru_keys)
         message = utils.censor(event.message)
 
         if not event.message.message:
             return False
 
-        if (
-            message.out
-            and len(message.message) > 2
-            and (
-                message.message.startswith(prefix * 2)
-                and any(s != prefix for s in message.message)
-                or message.message.startswith(str.translate(prefix * 2, change))
-                and any(s != str.translate(prefix, change) for s in message.message)
-            )
-        ):
-            # Allow escaping commands using .'s
-            if not watcher:
-                await message.edit(
-                    message.message[1:],
-                    parse_mode=lambda s: (
-                        s,
-                        utils.relocate_entities(message.entities, -1, message.message)
-                        or (),
-                    ),
-                )
-            return False
-
-        if (
-            event.message.message.startswith(str.translate(prefix, change))
-            and str.translate(prefix, change) != prefix
-        ):
-            message.message = str.translate(message.message, change)
-            message.text = str.translate(message.text, change)
-        elif not event.message.message.startswith(prefix):
+        if not event.message.message.startswith(prefix):
             return False
 
         if (
@@ -320,62 +288,19 @@ class CommandDispatcher:
         ):
             return False
 
-        blacklist_chats = self._db.get(main.__name__, "blacklist_chats", [])
-        whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
-        whitelist_modules = self._db.get(main.__name__, "whitelist_modules", [])
-
-        if utils.get_chat_id(message) in blacklist_chats or (
-            whitelist_chats and utils.get_chat_id(message) not in whitelist_chats
-        ):
-            return False
-
-        if not message.message or len(message.message) == 1:
+        if len(message.message) == 1:
             return False  # Message is just the prefix
 
         initiator = getattr(event, "sender_id", 0)
 
-        command = message.message[1:].strip().split(maxsplit=1)[0]
-        tag = command.split("@", maxsplit=1)
-
-        if len(tag) == 2:
-            if tag[1] == "me":
-                if not message.out:
-                    return False
-            elif tag[1].lower() not in self._cached_usernames:
-                return False
-        elif (
-            event.out
-            or event.mentioned
-            and event.message is not None
-            and event.message.message is not None
-            and not any(
-                f"@{username}" not in command.lower()
-                for username in self._cached_usernames
-            )
-        ):
-            pass
-        elif (
-            not event.is_private
-            and not self._db.get(main.__name__, "no_nickname", False)
-            and command not in self._db.get(main.__name__, "nonickcmds", [])
-            and initiator not in self._db.get(main.__name__, "nonickusers", [])
-            and not self.security.check_tsec(initiator, command)
-            and utils.get_chat_id(event)
-            not in self._db.get(main.__name__, "nonickchats", [])
-        ):
+        if initiator != self._me:
             return False
 
-        txt, func = self._modules.dispatch(tag[0])
+        command = message.message[1:].strip().split(maxsplit=1)[0]
 
-        if (
-            not func
-            or not await self._handle_ratelimit(message, func)
-            or not await self.security.check(
-                message,
-                func,
-                usernames=self._cached_usernames,
-            )
-        ):
+        txt, func = self._modules.dispatch(command)
+
+        if not func or not await self._handle_ratelimit(message, func):
             return False
 
         if message.is_channel and message.edit_date and not message.is_group:
@@ -402,15 +327,6 @@ class CommandDispatcher:
             return False
 
         message.message = prefix + txt + message.message[len(prefix + command) :]
-
-        if (
-            f"{str(utils.get_chat_id(message))}.{func.__self__.__module__}"
-            in blacklist_chats
-            or whitelist_modules
-            and f"{utils.get_chat_id(message)}.{func.__self__.__module__}"
-            not in whitelist_modules
-        ):
-            return False
 
         if await self._handle_tags(event, func):
             return False
@@ -584,7 +500,8 @@ class CommandDispatcher:
             "contains": lambda: isinstance(m, Message) and func.contains in m.raw_text,
             "filter": lambda: callable(func.filter) and func.filter(m),
             "from_id": lambda: getattr(m, "sender_id", None) == func.from_id,
-            "chat_id": lambda: utils.get_chat_id(m) == (
+            "chat_id": lambda: utils.get_chat_id(m)
+            == (
                 func.chat_id
                 if not str(func.chat_id).startswith("-100")
                 else int(str(func.chat_id)[4:])

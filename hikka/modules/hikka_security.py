@@ -39,10 +39,11 @@ class HikkaSecurityMod(loader.Module):
     strings = {"name": "HikkaSecurity"}
 
     async def client_ready(self):
-        self._sgroups: typing.Iterable[str, SecurityGroup] = self.pointer(
-            "sgroups", {}, item_type=SecurityGroup
-        )
-        self._reload_sgroups()
+        pass
+        # self._sgroups: typing.Iterable[str, SecurityGroup] = self.pointer(
+        #     "sgroups", {}, item_type=SecurityGroup
+        # )
+        # self._reload_sgroups()
 
     def _reload_sgroups(self):
         self._client.dispatcher.security.apply_sgroups(self._sgroups.todict())
@@ -1224,8 +1225,7 @@ class HikkaSecurityMod(loader.Module):
                             "\n".join(
                                 [
                                     "<emoji document_id=5870704313440932932>🔒</emoji>"
-                                    " <code>{}</code> <b>{} {} {}</b> <code>{}</code>"
-                                    .format(
+                                    " <code>{}</code> <b>{} {} {}</b> <code>{}</code>".format(
                                         utils.escape_html(group.name),
                                         self._convert_time(
                                             int(rule["expires"] - time.time())

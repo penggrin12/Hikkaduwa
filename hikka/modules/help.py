@@ -52,9 +52,7 @@ class Help(loader.Module):
 
         currently_hidden = self.get("hide", [])
         hidden, shown = [], []
-        for module in filter(
-            lambda module: self.lookup(module), modules
-        ):
+        for module in filter(lambda module: self.lookup(module), modules):
             module = self.lookup(module)
             module = module.__class__.__name__
             if module in currently_hidden:
@@ -145,13 +143,11 @@ class Help(loader.Module):
                 + "\n</i>"
             )
 
-        commands = (
-            {
-                name: func
-                for name, func in module.commands.items()
-                if await self.allmodules.check_security(message, func)
-            }
-        )
+        commands = {
+            name: func
+            for name, func in module.commands.items()
+            if await self.allmodules.check_security(message, func)
+        }
 
         if hasattr(module, "inline_handlers"):
             for name, fun in module.inline_handlers.items():
@@ -177,9 +173,7 @@ class Help(loader.Module):
                         " ({})".format(
                             ", ".join(
                                 "<code>{}{}</code>".format(
-                                    utils.escape_html(
-                                        self.get_prefix()
-                                    ),
+                                    utils.escape_html(self.get_prefix()),
                                     alias,
                                 )
                                 for alias in self.find_aliases(name)
@@ -269,11 +263,7 @@ class Help(loader.Module):
             )
             first = True
 
-            commands = [
-                name
-                for name, func in mod.commands.items()
-                if await self.allmodules.check_security(message, func) or force
-            ]
+            commands = [name for name, func in mod.commands.items()]
 
             for cmd in commands:
                 if first:

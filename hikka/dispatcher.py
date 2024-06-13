@@ -37,7 +37,7 @@ from hikkatl import events
 from hikkatl.errors import FloodWaitError, RPCError
 from hikkatl.tl.types import Message
 
-from . import main, security, utils
+from . import main, security, utils, features
 from .database import Database
 from .loader import Modules
 from .tl_cache import CustomTelegramClient
@@ -177,91 +177,6 @@ class CommandDispatcher:
 
         return ret
 
-    def _handle_grep(self, message: Message) -> Message:
-        # Allow escaping grep with double stick
-        if "||grep" in message.text or "|| grep" in message.text:
-            message.raw_text = re.sub(r"\|\| ?grep", "| grep", message.raw_text)
-            message.text = re.sub(r"\|\| ?grep", "| grep", message.text)
-            message.message = re.sub(r"\|\| ?grep", "| grep", message.message)
-            return message
-
-        grep = False
-        if not re.search(r".+\| ?grep (.+)", message.raw_text):
-            return message
-
-        grep = re.search(r".+\| ?grep (.+)", message.raw_text).group(1)
-        message.text = re.sub(r"\| ?grep.+", "", message.text)
-        message.raw_text = re.sub(r"\| ?grep.+", "", message.raw_text)
-        message.message = re.sub(r"\| ?grep.+", "", message.message)
-
-        ungrep = False
-
-        if re.search(r"-v (.+)", grep):
-            ungrep = re.search(r"-v (.+)", grep).group(1)
-            grep = re.sub(r"(.+) -v .+", r"\g<1>", grep)
-
-        grep = utils.escape_html(grep).strip() if grep else False
-        ungrep = utils.escape_html(ungrep).strip() if ungrep else False
-
-        old_edit = message.edit
-        old_reply = message.reply
-        old_respond = message.respond
-
-        def process_text(text: str) -> str:
-            nonlocal grep, ungrep
-            res = []
-
-            for line in text.split("\n"):
-                if (
-                    grep
-                    and grep in utils.remove_html(line)
-                    and (not ungrep or ungrep not in utils.remove_html(line))
-                ):
-                    res.append(
-                        utils.remove_html(line, escape=True).replace(
-                            grep, f"<u>{grep}</u>"
-                        )
-                    )
-
-                if not grep and ungrep and ungrep not in utils.remove_html(line):
-                    res.append(utils.remove_html(line, escape=True))
-
-            cont = (
-                (f"contain <b>{grep}</b>" if grep else "")
-                + (" and" if grep and ungrep else "")
-                + ((" do not contain <b>" + ungrep + "</b>") if ungrep else "")
-            )
-
-            if res:
-                text = f"<i>💬 Lines that {cont}:</i>\n" + "\n".join(res)
-            else:
-                text = f"💬 <i>No lines that {cont}</i>"
-
-            return text
-
-        async def my_edit(text, *args, **kwargs):
-            text = process_text(text)
-            kwargs["parse_mode"] = "HTML"
-            return await old_edit(text, *args, **kwargs)
-
-        async def my_reply(text, *args, **kwargs):
-            text = process_text(text)
-            kwargs["parse_mode"] = "HTML"
-            return await old_reply(text, *args, **kwargs)
-
-        async def my_respond(text, *args, **kwargs):
-            text = process_text(text)
-            kwargs["parse_mode"] = "HTML"
-            kwargs.setdefault("reply_to", utils.get_topic(message))
-            return await old_respond(text, *args, **kwargs)
-
-        message.edit = my_edit
-        message.reply = my_reply
-        message.respond = my_respond
-        message.hikka_grepped = True
-
-        return message
-
     async def _handle_command(
         self,
         event: typing.Union[events.NewMessage, events.MessageDeleted],
@@ -270,14 +185,15 @@ class CommandDispatcher:
         if not hasattr(event, "message") or not hasattr(event.message, "message"):
             return False
 
-        prefix = self._db.get(main.__name__, "command_prefix", False) or "."
-        message = utils.censor(event.message)
-
         if not event.message.message:
             return False
 
+        prefix = self._db.get(main.__name__, "command_prefix", False) or "."
+
         if not event.message.message.startswith(prefix):
             return False
+
+        message = utils.censor(event.message)
 
         if (
             event.sticker
@@ -304,17 +220,18 @@ class CommandDispatcher:
             return False
 
         if message.is_channel and message.edit_date and not message.is_group:
-            async for event in self._client.iter_admin_log(
-                utils.get_chat_id(message),
-                limit=10,
-                edit=True,
-            ):
-                if event.action.prev_message.id == message.id:
-                    if event.user_id != self._client.tg_id:
-                        logger.debug("Ignoring edit in channel")
-                        return False
+            if features.WORK_IN_CHANNELS:
+                async for event in self._client.iter_admin_log(
+                    utils.get_chat_id(message),
+                    limit=10,
+                    edit=True,
+                ):
+                    if event.action.prev_message.id == message.id:
+                        if event.user_id != self._client.tg_id:
+                            logger.debug("Ignoring edit in channel")
+                            return False
 
-                    break
+                        break
 
         if (
             message.is_channel
@@ -330,9 +247,6 @@ class CommandDispatcher:
 
         if await self._handle_tags(event, func):
             return False
-
-        if self._db.get(main.__name__, "grep", False) and not watcher:
-            message = self._handle_grep(message)
 
         return message, prefix, txt, func
 

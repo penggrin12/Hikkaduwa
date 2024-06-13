@@ -239,7 +239,7 @@ class Utils(InlineUnit):
         #     user_id=user,
         #     inline_cmd=self._reverse_method_lookup(func),
         # )
-        return True  # TODO TODO TODO
+        return user == self._client._tg_id
 
     def _find_caller_sec_map(self) -> typing.Optional[typing.Callable[[], int]]:
         try:

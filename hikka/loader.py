@@ -25,7 +25,7 @@ from uuid import uuid4
 
 from hikkatl.tl.tlobject import TLObject
 
-from . import security, utils, validators
+from . import utils, validators
 from .database import Database
 from .inline.core import InlineManager
 from .translations import Strings, Translator
@@ -94,25 +94,31 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
-owner = security.owner
+
+def _pseudo_security(func: Command) -> Command:
+    # TODO: i think this is what it does..?
+    return func
+
+
+owner = _pseudo_security
 
 # deprecated
-sudo = security.sudo
-support = security.support
+sudo = _pseudo_security
+support = _pseudo_security
 # /deprecated
 
-group_owner = security.group_owner
-group_admin_add_admins = security.group_admin_add_admins
-group_admin_change_info = security.group_admin_change_info
-group_admin_ban_users = security.group_admin_ban_users
-group_admin_delete_messages = security.group_admin_delete_messages
-group_admin_pin_messages = security.group_admin_pin_messages
-group_admin_invite_users = security.group_admin_invite_users
-group_admin = security.group_admin
-group_member = security.group_member
-pm = security.pm
-unrestricted = security.unrestricted
-inline_everyone = security.inline_everyone
+group_owner = _pseudo_security
+group_admin_add_admins = _pseudo_security
+group_admin_change_info = _pseudo_security
+group_admin_ban_users = _pseudo_security
+group_admin_delete_messages = _pseudo_security
+group_admin_pin_messages = _pseudo_security
+group_admin_invite_users = _pseudo_security
+group_admin = _pseudo_security
+group_member = _pseudo_security
+pm = _pseudo_security
+unrestricted = _pseudo_security
+inline_everyone = _pseudo_security
 
 
 async def stop_placeholder() -> bool:

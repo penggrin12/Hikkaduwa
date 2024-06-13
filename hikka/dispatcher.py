@@ -37,7 +37,7 @@ from hikkatl import events
 from hikkatl.errors import FloodWaitError, RPCError
 from hikkatl.tl.types import Message
 
-from . import main, security, utils, features
+from . import main, utils, features
 from .database import Database
 from .loader import Modules
 from .tl_cache import CustomTelegramClient

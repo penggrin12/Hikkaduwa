@@ -69,8 +69,6 @@ def restart():
 
     os.environ["HIKKA_DO_NOT_RESTART"] = "1"
 
-    print("uh")
-
     if IS_WINDOWS:
         restart_windows_test()
     else:

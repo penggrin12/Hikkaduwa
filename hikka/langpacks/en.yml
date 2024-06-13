@@ -250,7 +250,6 @@ test:
     cancel: "🚫 Cancel"
     logs_cleared: "🗑 <b>Logs cleared</b>"
     _cmd_doc_clearlogs: "Clear logs"
-    _cmd_doc_debugmod: "[module] - For developers: Open module for debugging\nYou will be able to track changes in real-time"
     _cmd_doc_dump: "Use in reply to get a dump of a message"
     _cmd_doc_logs: "<level> - Dump logs"
     _cmd_doc_ping: "Test your userbot ping"
@@ -421,15 +420,7 @@ eval:
     eval: "<emoji document_id={}>💻</emoji><b> Code:</b>\n<code>{}</code>\n\n<emoji document_id=5197688912457245639>✅</emoji><b> Result:</b>\n<code>{}</code>"
     err: "<emoji document_id={}>💻</emoji><b> Code:</b>\n<code>{}</code>\n\n<emoji document_id=5210952531676504517>🚫</emoji> <b>Error:</b>\n{}"
     _cmd_doc_e: "Evaluates python code"
-    _cls_doc: "Evaluates code in various languages"
-
-quickstart:
-    name: "Quickstart"
-    base: "🌘🇬🇧 <b>Hello.</b> You've just installed <b>Hikka</b> userbot.\n\n❓ <b>Need help?</b> Feel free to join our support chat. We help <b>everyone</b>.\n\n📼 <b>You can find and install modules using @hikkamods_bot. Simply enter your search query and click ⛩ Install on needed module</b>\n\n📣 <b>Check out community made channels with modules: <a href=\"https://t.me/hikka_ub/126\">show</a></b>\n\n💁‍♀️ <b>Quickstart:</b>\n\n1️⃣ <b>Type</b> <code>.help</code> <b>to see modules list</b>\n2️⃣ <b>Type</b> <code>.help &lt;ModuleName/command&gt;</code> <b>to see help of module ModuleName</b>\n3️⃣ <b>Type</b> <code>.dlmod &lt;link&gt;</code> <b>to load module from link</b>\n4️⃣ <b>Type</b> <code>.loadmod</code> <b>with reply to file to install module from it</b>\n5️⃣ <b>Type</b> <code>.unloadmod &lt;ModuleName&gt;</code> <b>to unload module ModuleName</b>\n\n💡 <b>Hikka supports modules from GeekTG, as well as its own ones.</b>"
-    language_saved: "🇬🇧 Language saved!"
-    language: "🇬🇧 English"
-    btn_support: "🥷 Support chat"
-    _cls_doc: "Notifies user about userbot installation"
+    _cls_doc: "Evaluates Python code"
 
 $validators:
     boolean: "boolean"

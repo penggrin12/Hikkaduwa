@@ -210,7 +210,7 @@ class UpdaterMod(loader.Module):
         #         raise
         # except Exception:
         #     await self.inline_update(message)
-        return # TODO: prompt something
+        return  # TODO: prompt something
 
     async def inline_update(
         self,
@@ -354,27 +354,29 @@ class UpdaterMod(loader.Module):
 
     async def update_complete(self):
         logger.debug("Self update successful! Edit message")
-        start = self.get("restart_ts")
-        try:
-            took = round(time.time() - start)
-        except Exception:
-            took = "n/a"
+        # start = self.get("restart_ts")
+        # try:
+        #     took = round(time.time() - start)
+        # except Exception:
+        #     took = "n/a"
 
-        msg = self.strings("success").format(utils.ascii_face(), took)
-        ms = self.get("selfupdatemsg")
+        # msg = self.strings("success").format(utils.ascii_face(), took)
+        # ms = self.get("selfupdatemsg")
 
-        if ":" in str(ms):
-            chat_id, message_id = ms.split(":")
-            chat_id, message_id = int(chat_id), int(message_id)
-            await self._client.edit_message(chat_id, message_id, msg)
-            return
+        # if ":" in str(ms):
+        #     chat_id, message_id = ms.split(":")
+        #     chat_id, message_id = int(chat_id), int(message_id)
+        #     await self._client.edit_message(chat_id, message_id, msg)
+        #     return
 
-        await self.inline.bot.edit_message_text(
-            inline_message_id=ms,
-            text=self.inline.sanitise_text(msg),
-        )
+        # await self.inline.bot.edit_message_text(
+        #     inline_message_id=ms,
+        #     text=self.inline.sanitise_text(msg),
+        # )
 
     async def full_restart_complete(self, secure_boot: bool = False):
+        logger.debug("im complete, dawg")
+
         start = self.get("restart_ts")
 
         try:
@@ -385,9 +387,9 @@ class UpdaterMod(loader.Module):
         self.set("restart_ts", None)
 
         ms = self.get("selfupdatemsg")
-        msg = self.strings(
-            "secure_boot_complete" if secure_boot else "full_success"
-        ).format(utils.ascii_face(), took)
+        msg = self.strings("secure_boot_complete" if secure_boot else "success").format(
+            took
+        )
 
         if ms is None:
             return

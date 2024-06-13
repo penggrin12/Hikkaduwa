@@ -100,6 +100,7 @@ class LoaderMod(loader.Module):
         )
 
     async def _async_init(self):
+        # Bloat..?
         modules = list(
             filter(
                 lambda x: not x.startswith("https://mods.hikariatama.ru"),
@@ -116,17 +117,17 @@ class LoaderMod(loader.Module):
         asyncio.ensure_future(self._storage.preload_main_repo())
 
     async def client_ready(self):
-        while not (settings := self.lookup("settings")):
-            await asyncio.sleep(0.5)
+        # while not (settings := self.lookup("settings")):
+        #     await asyncio.sleep(0.5)
 
         self._storage = RemoteStorage(self._client)
 
-        self.allmodules.add_aliases(settings.get("aliases", {}))
+        # self.allmodules.add_aliases(settings.get("aliases", {}))
 
         main.hikka.ready.set()
 
         asyncio.ensure_future(self._update_modules())
-        asyncio.ensure_future(self._async_init())
+        # asyncio.ensure_future(self._async_init())
 
     @loader.loop(interval=3, wait_before=True, autostart=True)
     async def _config_autosaver(self):
@@ -836,9 +837,7 @@ class LoaderMod(loader.Module):
                 ):
                     instance.strings.external_strings = transations
 
-                for alias, cmd in (
-                    self.lookup("settings").get("aliases", {}).items()
-                ):
+                for alias, cmd in self.lookup("settings").get("aliases", {}).items():
                     if cmd in instance.commands:
                         self.allmodules.add_alias(alias, cmd)
 
@@ -1163,13 +1162,13 @@ class LoaderMod(loader.Module):
 
             self.update_modules_in_db()
 
-            aliases = {
-                alias: cmd
-                for alias, cmd in self.lookup("settings").get("aliases", {}).items()
-                if self.allmodules.add_alias(alias, cmd)
-            }
+            # aliases = {
+            #     alias: cmd
+            #     for alias, cmd in self.lookup("settings").get("aliases", {}).items()
+            #     if self.allmodules.add_alias(alias, cmd)
+            # }
 
-            self.lookup("settings").set("aliases", aliases)
+            # self.lookup("settings").set("aliases", aliases)
 
         self.fully_loaded = True
 

@@ -187,7 +187,7 @@ api_protection:
 help:
     name: "Help"
     undoc: "🦥 No docs"
-    all_header: "🌘 <b>{} mods available, {} hidden:</b>"
+    all_header: "🌘 <b>{} mods available ({} hidden):</b>"
     no_mod: "🚫 <b>Specify module to hide</b>"
     hidden_shown: "🌘 <b>{} modules hidden, {} modules shown:</b>\n{}\n{}"
     support: "{} <b>Link to</b> <a href='https://t.me/hikka_talks'>support chat</a></b>"

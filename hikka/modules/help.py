@@ -143,7 +143,7 @@ class Help(loader.Module):
         )
         if module.__doc__:
             reply += (
-                "<i>\n<emoji document_id=5787544344906959608>ℹ️</emoji> "
+                "<i>\nℹ️ "
                 + utils.escape_html(inspect.getdoc(module))
                 + "\n</i>"
             )
@@ -169,7 +169,7 @@ class Help(loader.Module):
 
         for name, fun in commands.items():
             reply += (
-                "\n<emoji document_id=4971987363145188045>▫️</emoji>"
+                "\n▫️"
                 " <code>{}{}</code>{} {}".format(
                     utils.escape_html(self.get_prefix()),
                     name,

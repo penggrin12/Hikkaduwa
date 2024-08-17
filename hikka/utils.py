@@ -914,7 +914,7 @@ def get_platform_emoji() -> str:
 
     BASE = "".join(
         (
-            "<emoji document_id={}>🌘</emoji>",
+            "🌘",
             "🌘",
             "🌘",
         )

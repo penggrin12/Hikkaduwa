@@ -201,6 +201,7 @@ hikka_info:
     owner: "Owner"
     version: "Upstream Version"
     commit: "Local Commit"
+    modules: "Modules Installed"
     prefix: "Prefix"
     uptime: "Uptime"
     branch: "Branch"

@@ -48,7 +48,7 @@ class HikkaInfoMod(loader.Module):
         commit = utils.get_commit_url()
         _version = f'<i>{".".join(list(map(str, list(version.__version__))))}</i>'
         prefix = f"«<code>{utils.escape_html(self.get_prefix())}</code>»"
-
+        modules_count = len(self.allmodules.modules)
         platform = utils.get_named_platform()
 
         return (
@@ -70,14 +70,19 @@ class HikkaInfoMod(loader.Module):
             if self.config["custom_message"]
             else (
                 f'🌘 <b>Hikkaduwa</b>\n\n'
+
                 f'😎 <b>{self.strings("owner")}:</b> {me}\n\n'
+
                 f'☀️ <b>{self.strings("commit")}:</b> {commit} on <code>{version.branch}</code>\n'
                 f'🌙 <b>{self.strings("version")}:</b> {_version}\n\n'
+
+                f'⚙️ <b>{self.strings("modules")}:</b> {modules_count}\n'
                 f'⌨️ <b>{self.strings("prefix")}:</b> {prefix}\n'
                 f'⌛️ <b>{self.strings("uptime")}:</b> {utils.formatted_uptime()}\n\n'
+
                 f'⚡️ <b>{self.strings("cpu_usage")}:</b> <i>~{utils.get_cpu_usage()} %</i>\n'
                 f'💼 <b>{self.strings("ram_usage")}:</b> <i>~{utils.get_ram_usage()} MB</i>\n'
-                f'{platform}'
+                f'<b>{platform}</b>'
             )
         )
 

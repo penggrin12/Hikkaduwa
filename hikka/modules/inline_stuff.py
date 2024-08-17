@@ -5,7 +5,6 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import re
-import string
 
 from telethon.errors.rpcerrorlist import YouBlockedUserError
 from telethon.tl.functions.contacts import UnblockRequest
@@ -80,34 +79,6 @@ class InlineStuff(loader.Module):
                     await r.delete()
 
                     return True
-
-    @loader.command()
-    async def ch_hikka_bot(self, message: Message):
-        args = utils.get_args_raw(message).strip("@")
-        if (
-            not args
-            or not args.lower().endswith("bot")
-            or len(args) <= 4
-            or any(
-                litera not in (string.ascii_letters + string.digits + "_")
-                for litera in args
-            )
-        ):
-            await utils.answer(message, self.strings("bot_username_invalid"))
-            return
-
-        try:
-            await self._client.get_entity(f"@{args}")
-        except ValueError:
-            pass
-        else:
-            if not await self._check_bot(args):
-                await utils.answer(message, self.strings("bot_username_occupied"))
-                return
-
-        self._db.set("hikka.inline", "custom_bot", args)
-        self._db.set("hikka.inline", "bot_token", None)
-        await utils.answer(message, self.strings("bot_updated"))
 
     async def aiogram_watcher(self, message: BotInlineMessage):
         if message.text != "/start":

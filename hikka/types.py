@@ -351,7 +351,7 @@ class Module:
                 "✖️ <b>Declined joining <a"
                 f' href="https://t.me/{channel.username}">{utils.escape_html(channel.title)}</a></b>'
             ),
-            gif="https://static.hikari.gay/0d32cbaa959e755ac8eef610f01ba0bd.gif",
+            gif="https://data.whicdn.com/images/324445359/original.gif",
         )
 
     async def request_join(
@@ -403,7 +403,7 @@ class Module:
 
         await self.inline.bot.send_animation(
             self.tg_id,
-            "https://static.hikari.gay/ab3adf144c94a0883bfe489f4eebc520.gif",
+            "https://i.gifer.com/SD5S.gif",
             caption=(
                 self._client.loader.lookup("translations")
                 .strings("requested_join")

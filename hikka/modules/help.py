@@ -8,8 +8,7 @@ import difflib
 import inspect
 import logging
 
-from hikkatl.extensions.html import CUSTOM_EMOJIS
-from hikkatl.tl.types import Message
+from telethon.tl.types import Message
 
 from .. import loader, utils
 
@@ -327,10 +326,6 @@ class Help(loader.Module):
         await utils.answer(
             message,
             self.strings("support").format(
-                (
-                    utils.get_platform_emoji()
-                    if self._client.hikka_me.premium and CUSTOM_EMOJIS
-                    else "🌘"
-                )
+                "🌘"
             ),
         )

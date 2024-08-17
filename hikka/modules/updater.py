@@ -15,12 +15,11 @@ import typing
 
 # import git
 # from git import GitCommandError, Repo
-from hikkatl.extensions.html import CUSTOM_EMOJIS
-from hikkatl.tl.functions.messages import (
+from telethon.tl.functions.messages import (
     GetDialogFiltersRequest,
     UpdateDialogFilterRequest,
 )
-from hikkatl.tl.types import DialogFilter, Message
+from telethon.tl.types import DialogFilter, Message
 
 from .. import loader, main, utils, version
 from .._internal import restart
@@ -107,11 +106,8 @@ class UpdaterMod(loader.Module):
         msg_obj = await utils.answer(
             msg_obj,
             self.strings("restarting_caption").format(
-                utils.get_platform_emoji()
-                if self._client.hikka_me.premium
-                and CUSTOM_EMOJIS
-                and isinstance(msg_obj, Message)
-                else "Hikkaduwa"
+                utils.get_platform_emoji(),
+                "Hikkaduwa"
             ),
         )
 

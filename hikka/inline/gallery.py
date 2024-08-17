@@ -25,9 +25,8 @@ from aiogram.types import (
     InputMediaPhoto,
 )
 from aiogram.utils.exceptions import BadRequest, RetryAfter
-from hikkatl.errors.rpcerrorlist import ChatSendInlineForbiddenError
-from hikkatl.extensions.html import CUSTOM_EMOJIS
-from hikkatl.tl.types import Message
+from telethon.errors.rpcerrorlist import ChatSendInlineForbiddenError
+from telethon.tl.types import Message
 
 from .. import main, utils
 from ..types import HikkaReplyMarkup
@@ -258,11 +257,7 @@ class Gallery(InlineUnit):
                 status_message = await (
                     message.edit if message.out else message.respond
                 )(
-                    (
-                        utils.get_platform_emoji()
-                        if self._client.hikka_me.premium and CUSTOM_EMOJIS
-                        else "🌘"
-                    )
+                    "🌘"
                     + self.translator.getkey("inline.opening_gallery"),
                     **({"reply_to": utils.get_topic(message)} if message.out else {}),
                 )

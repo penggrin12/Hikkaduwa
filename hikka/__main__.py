@@ -38,14 +38,14 @@ elif __package__ != "hikka":  # In case they did python __main__.py
     print("🚫 Error: you cannot run this as a script; you must execute as a package")
 else:
     try:
-        import hikkatl
+        import telethon
     except Exception:
         pass
     else:
         try:
-            import hikkatl  # noqa: F811
+            import telethon  # noqa: F811
 
-            if tuple(map(int, hikkatl.__version__.split("."))) < (2, 0, 4):
+            if telethon.__version__ != "1.36.0":
                 raise ImportError
         except ImportError:
             print("🔄 Installing dependencies...")

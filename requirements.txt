@@ -1,4 +1,4 @@
-hikka-tl-new==2.0.4
+telethon==1.36.0
 meval==2.5
 aiohttp==3.8.3
 requests==2.27.1

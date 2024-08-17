@@ -7,14 +7,13 @@
 import logging
 import random
 
-import hikkatl
-from hikkatl.tl.functions.channels import JoinChannelRequest
-from hikkatl.tl.functions.messages import (
+import telethon
+from telethon.tl.functions.channels import JoinChannelRequest
+from telethon.tl.functions.messages import (
     GetDialogFiltersRequest,
     UpdateDialogFilterRequest,
 )
-from hikkatl.extensions.html import CUSTOM_EMOJIS
-from hikkatl.tl.types import Message
+from telethon.tl.types import Message
 
 from .. import loader, version, main, utils, features
 from .._internal import fw_protect, restart
@@ -287,9 +286,6 @@ class HikkaSettingsMod(loader.Module):
     async def inline__setting(self, call: InlineCall, key: str, state: bool = False):
         if callable(key):
             key()
-            hikkatl.extensions.html.CUSTOM_EMOJIS = not main.get_config_key(
-                "disable_custom_emojis"
-            )
         else:
             self._db.set(main.__name__, key, state)
 
@@ -489,27 +485,6 @@ class HikkaSettingsMod(loader.Module):
                         "args": (
                             "suggest_subscribe",
                             True,
-                        ),
-                    }
-                ),
-            ],
-            [
-                (
-                    {
-                        "text": self.strings("no_custom_emojis"),
-                        "callback": self.inline__setting,
-                        "args": (
-                            lambda: main.save_config_key(
-                                "disable_custom_emojis", False
-                            ),
-                        ),
-                    }
-                    if main.get_config_key("disable_custom_emojis")
-                    else {
-                        "text": self.strings("custom_emojis"),
-                        "callback": self.inline__setting,
-                        "args": (
-                            lambda: main.save_config_key("disable_custom_emojis", True),
                         ),
                     }
                 ),
@@ -720,14 +695,10 @@ class HikkaSettingsMod(loader.Module):
             message,
             "https://github.com/hikariatama/assets/raw/master/hikka_cat_banner.mp4",
             self.strings("hikka").format(
-                (
-                    utils.get_platform_emoji()
-                    if self._client.hikka_me.premium and CUSTOM_EMOJIS
-                    else "🌘 <b>Hikkaduwa userbot</b>"
-                ),
+                "🌘 <b>Hikkaduwa userbot</b>",
                 *version.__version__,
                 utils.get_commit_url(),
-                f"{hikkatl.__version__} #{hikkatl.tl.alltlobjects.LAYER}",
+                f"{telethon.__version__} #{telethon.tl.alltlobjects.LAYER}",
                 ("<emoji document_id=5418308381586759720>📴</emoji>"),
             )
             + (

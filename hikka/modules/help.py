@@ -151,7 +151,6 @@ class Help(loader.Module):
         commands = {
             name: func
             for name, func in module.commands.items()
-            if await self.allmodules.check_security(message, func)
         }
 
         if hasattr(module, "inline_handlers"):

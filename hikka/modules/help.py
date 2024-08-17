@@ -214,19 +214,6 @@ class Help(loader.Module):
 
         hidden = self.get("hide", [])
 
-        reply = self.strings("all_header").format(
-            len(self.allmodules.modules),
-            (
-                0
-                if force
-                else sum(
-                    module.__class__.__name__ in hidden
-                    for module in self.allmodules.modules
-                )
-            ),
-        )
-        shown_warn = False
-
         plain_ = []
         core_ = []
         no_commands_ = []
@@ -294,12 +281,19 @@ class Help(loader.Module):
                     core_ += [tmp]
                 else:
                     plain_ += [tmp]
-            elif not shown_warn and (mod.commands or mod.inline_handlers):
-                reply = (
-                    "<i>You have permissions to execute only these"
-                    f" commands</i>\n{reply}"
+        
+        reply = self.strings("all_header").format(
+            len(self.allmodules.modules),
+            (
+                0
+                if force
+                else sum(
+                    module.__class__.__name__ in hidden
+                    for module in self.allmodules.modules
                 )
-                shown_warn = True
+                + len(no_commands_)
+            ),
+        )
 
         plain_.sort(key=lambda x: x.split()[1])
         core_.sort(key=lambda x: x.split()[1])

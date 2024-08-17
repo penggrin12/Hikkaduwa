@@ -54,15 +54,12 @@ class InlineStuff(loader.Module):
     async def _check_bot(self, username: str) -> bool:
         async with self._client.conversation("@BotFather", exclusive=False) as conv:
             try:
-                m = await conv.send_message("/token")
+                await conv.send_message("/token")
             except YouBlockedUserError:
                 await self._client(UnblockRequest(id="@BotFather"))
-                m = await conv.send_message("/token")
+                await conv.send_message("/token")
 
             r = await conv.get_response()
-
-            await m.delete()
-            await r.delete()
 
             if not hasattr(r, "reply_markup") or not hasattr(r.reply_markup, "rows"):
                 return False
@@ -72,11 +69,8 @@ class InlineStuff(loader.Module):
                     if username != button.text.strip("@"):
                         continue
 
-                    m = await conv.send_message("/cancel")
-                    r = await conv.get_response()
-
-                    await m.delete()
-                    await r.delete()
+                    await conv.send_message("/cancel")
+                    r = await conv.get_response()  # TODO: why reassign r here???
 
                     return True
 

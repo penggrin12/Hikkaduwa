@@ -41,6 +41,12 @@ class Help(loader.Module):
                 lambda: "Empty modules bullet",
                 validator=loader.validators.Emoji(length=1),
             ),
+            loader.ConfigValue(
+                "use_quotes",
+                False,
+                lambda: "Hide commands in a quote",
+                validator=loader.validators.Boolean()
+            )
         )
 
     @loader.command()
@@ -253,7 +259,7 @@ class Help(loader.Module):
 
             for cmd in commands:
                 if first:
-                    tmp += f": ( {cmd}"
+                    tmp += f": {'<blockquote expandable>' if self.config['use_quotes'] else ''}( {cmd}"
                     first = False
                 else:
                     tmp += f" | {cmd}"
@@ -276,7 +282,7 @@ class Help(loader.Module):
                     tmp += f" | 🤖 {cmd}"
 
             if commands or icommands:
-                tmp += " )"
+                tmp += f" ){'</blockquote>' if self.config['use_quotes'] else ''}"
                 if core:
                     core_ += [tmp]
                 else:

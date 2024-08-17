@@ -628,8 +628,7 @@ class LoaderMod(loader.Module):
                         message,
                         self.strings("requirements_installing").format(
                             "\n".join(
-                                "<emoji"
-                                " document_id=4971987363145188045>▫️</emoji>"
+                                "▫️"
                                 f" {req}"
                                 for req in requirements
                             )

@@ -22,6 +22,7 @@ class HikkaInfoMod(loader.Module):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "custom_message",
+                None,
                 doc=lambda: self.strings("_cfg_cst_msg"),
             ),
             loader.ConfigValue(
@@ -56,38 +57,20 @@ class HikkaInfoMod(loader.Module):
             self._client.hikka_me.id,
             utils.escape_html(get_display_name(self._client.hikka_me)),
         )
-        build = utils.get_commit_url()
+        commit = utils.get_commit_url()
         _version = f'<i>{".".join(list(map(str, list(version.__version__))))}</i>'
         prefix = f"«<code>{utils.escape_html(self.get_prefix())}</code>»"
 
         platform = utils.get_named_platform()
 
-        # TODO: add windows emoji
-        for emoji, icon in [
-            ("🍊", "🧡"),
-            ("🍇", "💜"),
-            ("❓", "📱"),
-            ("🍀", "🍀"),
-            ("🦾", "🦾"),
-            ("🚂", "🚂"),
-            ("🐳", "🐳"),
-            ("🕶", "📱"),
-            ("🐈‍⬛", "🐈‍⬛"),
-            ("✌️", "✌️"),
-            ("📻", "💎"),
-        ]:
-            platform = platform.replace(emoji, icon)
-
         return (
             (
-                "<b>🌘 Hikkaduwa</b>\n"
-                if "hikka" not in self.config["custom_message"].lower()
-                else ""
+                "" if self.config["custom_message"] else "<b>🌘 Hikkaduwa</b>\n"
             )
             + self.config["custom_message"].format(
                 me=me,
                 version=_version,
-                build=build,
+                build=commit,
                 prefix=prefix,
                 platform=platform,
                 upd=upd,
@@ -99,9 +82,8 @@ class HikkaInfoMod(loader.Module):
             if self.config["custom_message"]
             else (
                 f'<b>{{}}</b>\n\n<b>{{}} {self.strings("owner")}:</b> {me}\n\n<b>{{}}'
-                f' {self.strings("version")}:</b> {_version} {build}\n<b>{{}}'
-                f' {self.strings("branch")}:'
-                f"</b> <code>{version.branch}</code>\n{upd}\n\n<b>{{}}"
+                f' {self.strings("commit")}:</b> {commit} on <code>{version.branch}</code>\n<b>{{}}'
+                f' {self.strings("version")}:</b> {_version}\n\n<b>{{}}'
                 f' {self.strings("prefix")}:</b> {prefix}\n<b>{{}}'
                 f' {self.strings("uptime")}:'
                 f"</b> {utils.formatted_uptime()}\n\n<b>{{}}"
@@ -119,8 +101,8 @@ class HikkaInfoMod(loader.Module):
                             else "🌘 Hikkaduwa"
                         ),
                         "😎",
-                        "💫",
-                        "🌳",
+                        "☀️",
+                        "🌙",
                         "⌨️",
                         "⌛️",
                         "⚡️",

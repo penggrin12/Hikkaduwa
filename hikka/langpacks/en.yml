@@ -199,8 +199,8 @@ help:
 hikka_info:
     name: "HikkaInfo"
     owner: "Owner"
-    version: "Version"
-    build: "Build"
+    version: "Upstream Version"
+    commit: "Local Commit"
     prefix: "Prefix"
     uptime: "Uptime"
     branch: "Branch"

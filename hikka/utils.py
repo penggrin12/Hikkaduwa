@@ -38,6 +38,7 @@ import signal
 import string
 import time
 import typing
+from pathlib import Path
 from datetime import timedelta
 from urllib.parse import urlparse
 
@@ -1211,11 +1212,13 @@ def get_git_hash() -> typing.Union[str, bool]:
     Get current Hikkaduwa git hash
     :return: Git commit hash
     """
-    # try:
-    #     return git.Repo().head.commit.hexsha
-    # except Exception:
-    #     return False
-    return False
+
+    # TODO: ultra hacky
+    try:
+        with open(Path(".") / Path(".git") / Path("refs") / Path("heads") / Path("master"), "r") as file:
+            return file.read().strip()
+    except Exception as e:
+        return False
 
 
 def get_commit_url() -> str:
@@ -1223,14 +1226,9 @@ def get_commit_url() -> str:
     Get current Hikkaduwa git commit url
     :return: Git commit url
     """
-    # try:
-    #     hash_ = get_git_hash()
-    #     return (
-    #         f'<a href="https://github.com/hikariatama/Hikka/commit/{hash_}">#{hash_[:7]}</a>'
-    #     )
-    # except Exception:
-    #     return "Unknown"
-    return "Unknown"
+    
+    commit_hash = get_git_hash()
+    return f'<a href="https://github.com/penggrin12/Hikkaduwa/commit/{commit_hash}">{commit_hash[:7]}</a>' if commit_hash else "Unknown"
 
 
 def is_serializable(x: typing.Any, /) -> bool:
@@ -1518,7 +1516,7 @@ def get_git_info() -> typing.Tuple[str, str]:
     hash_ = get_git_hash()
     return (
         hash_,
-        f"https://github.com/hikariatama/Hikka/commit/{hash_}" if hash_ else "",
+        f"https://github.com/penggrin12/Hikkaduwa/commit/{hash_}" if hash_ else "",
     )
 
 

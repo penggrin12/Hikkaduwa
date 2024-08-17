@@ -75,7 +75,7 @@ class Translations(loader.Module):
                         (
                             self._get_flag(lang)
                             if not utils.check_url(lang)
-                            else "<emoji document_id=5433653135799228968>📁</emoji>"
+                            else "📁"
                         )
                         for lang in args.split()
                     ]

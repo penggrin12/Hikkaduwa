@@ -64,17 +64,17 @@ class HikkaInfoMod(loader.Module):
 
         # TODO: add windows emoji
         for emoji, icon in [
-            ("🍊", "<emoji document_id=5449599833973203438>🧡</emoji>"),
-            ("🍇", "<emoji document_id=5449468596952507859>💜</emoji>"),
-            ("❓", "<emoji document_id=5407025283456835913>📱</emoji>"),
-            ("🍀", "<emoji document_id=5395325195542078574>🍀</emoji>"),
-            ("🦾", "<emoji document_id=5386766919154016047>🦾</emoji>"),
-            ("🚂", "<emoji document_id=5359595190807962128>🚂</emoji>"),
-            ("🐳", "<emoji document_id=5431815452437257407>🐳</emoji>"),
-            ("🕶", "<emoji document_id=5407025283456835913>📱</emoji>"),
+            ("🍊", "🧡"),
+            ("🍇", "💜"),
+            ("❓", "📱"),
+            ("🍀", "🍀"),
+            ("🦾", "🦾"),
+            ("🚂", "🚂"),
+            ("🐳", "🐳"),
+            ("🕶", "📱"),
             ("🐈‍⬛", "<emoji document_id=6334750507294262724>🐈‍⬛</emoji>"),
             ("✌️", "<emoji document_id=5469986291380657759>✌️</emoji>"),
-            ("📻", "<emoji document_id=5471952986970267163>💎</emoji>"),
+            ("📻", "💎"),
         ]:
             platform = platform.replace(emoji, icon)
 
@@ -118,13 +118,13 @@ class HikkaInfoMod(loader.Module):
                             if self._client.hikka_me.premium and not inline
                             else "🌘 Hikkaduwa"
                         ),
-                        "<emoji document_id=5373141891321699086>😎</emoji>",
-                        "<emoji document_id=5469741319330996757>💫</emoji>",
-                        "<emoji document_id=5449918202718985124>🌳</emoji>",
+                        "😎",
+                        "💫",
+                        "🌳",
                         "<emoji document_id=5472111548572900003>⌨️</emoji>",
                         "<emoji document_id=5451646226975955576>⌛️</emoji>",
                         "<emoji document_id=5431449001532594346>⚡️</emoji>",
-                        "<emoji document_id=5359785904535774578>💼</emoji>",
+                        "💼",
                         platform,
                     ),
                 )

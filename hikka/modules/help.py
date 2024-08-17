@@ -132,7 +132,7 @@ class Help(loader.Module):
         )
 
         reply = "{} <b>{}</b>:".format(
-            "<emoji document_id=5188377234380954537>🌘</emoji>",
+            "🌘",
             _name,
         )
         if module.__doc__:
@@ -151,7 +151,7 @@ class Help(loader.Module):
         if hasattr(module, "inline_handlers"):
             for name, fun in module.inline_handlers.items():
                 reply += (
-                    "\n<emoji document_id=5372981976804366741>🤖</emoji>"
+                    "\n🤖"
                     " <code>{}</code> {}".format(
                         f"@{self.inline.bot_username} {name}",
                         (

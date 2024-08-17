@@ -699,7 +699,7 @@ class HikkaSettingsMod(loader.Module):
                 *version.__version__,
                 utils.get_commit_url(),
                 f"{telethon.__version__} #{telethon.tl.alltlobjects.LAYER}",
-                ("<emoji document_id=5418308381586759720>📴</emoji>"),
+                "📴",
             )
             + (
                 ""
@@ -740,7 +740,7 @@ class HikkaSettingsMod(loader.Module):
         await utils.answer(
             message,
             self.strings("prefix_set").format(
-                "<emoji document_id=5197474765387864959>👍</emoji>",
+                "👍",
                 newprefix=utils.escape_html(args[0]),
                 oldprefix=utils.escape_html(oldprefix),
             ),

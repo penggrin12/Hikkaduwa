@@ -689,7 +689,7 @@ class LoaderMod(loader.Module):
                     await utils.answer(
                         message,
                         (
-                            "<emoji document_id=5454225457916420314>😖</emoji>"
+                            "😖"
                             f" <b>{utils.escape_html(str(e))}</b>"
                         ),
                     )
@@ -759,7 +759,7 @@ class LoaderMod(loader.Module):
                     await utils.answer(
                         message,
                         (
-                            "<emoji document_id=5454225457916420314>😖</emoji>"
+                            "😖"
                             f" <b>{utils.escape_html(str(e))}</b>"
                         ),
                     )
@@ -776,7 +776,7 @@ class LoaderMod(loader.Module):
                     await utils.answer(
                         message,
                         (
-                            "<emoji document_id=5454225457916420314>😖</emoji>"
+                            "😖"
                             f" <b>{utils.escape_html(str(e))}</b>"
                         ),
                     )
@@ -1040,7 +1040,7 @@ class LoaderMod(loader.Module):
 
         msg = (
             self.strings("unloaded").format(
-                "<emoji document_id=5784993237412351403>✅</emoji>",
+                "✅",
                 ", ".join(
                     [(mod[:-3] if mod.endswith("Mod") else mod) for mod in worked]
                 ),

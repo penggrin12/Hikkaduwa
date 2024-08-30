@@ -670,20 +670,14 @@ class HikkaSettingsMod(loader.Module):
 
     @loader.command()
     async def hikkacmd(self, message: Message):
-        await utils.answer_file(
+        await utils.answer(
             message,
-            "https://github.com/hikariatama/assets/raw/master/hikka_cat_banner.mp4",
             self.strings("hikka").format(
                 "🌘 <b>Hikkaduwa userbot</b>",
                 *version.__version__,
                 utils.get_commit_url(),
+                version.branch,
                 f"{telethon.__version__} #{telethon.tl.alltlobjects.LAYER}",
-                "📴",
-            )
-            + (
-                ""
-                if version.branch == "master"
-                else self.strings("unstable").format(version.branch)
             ),
         )
 

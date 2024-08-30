@@ -20,6 +20,7 @@ from telethon.tl.functions.messages import (
     UpdateDialogFilterRequest,
 )
 from telethon.tl.types import DialogFilter, Message
+from telethon.tl.types.messages import DialogFilters
 
 from .. import loader, main, utils, version
 from .._internal import restart
@@ -54,9 +55,7 @@ class UpdaterMod(loader.Module):
                 or not self.inline.init_complete
                 or not await self.inline.form(
                     message=message,
-                    text=self.strings(
-                        "secure_boot_confirm" if secure_boot else "restart_confirm"
-                    ),
+                    text=self.strings("secure_boot_confirm" if secure_boot else "restart_confirm"),
                     reply_markup=[
                         {
                             "text": self.strings("btn_restart"),
@@ -105,10 +104,7 @@ class UpdaterMod(loader.Module):
 
         msg_obj = await utils.answer(
             msg_obj,
-            self.strings("restarting_caption").format(
-                utils.get_platform_emoji(),
-                "Hikkaduwa"
-            ),
+            self.strings("restarting_caption").format(utils.get_platform_emoji(), "Hikkaduwa"),
         )
 
         await self.process_restart_message(msg_obj)
@@ -261,16 +257,16 @@ class UpdaterMod(loader.Module):
 
         self.set("do_not_create", True)
 
-    async def _add_folder(self):
-        folders = await self._client(GetDialogFiltersRequest())
+    async def _add_folder(self) -> None:
+        folders: DialogFilters = await self._client(GetDialogFiltersRequest())
 
-        if any(getattr(folder, "title", None) == "hikka" for folder in folders):
+        if any(getattr(folder, "title", None) == "hikka" for folder in folders.filters):
             return
 
         try:
             folder_id = (
                 max(
-                    folders,
+                    folders.filters,
                     key=lambda x: x.id,
                 ).id
                 + 1
@@ -286,11 +282,7 @@ class UpdaterMod(loader.Module):
                         folder_id,
                         title="hikka",
                         pinned_peers=(
-                            [
-                                await self._client.get_input_entity(
-                                    self._client.loader.inline.bot_id
-                                )
-                            ]
+                            [await self._client.get_input_entity(self._client.loader.inline.bot_id)]
                             if self._client.loader.inline.init_complete
                             else []
                         ),
@@ -317,8 +309,7 @@ class UpdaterMod(loader.Module):
                             )
                             or (
                                 self._client.loader.inline.init_complete
-                                and dialog.entity.id
-                                == self._client.loader.inline.bot_id
+                                and dialog.entity.id == self._client.loader.inline.bot_id
                             )
                             or dialog.entity.id
                             in [
@@ -383,9 +374,7 @@ class UpdaterMod(loader.Module):
         self.set("restart_ts", None)
 
         ms = self.get("selfupdatemsg")
-        msg = self.strings("secure_boot_complete" if secure_boot else "success").format(
-            took
-        )
+        msg = self.strings("secure_boot_complete" if secure_boot else "success").format(took)
 
         if ms is None:
             return

@@ -23,15 +23,19 @@ from dataclasses import dataclass, field
 from importlib.abc import SourceLoader
 
 import requests
-from telethon.hints import EntityLike
-from telethon.tl.functions.account import UpdateNotifySettingsRequest
-from telethon.tl.types import (
+from telethon.hints import EntityLike  # type: ignore[import-untyped]
+from telethon.tl.functions.account import UpdateNotifySettingsRequest  # type: ignore[import-untyped]
+from telethon.tl.types import (  # type: ignore[import-untyped]
     Channel,
     ChannelFull,
     InputPeerNotifySettings,
     Message,
     UserFull,
 )
+
+from hikka.loader import Modules
+from hikka.validators import Validator
+from hikka.translations import Strings
 
 from . import version
 from ._reference_finder import replace_all_refs
@@ -101,7 +105,10 @@ class StringLoader(SourceLoader):
 
 
 class Module:
-    strings = {"name": "Unknown"}
+    strings: Strings = {"name": "Unknown"}  # type: ignore[assignment]
+
+    allmodules: Modules
+    name: str
 
     """There is no help for this module"""
 
@@ -844,7 +851,7 @@ class ConfigValue:
     default: typing.Any = None
     doc: typing.Union[typing.Callable[[], str], str] = "No description"
     value: typing.Any = field(default_factory=_Placeholder)
-    validator: typing.Optional[typing.Callable[[JSONSerializable], JSONSerializable]] = None
+    validator: typing.Optional[Validator] = None
     on_change: typing.Optional[
         typing.Union[typing.Callable[[], typing.Awaitable], typing.Callable]
     ] = None

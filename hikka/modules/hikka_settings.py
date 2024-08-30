@@ -7,14 +7,16 @@
 import logging
 import random
 import string
+from typing import Dict, Optional, Callable
+import typing
 
-import telethon
-from telethon.tl.functions.channels import JoinChannelRequest
-from telethon.tl.functions.messages import (
+import telethon  # type: ignore[import-untyped]
+from telethon.tl.functions.channels import JoinChannelRequest  # type: ignore[import-untyped]
+from telethon.tl.functions.messages import (  # type: ignore[import-untyped]
     GetDialogFiltersRequest,
     UpdateDialogFilterRequest,
 )
-from telethon.tl.types import Message
+from telethon.tl.types import Message  # type: ignore[import-untyped]
 
 from .. import loader, version, main, utils, features
 from .._internal import fw_protect, restart
@@ -39,7 +41,7 @@ ALL_INVOKES = [
 class HikkaSettingsMod(loader.Module):
     """Advanced settings for Hikka Userbot"""
 
-    strings = {"name": "HikkaSettings"}
+    strings: Callable[[str], str] = {"name": "HikkaSettings"}  # type: ignore[assignment]
 
     def get_watchers(self) -> tuple:
         return [
@@ -184,7 +186,7 @@ class HikkaSettingsMod(loader.Module):
             await utils.answer(message, self.strings("mod404").format(args))
             return
 
-        args = next((x.lower() == args.lower() for x in watchers), False)
+        args = next((x.lower() == args.lower() for x in watchers), "")
 
         current_bl = [v for k, v in disabled_watchers.items() if k.lower() == args.lower()]
         current_bl = current_bl[0] if current_bl else []
@@ -650,8 +652,8 @@ class HikkaSettingsMod(loader.Module):
             await utils.answer(message, self.strings("too_many_args"))
             return
 
-        chatid = None
-        module = None
+        chatid: Optional[int] = None
+        module: Optional[str] = None
 
         if args:
             try:
@@ -665,7 +667,7 @@ class HikkaSettingsMod(loader.Module):
         if chatid is None:
             chatid = utils.get_chat_id(message)
 
-        module = self.allmodules.get_classname(module)
+        module = self.allmodules.get_classname(module) if module else None
         return f"{str(chatid)}.{module}" if module else chatid
 
     @loader.command()
@@ -740,7 +742,7 @@ class HikkaSettingsMod(loader.Module):
             self.set(
                 "aliases",
                 {
-                    **self.get("aliases", {}),
+                    **typing.cast(Dict, self.get("aliases", {})),
                     alias: cmd,
                 },
             )
@@ -771,7 +773,7 @@ class HikkaSettingsMod(loader.Module):
             )
             return
 
-        current = self.get("aliases", {})
+        current = typing.cast(Dict, self.get("aliases", {}))
         del current[alias]
         self.set("aliases", current)
         await utils.answer(
@@ -813,7 +815,7 @@ class HikkaSettingsMod(loader.Module):
         except ValueError:
             pass
         else:
-            if not await self._check_bot(args):
+            if not await self.lookup("InlineStuff")._check_bot(args):  # TODO: verify valid
                 await utils.answer(message, self.strings("bot_username_occupied"))
                 return
 

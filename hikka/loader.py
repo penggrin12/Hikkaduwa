@@ -480,10 +480,10 @@ class Modules:
         translator: Translator,
     ):
         self._initial_registration = True
-        self.commands = {}
+        self.commands: typing.Dict[str, typing.Callable] = {}  # TODO: verify type
         self.inline_handlers = {}
         self.callback_handlers = {}
-        self.aliases = {}
+        self.aliases: typing.Dict[str, str] = {}
         self.modules = []  # skipcq: PTC-W0052
         self.libraries = []
         self.watchers = []
@@ -500,14 +500,14 @@ class Modules:
         self.inline = InlineManager(self.client, self._db, self)
         self.client.hikka_inline = self.inline
 
-    async def _junk_collector(self):
+    async def _junk_collector(self) -> typing.NoReturn:
         """
         Periodically reloads commands, inline handlers, callback handlers and watchers from loaded
         modules to prevent zombie handlers
         """
         while True:
             await asyncio.sleep(30)
-            commands = {}
+            commands: typing.Dict[str, typing.Any] = {}
             inline_handlers = {}
             callback_handlers = {}
             watchers = []
@@ -613,7 +613,7 @@ class Modules:
         origin: str = "<core>",
         save_fs: bool = False,
         is_dragon: bool = False,  # probably not needed anymore..?
-    ) -> typing.Union[Module, typing.Tuple[ModuleType]]:
+    ) -> Module:
         """Register single module from importlib spec"""
         with contextlib.suppress(AttributeError):
             _hikka_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841
@@ -893,7 +893,7 @@ class Modules:
 
         return None
 
-    def dispatch(self, _command: str) -> typing.Tuple[str, typing.Optional[str]]:
+    def dispatch(self, _command: str) -> typing.Tuple[str, typing.Optional[typing.Callable]]:
         """Dispatch command to appropriate module"""
 
         return next(
@@ -904,7 +904,7 @@ class Modules:
                     self.aliases.get(_command.lower()),
                     self.find_alias(_command),
                 ]
-                if cmd and cmd.lower() in self.commands
+                if cmd and isinstance(cmd, str) and cmd.lower() in self.commands
             ),
             (_command, None),
         )

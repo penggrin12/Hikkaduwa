@@ -12,17 +12,18 @@ import subprocess
 import sys
 import time
 import typing
+from typing import Callable
 
 # import git
 # from git import GitCommandError, Repo
-from telethon.tl.functions.messages import (
+from telethon.tl.functions.messages import (  # type: ignore[import-untyped]
     GetDialogFiltersRequest,
     UpdateDialogFilterRequest,
 )
-from telethon.tl.types import DialogFilter, Message
-from telethon.tl.types.messages import DialogFilters
+from telethon.tl.types import DialogFilter, Message  # type: ignore[import-untyped]
+from telethon.tl.types.messages import DialogFilters  # type: ignore[import-untyped]
 
-from .. import loader, main, utils, version
+from .. import loader, utils
 from .._internal import restart
 from ..inline.types import InlineCall
 
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 class UpdaterMod(loader.Module):
     """Updates itself"""
 
-    strings = {"name": "Updater"}
+    strings: Callable[[str], str] = {"name": "Updater"}  # type: ignore[assignment]
 
     def __init__(self):
         self.config = loader.ModuleConfig(
@@ -365,25 +366,29 @@ class UpdaterMod(loader.Module):
         logger.debug("im complete, dawg")
 
         start = self.get("restart_ts")
+        assert isinstance(start, (float, int))
+
+        took: int = -1
 
         try:
             took = round(time.time() - start)
         except Exception:
-            took = "n/a"
+            pass
 
         self.set("restart_ts", None)
 
         ms = self.get("selfupdatemsg")
-        msg = self.strings("secure_boot_complete" if secure_boot else "success").format(took)
+        msg = self.strings("secure_boot_complete" if secure_boot else "success").format(
+            took if took >= 0 else "n/a"
+        )
 
-        if ms is None:
+        if not isinstance(ms, str):
             return
 
         self.set("selfupdatemsg", None)
 
-        if ":" in str(ms):
-            chat_id, message_id = ms.split(":")
-            chat_id, message_id = int(chat_id), int(message_id)
+        if ":" in ms:
+            chat_id, message_id = map(int, ms.split(":"))
             await self._client.edit_message(chat_id, message_id, msg)
             await asyncio.sleep(60)
             await self._client.delete_messages(chat_id, message_id)

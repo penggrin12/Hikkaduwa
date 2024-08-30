@@ -4,8 +4,9 @@
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-from telethon.tl.types import Message
-from telethon.utils import get_display_name
+from typing import Callable
+from telethon.tl.types import Message  # type: ignore[import-untyped]
+from telethon.utils import get_display_name  # type: ignore[import-untyped]
 
 from .. import loader, utils, version
 
@@ -14,7 +15,7 @@ from .. import loader, utils, version
 class HikkaInfoMod(loader.Module):
     """Show userbot info"""
 
-    strings = {"name": "HikkaInfo"}
+    strings: Callable[[str], str] = {"name": "HikkaInfo"}  # type: ignore[assignment]
 
     def __init__(self):
         self.config = loader.ModuleConfig(

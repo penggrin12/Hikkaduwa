@@ -10,8 +10,6 @@
 __version__ = (1, 6, 3)
 branch = "master"
 
-import os
-
 # import git
 
 # try:

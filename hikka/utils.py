@@ -43,25 +43,25 @@ from datetime import timedelta
 from urllib.parse import urlparse
 
 # import git
-import grapheme
-import telethon
+import grapheme  # type: ignore[import-untyped]
+import telethon  # type: ignore[import-untyped]
 import requests
-from aiogram.types import Message as AiogramMessage
+from aiogram.types import Message as AiogramMessage  # type: ignore[import-untyped]
 from telethon import hints
-from telethon.tl.custom.message import Message
-from telethon.tl.functions.account import UpdateNotifySettingsRequest
-from telethon.tl.functions.channels import (
+from telethon.tl.custom.message import Message  # type: ignore[import-untyped]
+from telethon.tl.functions.account import UpdateNotifySettingsRequest  # type: ignore[import-untyped]
+from telethon.tl.functions.channels import (  # type: ignore[import-untyped]
     CreateChannelRequest,
     EditAdminRequest,
     EditPhotoRequest,
     InviteToChannelRequest,
 )
-from telethon.tl.functions.messages import (
+from telethon.tl.functions.messages import (  # type: ignore[import-untyped]
     GetDialogFiltersRequest,
     SetHistoryTTLRequest,
     UpdateDialogFilterRequest,
 )
-from telethon.tl.types import (
+from telethon.tl.types import (  # type: ignore[import-untyped]
     Channel,
     Chat,
     ChatAdminRights,
@@ -142,7 +142,7 @@ def get_args(message: typing.Union[Message, str]) -> typing.List[str]:
     :return: List of arguments
     """
     if not (message := getattr(message, "message", message)):
-        return False
+        return []
 
     if len(message := message.split(maxsplit=1)) <= 1:
         return []
@@ -152,7 +152,7 @@ def get_args(message: typing.Union[Message, str]) -> typing.List[str]:
     try:
         split = shlex.split(message)
     except ValueError:
-        return message  # Cannot split, let's assume that it's just one long message
+        return [message]  # Cannot split, let's assume that it's just one long message
 
     return list(filter(lambda x: len(x) > 0, split))
 
@@ -164,7 +164,7 @@ def get_args_raw(message: typing.Union[Message, str]) -> str:
     :return: Raw string of arguments
     """
     if not (message := getattr(message, "message", message)):
-        return False
+        return ""
 
     return args[1] if len(args := message.split(maxsplit=1)) > 1 else ""
 
@@ -178,7 +178,7 @@ def get_args_html(message: Message) -> str:
     prefix = message.client.loader.get_prefix()
 
     if not (message := message.text):
-        return False
+        return ""
 
     if prefix not in message:
         return message
@@ -421,7 +421,7 @@ async def answer_file(
 
 async def answer(
     message: typing.Union[Message, InlineCall, InlineMessage],
-    response: str,
+    response: typing.Union[str, bytes, io.BytesIO],
     *,
     reply_markup: typing.Optional[HikkaReplyMarkup] = None,
     **kwargs,

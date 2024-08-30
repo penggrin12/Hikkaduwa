@@ -11,11 +11,12 @@ import logging
 import random
 import time
 import typing
+from typing import Callable, Optional
 
-from telethon.tl import functions
-from telethon.tl.tlobject import TLRequest
-from telethon.tl.types import Message
-from telethon.utils import is_list_like
+from telethon.tl import functions  # type: ignore[import-untyped]
+from telethon.tl.tlobject import TLRequest  # type: ignore[import-untyped]
+from telethon.tl.types import Message  # type: ignore[import-untyped]
+from telethon.utils import is_list_like  # type: ignore[import-untyped]
 
 from .. import loader, utils
 from ..inline.types import InlineCall
@@ -60,7 +61,7 @@ CONSTRUCTORS = {
 class APIRatelimiterMod(loader.Module):
     """Helps userbot avoid spamming Telegram API"""
 
-    strings = {"name": "APILimiter"}
+    strings: Callable[[str], str] = {"name": "APILimiter"}  # type: ignore[assignment]
 
     def __init__(self):
         self._ratelimiter: typing.List[tuple] = []
@@ -119,7 +120,7 @@ class APIRatelimiterMod(loader.Module):
             sender: "MTProtoSender",  # type: ignore  # noqa: F821
             request: TLRequest,
             ordered: bool = False,
-            flood_sleep_threshold: int = None,
+            flood_sleep_threshold: Optional[int] = None,
         ):
             await asyncio.sleep(random.randint(1, 5) / 100)
             req = (request,) if not is_list_like(request) else request

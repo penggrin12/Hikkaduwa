@@ -8,8 +8,8 @@ import functools
 import re
 import typing
 
-import grapheme
-from emoji import get_emoji_unicode_dict
+import grapheme  # type: ignore[import-untyped]
+from emoji import get_emoji_unicode_dict  # type: ignore[import-untyped]
 
 from . import utils
 from .translations import SUPPORTED_LANGUAGES, translator
@@ -52,9 +52,9 @@ class Validator:
 
     def __init__(
         self,
-        validator: callable,
-        doc: typing.Optional[typing.Union[str, dict]] = None,
-        _internal_id: typing.Optional[int] = None,
+        validator: typing.Callable,
+        doc: typing.Optional[typing.Union[str, dict]] = {"en": "No docstring."},
+        _internal_id: typing.Optional[typing.Union[int, str]] = None,
     ):
         self.validate = validator
 
@@ -284,6 +284,8 @@ class Series(Validator):
         fixed_len: typing.Optional[int] = None,
     ):
         def trans(lang: str) -> str:
+            if (not validator) or (not validator.doc):
+                return ""
             return validator.doc.get(lang, validator.doc["en"])
 
         _each = (
@@ -356,7 +358,7 @@ class Series(Validator):
                 except ValidationError:
                     raise ValidationError(
                         f"Passed value ({value}) contains invalid item"
-                        f" ({str(item).strip()}), which must be {validator.doc['en']}"
+                        f" ({str(item).strip()}), which must be {validator.doc['en'] if validator and validator.doc else '?'}"
                     )
 
         value = list(filter(lambda x: x, value))
@@ -377,12 +379,12 @@ class Link(Validator):
     @staticmethod
     def _validate(value: ConfigAllowedTypes, /) -> str:
         try:
-            if not utils.check_url(value):
+            if not utils.check_url(str(value)):
                 raise Exception("Invalid URL")
         except Exception:
-            raise ValidationError(f"Passed value ({value}) is not a valid URL")
+            raise ValidationError(f"Passed value ({str(value)}) is not a valid URL")
 
-        return value
+        return str(value)
 
 
 class String(Validator):
@@ -461,7 +463,7 @@ class RegExp(Validator):
         description: typing.Optional[typing.Union[dict, str]] = None,
     ):
         if not flags:
-            flags = 0
+            flags = re.RegexFlag.NOFLAG
 
         try:
             re.compile(regex, flags=flags)
@@ -488,9 +490,9 @@ class RegExp(Validator):
         /,
         *,
         regex: str,
-        flags: typing.Optional[re.RegexFlag],
-    ) -> str:
-        if not re.match(regex, str(value), flags=flags):
+        flags: typing.Optional[re.RegexFlag] = None,
+    ) -> typing.Union[str, int]:
+        if not re.match(regex, str(value), flags=flags or re.RegexFlag.NOFLAG):
             raise ValidationError(f"Passed value ({value}) must follow pattern {regex}")
 
         return str(value)
@@ -561,17 +563,17 @@ class Float(Validator):
         maximum: typing.Optional[float] = None,
     ) -> float:
         try:
-            value = float(str(value).strip().replace(",", "."))
+            value_ = float(str(value).strip().replace(",", "."))
         except ValueError:
-            raise ValidationError(f"Passed value ({value}) must be a float")
+            raise ValidationError(f"Passed value ({value_}) must be a float")
 
-        if minimum is not None and value < minimum:
-            raise ValidationError(f"Passed value ({value}) is lower than minimum one")
+        if minimum is not None and value_ < (minimum or 0):
+            raise ValidationError(f"Passed value ({value_}) is lower than minimum one")
 
-        if maximum is not None and value > maximum:
-            raise ValidationError(f"Passed value ({value}) is greater than maximum one")
+        if maximum is not None and value_ > (maximum or 0):
+            raise ValidationError(f"Passed value ({value_}) is greater than maximum one")
 
-        return value
+        return value_
 
 
 class TelegramID(Validator):
@@ -760,20 +762,20 @@ class EntityLike(RegExp):
         /,
         *,
         regex: str,
-        flags: typing.Optional[re.RegexFlag],
+        flags: typing.Optional[re.RegexFlag] = None,
     ) -> typing.Union[str, int]:
-        value = RegExp._validate(value, regex=regex, flags=flags)
-
-        if value.isdigit():
-            if value.startswith("-100"):
-                value = value[4:]
-
-            value = int(value)
+        value = str(RegExp._validate(value, regex=regex, flags=flags))
 
         if value.startswith("https://t.me/"):
             value = value.split("https://t.me/")[1]
 
         if not value.startswith("@"):
             value = f"@{value}"
+
+        if value.isdigit():
+            if value.startswith("-100"):
+                value = value[4:]
+
+            value = int(value)
 
         return value

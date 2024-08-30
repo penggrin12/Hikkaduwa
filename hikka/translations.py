@@ -170,7 +170,7 @@ class Strings:
             logger.debug("Module %s got empty translator %s", mod, translator)
 
         self._base_strings = mod.strings  # Back 'em up, bc they will get replaced
-        self.external_strings = {}
+        self.external_strings: typing.Dict[str, str] = {}  # TODO: verify type
 
     def get(self, key: str, lang: typing.Optional[str] = None) -> str:
         try:

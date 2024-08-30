@@ -141,16 +141,16 @@ def run_config():
     return configurator.api_config(IS_TERMUX or None)
 
 
-def get_config_key(key: str) -> typing.Union[str, bool]:
+def get_config_key(key: str) -> typing.Optional[str]:
     """
     Parse and return key from config
     :param key: Key name in config
-    :return: Value of config key or `False`, if it doesn't exist
+    :return: Value of config key or `None`, if it doesn't exist
     """
     try:
         return json.loads(CONFIG_PATH.read_text(encoding="utf-8")).get(key, False)
     except FileNotFoundError:
-        return False
+        return None
 
 
 def save_config_key(key: str, value: str) -> bool:

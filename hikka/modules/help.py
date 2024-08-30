@@ -7,8 +7,9 @@
 import difflib
 import inspect
 import logging
+from typing import Callable, Dict, List
 
-from telethon.tl.types import Message
+from telethon.tl.types import Message  # type: ignore[import-untyped]
 
 from .. import loader, utils
 
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 class Help(loader.Module):
     """Shows help for modules and commands"""
 
-    strings = {"name": "Help"}
+    strings: Callable[[str], str] = {"name": "Help"}  # type: ignore[assignment]
 
     def __init__(self):
         self.config = loader.ModuleConfig(
@@ -55,7 +56,7 @@ class Help(loader.Module):
             await utils.answer(message, self.strings("no_mod"))
             return
 
-        currently_hidden = self.get("hide", [])
+        currently_hidden: List[str] = self.get("hide", [])  # type: ignore[assignment]
         hidden, shown = [], []
         for module in filter(lambda module: self.lookup(module), modules):
             module = self.lookup(module)
@@ -81,18 +82,20 @@ class Help(loader.Module):
 
     def find_aliases(self, command: str) -> list:
         """Find aliases for command"""
-        aliases = []
+        aliases: List[Dict[str, str]] = []  # TODO: is this a right type?
         _command = self.allmodules.commands[command]
-        if getattr(_command, "alias", None) and not (aliases := getattr(_command, "aliases", None)):
-            aliases = [_command.alias]
+        if getattr(_command, "alias", None) and not (
+            aliases := getattr(_command, "aliases", None)  # type: ignore[assignment]
+        ):
+            aliases = [getattr(_command, "alias", {})]
 
-        return aliases or []
+        return aliases
 
     async def modhelp(self, message: Message, args: str):
         exact = True
         if not (module := self.lookup(args)):
             if method := self.allmodules.dispatch(args.lower().strip(self.get_prefix()))[1]:
-                module = method.__self__
+                module = method  # TODO: upstream does `method.__self__`, why?
             else:
                 module = self.lookup(
                     next(
@@ -135,7 +138,7 @@ class Help(loader.Module):
             _name,
         )
         if module.__doc__:
-            reply += "<i>\nℹ️ " + utils.escape_html(inspect.getdoc(module)) + "\n</i>"
+            reply += "<i>\nℹ️ " + utils.escape_html(inspect.getdoc(module) or "") + "\n</i>"
 
         commands = {name: func for name, func in module.commands.items()}
 
@@ -144,7 +147,7 @@ class Help(loader.Module):
                 reply += "\n🤖" " <code>{}</code> {}".format(
                     f"@{self.inline.bot_username} {name}",
                     (
-                        utils.escape_html(inspect.getdoc(fun))
+                        utils.escape_html(inspect.getdoc(fun) or "")
                         if fun.__doc__
                         else self.strings("undoc")
                     ),
@@ -167,7 +170,11 @@ class Help(loader.Module):
                     if self.find_aliases(name)
                     else ""
                 ),
-                (utils.escape_html(inspect.getdoc(fun)) if fun.__doc__ else self.strings("undoc")),
+                (
+                    utils.escape_html(inspect.getdoc(fun) or "")
+                    if fun.__doc__
+                    else self.strings("undoc")
+                ),
             )
 
         await utils.answer(
@@ -194,6 +201,7 @@ class Help(loader.Module):
             return
 
         hidden = self.get("hide", [])
+        assert isinstance(hidden, list)  # should never hit this
 
         plain_ = []
         core_ = []
@@ -204,7 +212,7 @@ class Help(loader.Module):
                 logger.debug("Module %s is not inited yet", mod.__class__.__name__)
                 continue
 
-            if mod.__class__.__name__ in self.get("hide", []) and not force:
+            if mod.__class__.__name__ in hidden and not force:
                 continue
 
             tmp = ""

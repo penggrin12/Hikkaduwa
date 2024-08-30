@@ -5,20 +5,21 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import re
+from typing import Callable, Optional
 
-from telethon.errors.rpcerrorlist import YouBlockedUserError
-from telethon.tl.functions.contacts import UnblockRequest
-from telethon.tl.types import Message
+from telethon.errors.rpcerrorlist import YouBlockedUserError  # type: ignore[import-untyped]
+from telethon.tl.functions.contacts import UnblockRequest  # type: ignore[import-untyped]
+from telethon.tl.types import Message  # type: ignore[import-untyped]
+from aiogram.types import Message as AiogramMessage  # type: ignore[import-untyped]
 
 from .. import loader, utils
-from ..inline.types import BotInlineMessage
 
 
 @loader.tds
 class InlineStuff(loader.Module):
     """Provides support for inline stuff"""
 
-    strings = {"name": "InlineStuff"}
+    strings: Callable[[str], str] = {"name": "InlineStuff"}  # type: ignore[assignment]
 
     @loader.watcher(
         "out",
@@ -34,7 +35,9 @@ class InlineStuff(loader.Module):
         if message.via_bot_id != self.inline.bot_id:
             return
 
-        id_ = re.search(r"#id: ([a-zA-Z0-9]+)", message.raw_text)[1]
+        match: Optional[re.Match[str]] = re.search(r"#id: ([a-zA-Z0-9]+)", message.raw_text)
+        assert match
+        id_ = match[1]
 
         await message.delete()
 
@@ -72,7 +75,9 @@ class InlineStuff(loader.Module):
 
                     return True
 
-    async def aiogram_watcher(self, message: BotInlineMessage):
+            return False  # TODO: default false?
+
+    async def aiogram_watcher(self, message: AiogramMessage):
         if message.text != "/start":
             return
 

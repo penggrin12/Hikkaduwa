@@ -9,8 +9,9 @@ import contextlib
 import functools
 import typing
 from math import ceil
+from typing import Callable, List, Union
 
-from telethon.tl.types import Message
+from telethon.tl.types import Message  # type: ignore[import-untyped]
 
 from .. import loader, translations, utils
 from ..inline.types import InlineCall
@@ -29,7 +30,7 @@ NUM_ROWS = 5
 class HikkaConfigMod(loader.Module):
     """Interactive configurator for Hikka Userbot"""
 
-    strings = {"name": "HikkaConfig"}
+    strings: Callable[[str], str] = {"name": "HikkaConfig"}  # type: ignore[assignment]
 
     @staticmethod
     def prep_value(value: typing.Any) -> typing.Any:
@@ -43,7 +44,7 @@ class HikkaConfigMod(loader.Module):
                 + "\n<code>]</code><b>"
             )
 
-        return f"</b><code>{utils.escape_html(value)}</code><b>"
+        return f"</b><code>{utils.escape_html(value or '')}</code><b>"
 
     def hide_value(self, value: typing.Any) -> str:
         if isinstance(value, list) and value:
@@ -254,15 +255,16 @@ class HikkaConfigMod(loader.Module):
     async def inline__add_item(
         self,
         call: InlineCall,
-        query: str,
+        query: Union[str, List[str]],
         mod: str,
         option: str,
         inline_message_id: str,
         obj_type: typing.Union[bool, str] = False,
     ):
         try:
-            with contextlib.suppress(Exception):
-                query = ast.literal_eval(query)
+            if isinstance(query, str):
+                with contextlib.suppress(Exception):
+                    query = ast.literal_eval(query)
 
             if isinstance(query, (set, tuple)):
                 query = list(query)
@@ -308,15 +310,16 @@ class HikkaConfigMod(loader.Module):
     async def inline__remove_item(
         self,
         call: InlineCall,
-        query: str,
+        query: Union[str, List[str]],
         mod: str,
         option: str,
         inline_message_id: str,
         obj_type: typing.Union[bool, str] = False,
     ):
         try:
-            with contextlib.suppress(Exception):
-                query = ast.literal_eval(query)
+            if isinstance(query, str):
+                with contextlib.suppress(Exception):
+                    query = ast.literal_eval(query)
 
             if isinstance(query, (set, tuple)):
                 query = list(query)
@@ -712,7 +715,7 @@ class HikkaConfigMod(loader.Module):
             args += [
                 self.strings("typehint").format(
                     doc,
-                    eng_art="n" if doc.lower().startswith(tuple("euioay")) else "",
+                    eng_art="n" if (doc or "").lower().startswith(tuple("euioay")) else "",
                 )
             ]
             if validator.internal_id == "Boolean":

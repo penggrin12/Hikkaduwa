@@ -1,0 +1,2 @@
+-r requirements.txt
+types-requests==2.32.0.20240712

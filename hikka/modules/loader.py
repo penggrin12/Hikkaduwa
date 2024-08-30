@@ -799,7 +799,7 @@ class LoaderMod(loader.Module):
         ):
             instance.strings.external_strings = transations
 
-        for alias, cmd in self.lookup("hikka_settings").get("aliases", {}).items():
+        for alias, cmd in self.lookup("HikkaSettings").get("aliases", {}).items():
             if cmd in instance.commands:
                 self.allmodules.add_alias(alias, cmd)
 

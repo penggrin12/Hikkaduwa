@@ -124,9 +124,7 @@ class Evaluator(loader.Module):
         return {
             **dict(
                 filter(
-                    lambda x: x[0][0] != "_"
-                    and x[0][0].upper() == x[0][0]
-                    and callable(x[1]),
+                    lambda x: x[0][0] != "_" and x[0][0].upper() == x[0][0] and callable(x[1]),
                     obj.__dict__.items(),
                 )
             ),

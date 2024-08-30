@@ -129,9 +129,7 @@ class CommandDispatcher:
             )
         ]
 
-        self._cached_usernames.extend(
-            getattr(self._client.hikka_me, "usernames", None) or []
-        )
+        self._cached_usernames.extend(getattr(self._client.hikka_me, "usernames", None) or [])
 
         self.raw_handlers = []
 
@@ -142,9 +140,7 @@ class CommandDispatcher:
 
         if message.sender_id:
             user = self._ratelimit_storage_user[message.sender_id]
-            severity = (5 if getattr(func, "ratelimit", False) else 2) * (
-                (user + chat) // 30 + 1
-            )
+            severity = (5 if getattr(func, "ratelimit", False) else 2) * ((user + chat) // 30 + 1)
             user += severity
             self._ratelimit_storage_user[message.sender_id] = user
             if user > self._ratelimit_max_user:
@@ -159,9 +155,7 @@ class CommandDispatcher:
                 severity,
             )
         else:
-            severity = (5 if getattr(func, "ratelimit", False) else 2) * (
-                chat // 15 + 1
-            )
+            severity = (5 if getattr(func, "ratelimit", False) else 2) * (chat // 15 + 1)
 
         chat += severity
 
@@ -292,6 +286,7 @@ class CommandDispatcher:
                 seconds = f"{seconds} seconds" if seconds else ""
                 fw_time = f"{hours}{minutes}{seconds}"
                 txt = (
+                    # FIXME: translations no more
                     self._client.loader.lookup("translations")
                     .strings("fw_error")
                     .format(
@@ -308,6 +303,7 @@ class CommandDispatcher:
                     f" <code>{utils.escape_html(str(exc))}</code>"
                 )
                 txt = (
+                    # FIXME: translations no more
                     self._client.loader.lookup("translations")
                     .strings("rpc_error")
                     .format(
@@ -367,9 +363,7 @@ class CommandDispatcher:
                 and not getattr(m, "sticker", False)
                 and not getattr(m, "via_bot_id", False)
             ),
-            "no_media": lambda: (
-                not isinstance(m, Message) or not getattr(m, "media", False)
-            ),
+            "no_media": lambda: (not isinstance(m, Message) or not getattr(m, "media", False)),
             "only_media": lambda: isinstance(m, Message) and getattr(m, "media", False),
             "only_photos": lambda: utils.mime_type(m).startswith("image/"),
             "only_videos": lambda: utils.mime_type(m).startswith("video/"),
@@ -408,9 +402,7 @@ class CommandDispatcher:
             "startswith": lambda: (
                 isinstance(m, Message) and m.raw_text.startswith(func.startswith)
             ),
-            "endswith": lambda: (
-                isinstance(m, Message) and m.raw_text.endswith(func.endswith)
-            ),
+            "endswith": lambda: (isinstance(m, Message) and m.raw_text.endswith(func.endswith)),
             "contains": lambda: isinstance(m, Message) and func.contains in m.raw_text,
             "filter": lambda: callable(func.filter) and func.filter(m),
             "from_id": lambda: getattr(m, "sender_id", None) == func.from_id,
@@ -420,9 +412,7 @@ class CommandDispatcher:
                 if not str(func.chat_id).startswith("-100")
                 else int(str(func.chat_id)[4:])
             ),
-            "regex": lambda: (
-                isinstance(m, Message) and re.search(func.regex, m.raw_text)
-            ),
+            "regex": lambda: (isinstance(m, Message) and re.search(func.regex, m.raw_text)),
         }
 
         return (

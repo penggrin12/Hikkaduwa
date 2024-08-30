@@ -23,7 +23,6 @@
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-
 import argparse
 import asyncio
 import collections
@@ -190,9 +189,7 @@ def gen_port(cfg: str = "port", no8080: bool = False) -> int:
     # If we didn't get port from config, generate new one
     # First, try to randomly get port
     while port := random.randint(1024, 65536):
-        if socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(
-            ("localhost", port)
-        ):
+        if socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(("localhost", port)):
             break
 
     return port
@@ -294,9 +291,7 @@ class SuperList(list):
                         return [await getattr(_, attr)(*args, **kwargs) for _ in self]
 
                     return foobar
-                return lambda *args, **kwargs: [
-                    getattr(_, attr)(*args, **kwargs) for _ in self
-                ]
+                return lambda *args, **kwargs: [getattr(_, attr)(*args, **kwargs) for _ in self]
 
             return [getattr(x, attr) for x in self]
 
@@ -532,9 +527,7 @@ class Hikka:
                     await client._on_login(
                         (
                             await client(
-                                CheckPasswordRequest(
-                                    compute_check(password, _2fa.strip())
-                                )
+                                CheckPasswordRequest(compute_check(password, _2fa.strip()))
                             )
                         ).user
                     )
@@ -551,10 +544,7 @@ class Hikka:
                         f"{minutes} minute(-s) " if minutes else "",
                         f"{hours} hour(-s) " if hours else "",
                     )
-                    print(
-                        "You got FloodWait error! Please wait"
-                        f" {hours}{minutes}{seconds}"
-                    )
+                    print("You got FloodWait error! Please wait" f" {hours}{minutes}{seconds}")
                     return False
                 else:
                     break

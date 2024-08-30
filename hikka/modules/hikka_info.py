@@ -52,9 +52,7 @@ class HikkaInfoMod(loader.Module):
         platform = utils.get_named_platform()
 
         return (
-            (
-                "" if self.config["custom_message"] else "<b>🌘 Hikkaduwa</b>\n"
-            )
+            ("" if self.config["custom_message"] else "<b>🌘 Hikkaduwa</b>\n")
             + self.config["custom_message"].format(
                 me=me,
                 version=_version,
@@ -70,16 +68,12 @@ class HikkaInfoMod(loader.Module):
             if self.config["custom_message"]
             else (
                 f'🌘 <b>Hikkaduwa</b>\n\n'
-
                 f'😎 <b>{self.strings("owner")}:</b> {me}\n\n'
-
                 f'☀️ <b>{self.strings("commit")}:</b> {commit} on <code>{version.branch}</code>\n'
                 f'🌙 <b>{self.strings("version")}:</b> {_version}\n\n'
-
                 f'⚙️ <b>{self.strings("modules")}:</b> {modules_count}\n'
                 f'⌨️ <b>{self.strings("prefix")}:</b> {prefix}\n'
                 f'⌛️ <b>{self.strings("uptime")}:</b> {utils.formatted_uptime()}\n\n'
-
                 f'⚡️ <b>{self.strings("cpu_usage")}:</b> <i>~{utils.get_cpu_usage()} %</i>\n'
                 f'💼 <b>{self.strings("ram_usage")}:</b> <i>~{utils.get_ram_usage()} MB</i>\n'
                 f'<b>{platform}</b>'
@@ -102,11 +96,7 @@ class HikkaInfoMod(loader.Module):
             message=message,
             text=self._render_info(True),
             reply_markup=self._get_mark(),
-            **(
-                {"photo": self.config["banner_url"]}
-                if self.config["banner_url"]
-                else {}
-            ),
+            **({"photo": self.config["banner_url"]} if self.config["banner_url"] else {}),
         )
 
     @loader.command()

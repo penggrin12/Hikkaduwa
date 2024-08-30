@@ -236,9 +236,7 @@ class SudoMessageEditor(MessageEditor):
                 await message.delete()
 
             self.state = 1
-            self.process.stdin.write(
-                message.message.message.split("\n", 1)[0].encode() + b"\n"
-            )
+            self.process.stdin.write(message.message.message.split("\n", 1)[0].encode() + b"\n")
 
 
 class RawMessageEditor(SudoMessageEditor):
@@ -318,9 +316,7 @@ class TerminalMod(loader.Module):
     async def aptcmd(self, message):
         await self.run_command(
             message,
-            ("apt " if os.geteuid() == 0 else "sudo -S apt ")
-            + utils.get_args_raw(message)
-            + " -y",
+            ("apt " if os.geteuid() == 0 else "sudo -S apt ") + utils.get_args_raw(message) + " -y",
             RawMessageEditor(
                 message,
                 f"apt {utils.get_args_raw(message)}",
@@ -392,9 +388,7 @@ class TerminalMod(loader.Module):
         if hash_msg(await message.get_reply_message()) in self.activecmds:
             try:
                 if "-f" not in utils.get_args_raw(message):
-                    self.activecmds[
-                        hash_msg(await message.get_reply_message())
-                    ].terminate()
+                    self.activecmds[hash_msg(await message.get_reply_message())].terminate()
                 else:
                     self.activecmds[hash_msg(await message.get_reply_message())].kill()
             except Exception:

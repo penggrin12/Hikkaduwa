@@ -188,9 +188,7 @@ def get_args_html(message: Message) -> str:
     raw_text = parser._add_surrogate(raw_text)
 
     try:
-        command = raw_text[
-            raw_text.index(prefix) : raw_text.index(" ", raw_text.index(prefix) + 1)
-        ]
+        command = raw_text[raw_text.index(prefix) : raw_text.index(" ", raw_text.index(prefix) + 1)]
     except ValueError:
         return ""
 
@@ -212,9 +210,7 @@ def get_args_split_by(
     :param separator: Separator to split by
     :return: List of arguments
     """
-    return [
-        section.strip() for section in get_args_raw(message).split(separator) if section
-    ]
+    return [section.strip() for section in get_args_raw(message).split(separator) if section]
 
 
 def get_chat_id(message: typing.Union[Message, AiogramMessage]) -> int:
@@ -224,8 +220,7 @@ def get_chat_id(message: typing.Union[Message, AiogramMessage]) -> int:
     :return: Chat ID
     """
     return telethon.utils.resolve_id(
-        getattr(message, "chat_id", None)
-        or getattr(getattr(message, "chat", None), "id", None)
+        getattr(message, "chat_id", None) or getattr(getattr(message, "chat", None), "id", None)
     )[0]
 
 
@@ -413,9 +408,7 @@ async def answer_file(
         )
     except Exception:
         if caption:
-            logger.warning(
-                "Failed to send file, sending plain text instead", exc_info=True
-            )
+            logger.warning("Failed to send file, sending plain text instead", exc_info=True)
             return await answer(message, caption, **kwargs)
 
         raise
@@ -530,9 +523,8 @@ async def answer(
                 result = await message.client.send_file(
                     message.peer_id,
                     file,
-                    caption=message.client.loader.lookup("translations").strings(
-                        "too_long"
-                    ),
+                    # FIXME: translations no more
+                    caption=message.client.loader.lookup("translations").strings("too_long"),
                     reply_to=kwargs.get("reply_to") or get_topic(message),
                 )
 
@@ -588,10 +580,7 @@ async def get_target(message: Message, arg_no: int = 0) -> typing.Optional[int]:
     :return: Target
     """
 
-    if any(
-        isinstance(entity, MessageEntityMentionName)
-        for entity in (message.entities or [])
-    ):
+    if any(isinstance(entity, MessageEntityMentionName) for entity in (message.entities or [])):
         e = sorted(
             filter(lambda x: isinstance(x, MessageEntityMentionName), message.entities),
             key=lambda x: x.offset,
@@ -676,9 +665,7 @@ async def set_avatar(
             peer,
             message_ids=[
                 next(
-                    update
-                    for update in res.updates
-                    if isinstance(update, UpdateNewChannelMessage)
+                    update for update in res.updates if isinstance(update, UpdateNewChannelMessage)
                 ).message.id
             ],
         )
@@ -747,10 +734,7 @@ async def asset_channel(
     if not hasattr(client, "_channels_cache"):
         client._channels_cache = {}
 
-    if (
-        title in client._channels_cache
-        and client._channels_cache[title]["exp"] > time.time()
-    ):
+    if title in client._channels_cache and client._channels_cache[title]["exp"] > time.time():
         return client._channels_cache[title]["peer"], False
 
     async for d in client.iter_dialogs():
@@ -759,9 +743,7 @@ async def asset_channel(
             if invite_bot:
                 if all(
                     participant.id != client.loader.inline.bot_id
-                    for participant in (
-                        await client.get_participants(d.entity, limit=100)
-                    )
+                    for participant in (await client.get_participants(d.entity, limit=100))
                 ):
                     await fw_protect()
                     await invite_inline_bot(client, d.entity)
@@ -869,11 +851,7 @@ def get_link(user: typing.Union[User, Channel], /) -> str:
     return (
         f"tg://user?id={user.id}"
         if isinstance(user, User)
-        else (
-            f"tg://resolve?domain={user.username}"
-            if getattr(user, "username", None)
-            else ""
-        )
+        else (f"tg://resolve?domain={user.username}" if getattr(user, "username", None) else "")
     )
 
 
@@ -1014,9 +992,7 @@ def ascii_face() -> str:
     )
 
 
-def array_sum(
-    array: typing.List[typing.List[typing.Any]], /
-) -> typing.List[typing.Any]:
+def array_sum(array: typing.List[typing.List[typing.Any]], /) -> typing.List[typing.Any]:
     """
     Performs basic sum operation on array
     :param array: Array to sum
@@ -1035,9 +1011,7 @@ def rand(size: int, /) -> str:
     :param size: Length of string
     :return: Random string
     """
-    return "".join(
-        [random.choice("abcdefghijklmnopqrstuvwxyz1234567890") for _ in range(size)]
-    )
+    return "".join([random.choice("abcdefghijklmnopqrstuvwxyz1234567890") for _ in range(size)])
 
 
 def smart_split(
@@ -1105,15 +1079,10 @@ def smart_split(
 
         split_index = grapheme.safe_split_index(text, search_index)
 
-        split_offset_utf16 = (
-            len(text[text_offset:split_index].encode("utf-16le"))
-        ) // 2
+        split_offset_utf16 = (len(text[text_offset:split_index].encode("utf-16le"))) // 2
         exclude = 0
 
-        while (
-            split_index + exclude < text_length
-            and text[split_index + exclude] in split_on
-        ):
+        while split_index + exclude < text_length and text[split_index + exclude] in split_on:
             exclude += 1
 
         current_entities = []
@@ -1136,10 +1105,7 @@ def smart_split(
                     _copy_tl(
                         entity,
                         offset=0,
-                        length=entity.offset
-                        + entity.length
-                        - split_offset_utf16
-                        - exclude,
+                        length=entity.offset + entity.length - split_offset_utf16 - exclude,
                     )
                 )
             elif entity.offset < split_offset_utf16 < entity.offset + entity.length:
@@ -1153,20 +1119,13 @@ def smart_split(
             elif entity.offset < split_offset_utf16:
                 # wholly left
                 current_entities.append(entity)
-            elif (
-                entity.offset + entity.length
-                > split_offset_utf16 + exclude
-                > entity.offset
-            ):
+            elif entity.offset + entity.length > split_offset_utf16 + exclude > entity.offset:
                 # overlaps right boundary
                 pending_entities.append(
                     _copy_tl(
                         entity,
                         offset=0,
-                        length=entity.offset
-                        + entity.length
-                        - split_offset_utf16
-                        - exclude,
+                        length=entity.offset + entity.length - split_offset_utf16 - exclude,
                     )
                 )
             elif entity.offset + entity.length > split_offset_utf16 + exclude:
@@ -1215,7 +1174,9 @@ def get_git_hash() -> typing.Union[str, bool]:
 
     # TODO: ultra hacky
     try:
-        with open(Path(".") / Path(".git") / Path("refs") / Path("heads") / Path("master"), "r") as file:
+        with open(
+            Path(".") / Path(".git") / Path("refs") / Path("heads") / Path("master"), "r"
+        ) as file:
             return file.read().strip()
     except Exception as e:
         return False
@@ -1226,9 +1187,13 @@ def get_commit_url() -> str:
     Get current Hikkaduwa git commit url
     :return: Git commit url
     """
-    
+
     commit_hash = get_git_hash()
-    return f'<a href="https://github.com/penggrin12/Hikkaduwa/commit/{commit_hash}">{commit_hash[:7]}</a>' if commit_hash else "Unknown"
+    return (
+        f'<a href="https://github.com/penggrin12/Hikkaduwa/commit/{commit_hash}">{commit_hash[:7]}</a>'
+        if commit_hash
+        else "Unknown"
+    )
 
 
 def is_serializable(x: typing.Any, /) -> bool:
@@ -1251,13 +1216,7 @@ def get_lang_flag(countrycode: str) -> str:
     :return: Emoji flag
     """
     if (
-        len(
-            code := [
-                c
-                for c in countrycode.lower()
-                if c in string.ascii_letters + string.digits
-            ]
-        )
+        len(code := [c for c in countrycode.lower() if c in string.ascii_letters + string.digits])
         == 2
     ):
         return "".join([chr(ord(c.upper()) + (ord("🇦") - ord("A"))) for c in code])
@@ -1276,17 +1235,9 @@ def get_entity_url(
     :return: Link to object or empty string
     """
     return (
-        (
-            f"tg://openmessage?id={entity.id}"
-            if openmessage
-            else f"tg://user?id={entity.id}"
-        )
+        (f"tg://openmessage?id={entity.id}" if openmessage else f"tg://user?id={entity.id}")
         if isinstance(entity, User)
-        else (
-            f"tg://resolve?domain={entity.username}"
-            if getattr(entity, "username", None)
-            else ""
-        )
+        else (f"tg://resolve?domain={entity.username}" if getattr(entity, "username", None) else "")
     )
 
 
@@ -1301,9 +1252,7 @@ async def get_message_link(
     :return: Link to message
     """
     if message.is_private:
-        return (
-            f"tg://openmessage?user_id={get_chat_id(message)}&message_id={message.id}"
-        )
+        return f"tg://openmessage?user_id={get_chat_id(message)}&message_id={message.id}"
 
     if not chat and not (chat := message.chat):
         chat = await message.get_chat()
@@ -1379,9 +1328,7 @@ def find_caller(
             for frame_info in stack or inspect.stack()
             if hasattr(frame_info, "function")
             and any(
-                inspect.isclass(cls_)
-                and issubclass(cls_, Module)
-                and cls_ is not Module
+                inspect.isclass(cls_) and issubclass(cls_, Module) and cls_ is not Module
                 for cls_ in frame_info.frame.f_globals.values()
             )
         ),
@@ -1461,15 +1408,9 @@ def get_topic(message: Message) -> typing.Optional[int]:
     """
     return (
         (message.reply_to.reply_to_top_id or message.reply_to.reply_to_msg_id)
-        if (
-            isinstance(message, Message)
-            and message.reply_to
-            and message.reply_to.forum_topic
-        )
+        if (isinstance(message, Message) and message.reply_to and message.reply_to.forum_topic)
         else (
-            message.form["top_msg_id"]
-            if isinstance(message, (InlineCall, InlineMessage))
-            else None
+            message.form["top_msg_id"] if isinstance(message, (InlineCall, InlineMessage)) else None
         )
     )
 

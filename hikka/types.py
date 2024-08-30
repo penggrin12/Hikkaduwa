@@ -270,8 +270,7 @@ class Module:
 
         if interval < 0.1:
             logger.warning(
-                "Resetting animation interval to 0.1s, because it may get you in"
-                " floodwaits"
+                "Resetting animation interval to 0.1s, because it may get you in" " floodwaits"
             )
             interval = 0.1
 
@@ -386,9 +385,7 @@ class Module:
         channel = await self.client.get_entity(peer)
         if channel.id in self._db.get("hikka.main", "declined_joins", []):
             if assure_joined:
-                raise LoadError(
-                    f"You need to join @{channel.username} in order to use this module"
-                )
+                raise LoadError(f"You need to join @{channel.username} in order to use this module")
 
             return False
 
@@ -405,6 +402,7 @@ class Module:
             self.tg_id,
             "https://i.gifer.com/SD5S.gif",
             caption=(
+                # FIXME: translations no more
                 self._client.loader.lookup("translations")
                 .strings("requested_join")
                 .format(
@@ -441,9 +439,7 @@ class Module:
             delattr(self, "hikka_wait_channel_approve")
 
         if assure_joined and not event.status:
-            raise LoadError(
-                f"You need to join @{channel.username} in order to use this module"
-            )
+            raise LoadError(f"You need to join @{channel.username} in order to use this module")
 
         return event.status
 
@@ -488,17 +484,13 @@ class Module:
             ver = tuple(
                 map(
                     int,
-                    re.search(r"# ?scope: ?hikka_min ((\d+\.){2}\d+)", code)[1].split(
-                        "."
-                    ),
+                    re.search(r"# ?scope: ?hikka_min ((\d+\.){2}\d+)", code)[1].split("."),
                 )
             )
 
             if version.__version__ < ver:
                 _raise(
-                    RuntimeError(
-                        f"Library requires Hikkaduwa version {'{}.{}.{}'.format(*ver)}+"
-                    )
+                    RuntimeError(f"Library requires Hikkaduwa version {'{}.{}.{}'.format(*ver)}+")
                 )
 
         module = f"hikka.libraries.{url.replace('%', '%%').replace('.', '%d')}"
@@ -531,8 +523,7 @@ class Module:
                 )
             except TypeError:
                 logger.warning(
-                    "No valid pip packages specified in code, attemping"
-                    " installation from error"
+                    "No valid pip packages specified in code, attemping" " installation from error"
                 )
                 requirements = [e.name]
 
@@ -588,9 +579,7 @@ class Module:
             )
 
         if (
-            all(
-                line.replace(" ", "") != "#scope:no_stats" for line in code.splitlines()
-            )
+            all(line.replace(" ", "") != "#scope:no_stats" for line in code.splitlines())
             and self._db.get("hikka.main", "stats", True)
             and url is not None
             and utils.check_url(url)
@@ -622,9 +611,7 @@ class Module:
 
         if hasattr(lib_obj, "config"):
             if not isinstance(lib_obj.config, LibraryConfig):
-                _raise(
-                    RuntimeError("Library config must be a `LibraryConfig` instance")
-                )
+                _raise(RuntimeError("Library config must be a `LibraryConfig` instance"))
 
             libcfg = lib_obj.db.get(
                 lib_obj.__class__.__name__,
@@ -651,9 +638,7 @@ class Module:
 
         for old_lib in self.allmodules.libraries:
             if old_lib.name == lib_obj.name:
-                if hasattr(old_lib, "on_lib_update") and callable(
-                    old_lib.on_lib_update
-                ):
+                if hasattr(old_lib, "on_lib_update") and callable(old_lib.on_lib_update):
                     await old_lib.on_lib_update(lib_obj)
 
                 replace_all_refs(old_lib, lib_obj)
@@ -799,9 +784,7 @@ class ModuleConfig(dict):
                 for key, default, doc in zip(keys, defaults, docstrings)
             }
 
-        super().__init__(
-            {option: config.value for option, config in self._config.items()}
-        )
+        super().__init__({option: config.value for option, config in self._config.items()})
 
     def getdoc(self, key: str, message: typing.Optional[Message] = None) -> str:
         """Get the documentation by key"""
@@ -870,9 +853,7 @@ class ConfigValue:
     default: typing.Any = None
     doc: typing.Union[typing.Callable[[], str], str] = "No description"
     value: typing.Any = field(default_factory=_Placeholder)
-    validator: typing.Optional[
-        typing.Callable[[JSONSerializable], JSONSerializable]
-    ] = None
+    validator: typing.Optional[typing.Callable[[JSONSerializable], JSONSerializable]] = None
     on_change: typing.Optional[
         typing.Union[typing.Callable[[], typing.Awaitable], typing.Callable]
     ] = None
@@ -907,9 +888,7 @@ class ConfigValue:
                 value = list(value)
 
             if isinstance(value, list):
-                value = [
-                    item.strip() if isinstance(item, str) else item for item in value
-                ]
+                value = [item.strip() if isinstance(item, str) else item for item in value]
 
             if self.validator is not None:
                 if value is not None:
@@ -1006,10 +985,7 @@ class CacheRecordEntity:
         return f"CacheRecordEntity of {self.entity}"
 
     def __repr__(self) -> str:
-        return (
-            f"CacheRecordEntity(entity={type(self.entity).__name__}(...),"
-            f" exp={self._exp})"
-        )
+        return f"CacheRecordEntity(entity={type(self.entity).__name__}(...)," f" exp={self._exp})"
 
 
 class CacheRecordPerms:
@@ -1040,9 +1016,7 @@ class CacheRecordPerms:
         return f"CacheRecordPerms of {self.perms}"
 
     def __repr__(self) -> str:
-        return (
-            f"CacheRecordPerms(perms={type(self.perms).__name__}(...), exp={self._exp})"
-        )
+        return f"CacheRecordPerms(perms={type(self.perms).__name__}(...), exp={self._exp})"
 
 
 class CacheRecordFullChannel:
@@ -1066,10 +1040,7 @@ class CacheRecordFullChannel:
         return f"CacheRecordFullChannel of {self.channel_id}"
 
     def __repr__(self) -> str:
-        return (
-            f"CacheRecordFullChannel(channel_id={self.channel_id}(...),"
-            f" exp={self._exp})"
-        )
+        return f"CacheRecordFullChannel(channel_id={self.channel_id}(...)," f" exp={self._exp})"
 
 
 class CacheRecordFullUser:

@@ -20,9 +20,7 @@ for i in range(8):
     EXP_TABLE[i] = 1 << i
 
 for i in range(8, 256):
-    EXP_TABLE[i] = (
-        EXP_TABLE[i - 4] ^ EXP_TABLE[i - 5] ^ EXP_TABLE[i - 6] ^ EXP_TABLE[i - 8]
-    )
+    EXP_TABLE[i] = EXP_TABLE[i - 4] ^ EXP_TABLE[i - 5] ^ EXP_TABLE[i - 6] ^ EXP_TABLE[i - 8]
 
 for i in range(255):
     LOG_TABLE[EXP_TABLE[i]] = i
@@ -31,8 +29,7 @@ for i in range(255):
 def rs_blocks(version, error_correction):
     if error_correction not in RS_BLOCK_OFFSET:  # pragma: no cover
         raise Exception(
-            "bad rs block @ version: %s / error_correction: %s"
-            % (version, error_correction)
+            "bad rs block @ version: %s / error_correction: %s" % (version, error_correction)
         )
     offset = RS_BLOCK_OFFSET[error_correction]
     rs_block = RS_BLOCK_TABLE[(version - 1) * 4 + offset]
@@ -309,10 +306,7 @@ class Polynomial:
 
         ratio = glog(self[0]) - glog(other[0])
 
-        num = [
-            item ^ gexp(glog(other_item) + ratio)
-            for item, other_item in zip(self, other)
-        ]
+        num = [item ^ gexp(glog(other_item) + ratio) for item, other_item in zip(self, other)]
         if difference:
             num.extend(self[-difference:])
 
@@ -600,16 +594,7 @@ PATTERN_POSITION_TABLE = [
 ]
 
 G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0)
-G18 = (
-    (1 << 12)
-    | (1 << 11)
-    | (1 << 10)
-    | (1 << 9)
-    | (1 << 8)
-    | (1 << 5)
-    | (1 << 2)
-    | (1 << 0)
-)
+G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0)
 G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1)
 
 PAD0 = 0xEC
@@ -623,10 +608,7 @@ def _data_count(block):
 
 BIT_LIMIT_TABLE = [
     [0]
-    + [
-        8 * sum(map(_data_count, rs_blocks(version, error_correction)))
-        for version in range(1, 41)
-    ]
+    + [8 * sum(map(_data_count, rs_blocks(version, error_correction))) for version in range(1, 41)]
     for error_correction in range(4)
 ]
 
@@ -753,8 +735,7 @@ def _lost_point_level1(modules, modules_count):
             container[length] += 1
 
     lost_point += sum(
-        container[each_length] * (each_length - 2)
-        for each_length in range(5, modules_count + 1)
+        container[each_length] * (each_length - 2) for each_length in range(5, modules_count + 1)
     )
 
     return lost_point
@@ -971,9 +952,7 @@ class QRData:
             for i in range(0, len(self.data), 2):
                 chars = self.data[i : i + 2]
                 if len(chars) > 1:
-                    buffer.put(
-                        ALPHA_NUM.find(chars[0]) * 45 + ALPHA_NUM.find(chars[1]), 11
-                    )
+                    buffer.put(ALPHA_NUM.find(chars[0]) * 45 + ALPHA_NUM.find(chars[1]), 11)
                 else:
                     buffer.put(ALPHA_NUM.find(chars), 6)
         else:
@@ -1079,8 +1058,7 @@ def create_data(version, error_correction, data_list):
     bit_limit = sum(block.data_count * 8 for block in rs_blocks_)
     if len(buffer) > bit_limit:
         raise DataOverflowError(
-            "Code length overflow. Data size (%s) > size available (%s)"
-            % (len(buffer), bit_limit)
+            "Code length overflow. Data size (%s) > size available (%s)" % (len(buffer), bit_limit)
         )
 
     # Terminate the bits (add up to four 0s).
@@ -1120,18 +1098,14 @@ def _check_box_size(size):
 
 def _check_border(size):
     if int(size) < 0:
-        raise ValueError(
-            "Invalid border value (was %s, expected 0 or larger than that)" % size
-        )
+        raise ValueError("Invalid border value (was %s, expected 0 or larger than that)" % size)
 
 
 def _check_mask_pattern(mask_pattern):
     if mask_pattern is None:
         return
     if not isinstance(mask_pattern, int):
-        raise TypeError(
-            f"Invalid mask pattern (was {type(mask_pattern)}, expected int)"
-        )
+        raise TypeError(f"Invalid mask pattern (was {type(mask_pattern)}, expected int)")
     if mask_pattern < 0 or mask_pattern > 7:
         raise ValueError(f"Mask pattern should be in range(8) (got {mask_pattern})")
 
@@ -1244,9 +1218,7 @@ class QRCode:
         if self.version in precomputed_qr_blanks:
             self.modules = copy_2d_array(precomputed_qr_blanks[self.version])
         else:
-            self.modules = [
-                [None] * self.modules_count for i in range(self.modules_count)
-            ]
+            self.modules = [[None] * self.modules_count for i in range(self.modules_count)]
             self.setup_position_probe_pattern(0, 0)
             self.setup_position_probe_pattern(self.modules_count - 7, 0)
             self.setup_position_probe_pattern(0, self.modules_count - 7)
@@ -1261,9 +1233,7 @@ class QRCode:
             self.setup_type_number(test)
 
         if self.data_cache is None:
-            self.data_cache = create_data(
-                self.version, self.error_correction, self.data_list
-            )
+            self.data_cache = create_data(self.version, self.error_correction, self.data_list)
         self.map_data(self.data_cache, mask_pattern)
 
     def setup_position_probe_pattern(self, row, col):
@@ -1302,9 +1272,7 @@ class QRCode:
             data.write(buffer)
 
         needed_bits = len(buffer)
-        self.version = bisect_left(
-            BIT_LIMIT_TABLE[self.error_correction], needed_bits, start
-        )
+        self.version = bisect_left(BIT_LIMIT_TABLE[self.error_correction], needed_bits, start)
         if self.version == 41:
             raise DataOverflowError()
 
@@ -1406,12 +1374,7 @@ class QRCode:
 
     # return true if and only if (row, col) is in the module
     def is_constrained(self, row: int, col: int) -> bool:
-        return (
-            row >= 0
-            and row < len(self.modules)
-            and col >= 0
-            and col < len(self.modules[row])
-        )
+        return row >= 0 and row < len(self.modules) and col >= 0 and col < len(self.modules[row])
 
     def setup_timing_pattern(self):
         for r in range(8, self.modules_count - 8):
@@ -1438,13 +1401,7 @@ class QRCode:
 
                 for r in range(-2, 3):
                     for c in range(-2, 3):
-                        if (
-                            r == -2
-                            or r == 2
-                            or c == -2
-                            or c == 2
-                            or (r == 0 and c == 0)
-                        ):
+                        if r == -2 or r == 2 or c == -2 or c == 2 or (r == 0 and c == 0):
                             self.modules[row + r][col + c] = True
                         else:
                             self.modules[row + r][col + c] = False

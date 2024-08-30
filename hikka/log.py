@@ -125,30 +125,22 @@ class HikkaException:
             ).format(
                 (
                     (
-                        "🔮 <b>Cause: method </b><code>{}</code><b> of"
-                        " </b><code>{}</code>\n\n"
+                        "🔮 <b>Cause: method </b><code>{}</code><b> of" " </b><code>{}</code>\n\n"
                     ).format(
                         utils.escape_html(caller.__name__),
                         utils.escape_html(caller.__self__.__class__.__name__),
                     )
-                    if (
-                        caller
-                        and hasattr(caller, "__self__")
-                        and hasattr(caller, "__name__")
-                    )
+                    if (caller and hasattr(caller, "__self__") and hasattr(caller, "__name__"))
                     else ""
                 ),
                 utils.escape_html(filename),
                 lineno,
                 utils.escape_html(name),
                 utils.escape_html(
-                    "".join(
-                        traceback.format_exception_only(exc_type, exc_value)
-                    ).strip()
+                    "".join(traceback.format_exception_only(exc_type, exc_value)).strip()
                 ),
                 (
-                    "\n💭 <b>Message:</b>"
-                    f" <code>{utils.escape_html(str(comment))}</code>"
+                    "\n💭 <b>Message:</b>" f" <code>{utils.escape_html(str(comment))}</code>"
                     if comment
                     else ""
                 ),
@@ -244,11 +236,7 @@ class TelegramLogsHandler(logging.Handler):
                                 item[0]
                                 for item in self.tg_buff
                                 if isinstance(item[0], str)
-                                and (
-                                    not item[1]
-                                    or item[1] == client_id
-                                    or self.force_send_all
-                                )
+                                and (not item[1] or item[1] == client_id or self.force_send_all)
                             ]
                         )
                     ),
@@ -294,17 +282,14 @@ class TelegramLogsHandler(logging.Handler):
                     continue
 
                 if len(self._queue[client_id]) > 5:
-                    logfile = io.BytesIO(
-                        "".join(self._queue[client_id]).encode("utf-8")
-                    )
+                    logfile = io.BytesIO("".join(self._queue[client_id]).encode("utf-8"))
                     logfile.name = "hikka-logs.txt"
                     logfile.seek(0)
                     await self._mods[client_id].inline.bot.send_document(
                         self._mods[client_id].logchat,
                         logfile,
                         caption=(
-                            "<b>🧳 Journals are too big to be sent as separate"
-                            " messages</b>"
+                            "<b>🧳 Journals are too big to be sent as separate" " messages</b>"
                         ),
                     )
 
@@ -385,8 +370,7 @@ class TelegramLogsHandler(logging.Handler):
                             target.handle(precord)
 
                 self.handledbuffer = (
-                    self.handledbuffer[-(self.capacity - len(self.buffer)) :]
-                    + self.buffer
+                    self.handledbuffer[-(self.capacity - len(self.buffer)) :] + self.buffer
                 )
                 self.buffer = []
             finally:
@@ -421,9 +405,7 @@ def init():
     handler.setLevel(logging.INFO)
     handler.setFormatter(_main_formatter)
     logging.getLogger().handlers = []
-    logging.getLogger().addHandler(
-        TelegramLogsHandler((handler, rotating_handler), 7000)
-    )
+    logging.getLogger().addHandler(TelegramLogsHandler((handler, rotating_handler), 7000))
     logging.getLogger().setLevel(logging.NOTSET)
     logging.getLogger("telethon").setLevel(logging.WARNING)
     logging.getLogger("matplotlib").setLevel(logging.WARNING)  # ???

@@ -219,9 +219,7 @@ class BaseSerializingMiddlewareDict:
         self._pointer.clear()
 
     def todict(self) -> dict:
-        return {
-            key: self.deserialize(value) for key, value in self._pointer.data.items()
-        }
+        return {key: self.deserialize(value) for key, value in self._pointer.data.items()}
 
     def keys(self) -> typing.KeysView:
         return self._pointer.keys()

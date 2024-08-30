@@ -50,9 +50,7 @@ class TestMod(loader.Module):
                     "⚠️ Do not touch, if you don't know what it does!\n"
                     "Minimal loglevel for records to be sent in Telegram."
                 ),
-                validator=loader.validators.Choice(
-                    ["INFO", "WARNING", "ERROR", "CRITICAL"]
-                ),
+                validator=loader.validators.Choice(["INFO", "WARNING", "ERROR", "CRITICAL"]),
                 on_change=self._pass_config_to_logger,
             ),
             loader.ConfigValue(
@@ -162,8 +160,7 @@ class TestMod(loader.Module):
             lvl < logging.WARNING
             and not force
             and (
-                not isinstance(message, Message)
-                or "force_insecure" not in message.raw_text.lower()
+                not isinstance(message, Message) or "force_insecure" not in message.raw_text.lower()
             )
         ):
             try:
@@ -260,11 +257,7 @@ class TestMod(loader.Module):
                 round((time.perf_counter_ns() - start) / 10**6, 3),
                 utils.formatted_uptime(),
             )
-            + (
-                ("\n\n" + self.strings("ping_hint"))
-                if random.choice([0, 0, 1]) == 1
-                else ""
-            ),
+            + (("\n\n" + self.strings("ping_hint")) if random.choice([0, 0, 1]) == 1 else ""),
         )
 
     async def client_ready(self):

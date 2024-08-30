@@ -94,9 +94,7 @@ class LoaderMod(loader.Module):
                 "basic_auth",
                 None,
                 lambda: self.strings("basic_auth_doc"),
-                validator=loader.validators.Hidden(
-                    loader.validators.RegExp(r"^.*:.*$")
-                ),
+                validator=loader.validators.Hidden(loader.validators.RegExp(r"^.*:.*$")),
             ),
         )
 
@@ -201,9 +199,7 @@ class LoaderMod(loader.Module):
                                     f"<code>{i}</code>"
                                     for i in sorted(
                                         [
-                                            utils.escape_html(
-                                                i.split("/")[-1].split(".")[0]
-                                            )
+                                            utils.escape_html(i.split("/")[-1].split(".")[0])
                                             for i in mods.values()
                                         ]
                                     )
@@ -458,9 +454,9 @@ class LoaderMod(loader.Module):
         save_fs: bool = False,
         blob_link: bool = False,
     ):
-        if any(
-            line.replace(" ", "") == "#scope:ffmpeg" for line in doc.splitlines()
-        ) and os.system("ffmpeg -version 1>/dev/null 2>/dev/null"):
+        if any(line.replace(" ", "") == "#scope:ffmpeg" for line in doc.splitlines()) and os.system(
+            "ffmpeg -version 1>/dev/null 2>/dev/null"
+        ):
             if isinstance(message, Message):
                 await utils.answer(message, self.strings("ffmpeg_required"))
             return
@@ -579,10 +575,7 @@ class LoaderMod(loader.Module):
 
             except ImportError as e:
                 logger.info(
-                    (
-                        "Module loading failed, attemping dependency"
-                        " installation (%s)"
-                    ),
+                    ("Module loading failed, attemping dependency" " installation (%s)"),
                     e.name,
                 )
                 # Let's try to reinstall dependencies
@@ -627,11 +620,7 @@ class LoaderMod(loader.Module):
                     await utils.answer(
                         message,
                         self.strings("requirements_installing").format(
-                            "\n".join(
-                                "▫️"
-                                f" {req}"
-                                for req in requirements
-                            )
+                            "\n".join("▫️" f" {req}" for req in requirements)
                         ),
                     )
 
@@ -687,10 +676,7 @@ class LoaderMod(loader.Module):
                 if message:
                     await utils.answer(
                         message,
-                        (
-                            "😖"
-                            f" <b>{utils.escape_html(str(e))}</b>"
-                        ),
+                        ("😖" f" <b>{utils.escape_html(str(e))}</b>"),
                     )
                 return
         except Exception as e:
@@ -702,10 +688,7 @@ class LoaderMod(loader.Module):
             return
 
         if hasattr(instance, "__version__") and isinstance(instance.__version__, tuple):
-            version = (
-                "<b><i>"
-                f" (v{'.'.join(list(map(str, list(instance.__version__))))})</i></b>"
-            )
+            version = "<b><i>" f" (v{'.'.join(list(map(str, list(instance.__version__))))})</i></b>"
         else:
             version = ""
 
@@ -757,10 +740,7 @@ class LoaderMod(loader.Module):
                 if message:
                     await utils.answer(
                         message,
-                        (
-                            "😖"
-                            f" <b>{utils.escape_html(str(e))}</b>"
-                        ),
+                        ("😖" f" <b>{utils.escape_html(str(e))}</b>"),
                     )
                 return
             except loader.SelfUnload as e:
@@ -774,10 +754,7 @@ class LoaderMod(loader.Module):
                 if message:
                     await utils.answer(
                         message,
-                        (
-                            "😖"
-                            f" <b>{utils.escape_html(str(e))}</b>"
-                        ),
+                        ("😖" f" <b>{utils.escape_html(str(e))}</b>"),
                     )
                 return
             except loader.SelfSuspend as e:
@@ -818,13 +795,11 @@ class LoaderMod(loader.Module):
         )
 
         if pack_url and (
-            transations := await self.allmodules.translator.load_module_translations(
-                pack_url
-            )
+            transations := await self.allmodules.translator.load_module_translations(pack_url)
         ):
             instance.strings.external_strings = transations
 
-        for alias, cmd in self.lookup("settings").get("aliases", {}).items():
+        for alias, cmd in self.lookup("hikka_settings").get("aliases", {}).items():
             if cmd in instance.commands:
                 self.allmodules.add_alias(alias, cmd)
 
@@ -858,10 +833,7 @@ class LoaderMod(loader.Module):
         modhelp = ""
 
         if instance.__doc__:
-            modhelp += (
-                "<i>\nℹ️"
-                f" {utils.escape_html(inspect.getdoc(instance))}</i>\n"
-            )
+            modhelp += "<i>\nℹ️" f" {utils.escape_html(inspect.getdoc(instance))}</i>\n"
 
         subscribe = ""
         subscribe_markup = None
@@ -871,8 +843,7 @@ class LoaderMod(loader.Module):
             value = getattr(instance, key)
             if isinstance(value, loader.Library):
                 depends_from.append(
-                    "▫️"
-                    " <code>{}</code> <b>{}</b> <code>{}</code>".format(
+                    "▫️" " <code>{}</code> <b>{}</b> <code>{}</code>".format(
                         value.__class__.__name__,
                         self.strings("by"),
                         (
@@ -884,13 +855,19 @@ class LoaderMod(loader.Module):
                 )
 
         depends_from = (
-            self.strings("depends_from").format("\n".join(depends_from))
-            if depends_from
-            else ""
+            self.strings("depends_from").format("\n".join(depends_from)) if depends_from else ""
         )
 
         def loaded_msg(use_subscribe: bool = True):
-            nonlocal modname, version, modhelp, developer, origin, subscribe, blob_link, depends_from
+            nonlocal \
+                modname, \
+                version, \
+                modhelp, \
+                developer, \
+                origin, \
+                subscribe, \
+                blob_link, \
+                depends_from
             return self.strings("loaded").format(
                 modname.strip(),
                 version,
@@ -908,9 +885,7 @@ class LoaderMod(loader.Module):
             )
 
         if developer:
-            if developer.startswith("@") and developer not in self.get(
-                "do_not_subscribe", []
-            ):
+            if developer.startswith("@") and developer not in self.get("do_not_subscribe", []):
                 if (
                     developer_entity
                     and getattr(developer_entity, "left", True)
@@ -948,10 +923,7 @@ class LoaderMod(loader.Module):
         else:
             developer = ""
 
-        if any(
-            line.replace(" ", "") == "#scope:disable_onload_docs"
-            for line in doc.splitlines()
-        ):
+        if any(line.replace(" ", "") == "#scope:disable_onload_docs" for line in doc.splitlines()):
             await utils.answer(message, loaded_msg(), reply_markup=subscribe_markup)
             return
 
@@ -963,11 +935,7 @@ class LoaderMod(loader.Module):
                 "▫️",
                 utils.escape_html(self.get_prefix()),
                 _name,
-                (
-                    utils.escape_html(inspect.getdoc(fun))
-                    if fun.__doc__
-                    else self.strings("undoc")
-                ),
+                (utils.escape_html(inspect.getdoc(fun)) if fun.__doc__ else self.strings("undoc")),
             )
 
         if self.inline.init_complete:
@@ -1040,9 +1008,7 @@ class LoaderMod(loader.Module):
         msg = (
             self.strings("unloaded").format(
                 "✅",
-                ", ".join(
-                    [(mod[:-3] if mod.endswith("Mod") else mod) for mod in worked]
-                ),
+                ", ".join([(mod[:-3] if mod.endswith("Mod") else mod) for mod in worked]),
             )
             if worked
             else self.strings("not_unloaded")

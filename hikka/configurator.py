@@ -36,17 +36,11 @@ def api_config(tty: typing.Optional[bool] = None):
     tty_print("\033[0;96m1. Go to https://my.telegram.org and login\033[0m", tty)
     tty_print("\033[0;96m2. Click on \033[1;96mAPI development tools\033[0m", tty)
     tty_print(
-        (
-            "\033[0;96m3. Create a new application, by entering the required"
-            " details\033[0m"
-        ),
+        ("\033[0;96m3. Create a new application, by entering the required" " details\033[0m"),
         tty,
     )
     tty_print(
-        (
-            "\033[0;96m4. Copy your \033[1;96mAPI ID\033[0;96m and \033[1;96mAPI"
-            " hash\033[0m"
-        ),
+        ("\033[0;96m4. Copy your \033[1;96mAPI ID\033[0;96m and \033[1;96mAPI" " hash\033[0m"),
         tty,
     )
 
@@ -61,9 +55,7 @@ def api_config(tty: typing.Optional[bool] = None):
         sys.exit(0)
 
     while api_hash := tty_input("\033[0;95mEnter API hash: \033[0m", tty):
-        if len(api_hash) == 32 and all(
-            symbol in string.hexdigits for symbol in api_hash
-        ):
+        if len(api_hash) == 32 and all(symbol in string.hexdigits for symbol in api_hash):
             break
 
         tty_print("\033[0;91mInvalid hash\033[0m", tty)

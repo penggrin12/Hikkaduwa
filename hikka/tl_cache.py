@@ -167,10 +167,7 @@ class CustomTelegramClient(TelegramClient):
             not force
             and hashable_entity
             and hashable_entity in self._hikka_entity_cache
-            and (
-                not exp
-                or self._hikka_entity_cache[hashable_entity].ts + exp > time.time()
-            )
+            and (not exp or self._hikka_entity_cache[hashable_entity].ts + exp > time.time())
         ):
             logger.debug(
                 "Using cached entity %s (%s)",
@@ -267,14 +264,11 @@ class CustomTelegramClient(TelegramClient):
             and hashable_user in self._hikka_perms_cache.get(hashable_entity, {})
             and (
                 not exp
-                or self._hikka_perms_cache[hashable_entity][hashable_user].ts + exp
-                > time.time()
+                or self._hikka_perms_cache[hashable_entity][hashable_user].ts + exp > time.time()
             )
         ):
             logger.debug("Using cached perms %s (%s)", hashable_entity, hashable_user)
-            return copy.deepcopy(
-                self._hikka_perms_cache[hashable_entity][hashable_user].perms
-            )
+            return copy.deepcopy(self._hikka_perms_cache[hashable_entity][hashable_user].perms)
 
         resolved_perms = await self.get_permissions(entity, user)
 
@@ -285,9 +279,7 @@ class CustomTelegramClient(TelegramClient):
                 resolved_perms,
                 exp,
             )
-            self._hikka_perms_cache.setdefault(hashable_entity, {})[
-                hashable_user
-            ] = cache_record
+            self._hikka_perms_cache.setdefault(hashable_entity, {})[hashable_user] = cache_record
             logger.debug("Saved hashable_entity %s perms to cache", hashable_entity)
 
             def save_user(key: typing.Union[str, int]):
@@ -296,12 +288,8 @@ class CustomTelegramClient(TelegramClient):
                     self._hikka_perms_cache.setdefault(key, {})[user.id] = cache_record
 
                 if getattr(user, "username", None):
-                    self._hikka_perms_cache.setdefault(key, {})[
-                        f"@{user.username}"
-                    ] = cache_record
-                    self._hikka_perms_cache.setdefault(key, {})[
-                        user.username
-                    ] = cache_record
+                    self._hikka_perms_cache.setdefault(key, {})[f"@{user.username}"] = cache_record
+                    self._hikka_perms_cache.setdefault(key, {})[user.username] = cache_record
 
             if getattr(entity, "id", None):
                 logger.debug("Saved resolved_entity id %s perms to cache", entity.id)
@@ -340,10 +328,7 @@ class CustomTelegramClient(TelegramClient):
                 )
             except StopIteration:
                 logger.debug(
-                    (
-                        "Can't parse hashable from entity %s, using legacy fullchannel"
-                        " request"
-                    ),
+                    ("Can't parse hashable from entity %s, using legacy fullchannel" " request"),
                     entity,
                 )
                 return await self(GetFullChannelRequest(channel=entity))
@@ -392,10 +377,7 @@ class CustomTelegramClient(TelegramClient):
                 )
             except StopIteration:
                 logger.debug(
-                    (
-                        "Can't parse hashable from entity %s, using legacy fulluser"
-                        " request"
-                    ),
+                    ("Can't parse hashable from entity %s, using legacy fulluser" " request"),
                     entity,
                 )
                 return await self(GetFullUserRequest(entity))
@@ -560,9 +542,9 @@ class CustomTelegramClient(TelegramClient):
                     and isinstance(frame_info.frame.f_locals, dict)
                     and "self" in frame_info.frame.f_locals
                     and isinstance(frame_info.frame.f_locals["self"], Module)
-                    and not getattr(
-                        frame_info.frame.f_locals["self"], "__origin__", ""
-                    ).startswith("<core")
+                    and not getattr(frame_info.frame.f_locals["self"], "__origin__", "").startswith(
+                        "<core"
+                    )
                 ),
                 None,
             ):

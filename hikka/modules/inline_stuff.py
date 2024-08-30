@@ -45,9 +45,7 @@ class InlineStuff(loader.Module):
             next_handler=self.inline._custom_map[id_]["handler"],
             caption=self.inline._custom_map[id_].get("caption", ""),
             force_me=self.inline._custom_map[id_].get("force_me", False),
-            disable_security=self.inline._custom_map[id_].get(
-                "disable_security", False
-            ),
+            disable_security=self.inline._custom_map[id_].get("disable_security", False),
             silent=True,
         )
 

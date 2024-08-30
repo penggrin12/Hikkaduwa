@@ -209,9 +209,7 @@ class Database(dict):
     async def fetch_asset(self, asset_id: int) -> typing.Optional[Message]:
         """Fetch previously saved asset by its asset_id"""
         if not self._assets:
-            raise NoAssetsChannel(
-                "Tried to fetch asset from non-existing asset channel"
-            )
+            raise NoAssetsChannel("Tried to fetch asset from non-existing asset channel")
 
         asset = await self._client.get_messages(self._assets, ids=[asset_id])
 
@@ -276,9 +274,7 @@ class Database(dict):
         )
 
         if pointer_constructor is None:
-            raise ValueError(
-                f"Pointer for type {type(value).__name__} is not implemented"
-            )
+            raise ValueError(f"Pointer for type {type(value).__name__} is not implemented")
 
         if item_type is not None:
             if isinstance(value, list):

@@ -49,11 +49,7 @@ CONSTRUCTORS = {
     ): method.CONSTRUCTOR_ID
     for method in utils.array_sum(
         [
-            [
-                method
-                for method in dir(getattr(functions, group))
-                if isinstance(method, TLRequest)
-            ]
+            [method for method in dir(getattr(functions, group)) if isinstance(method, TLRequest)]
             for group in GROUPS
         ]
     )
@@ -144,16 +140,12 @@ class APIRatelimiterMod(loader.Module):
 
                     self._ratelimiter = list(
                         filter(
-                            lambda x: time.perf_counter() - x[1]
-                            < int(self.config["time_sample"]),
+                            lambda x: time.perf_counter() - x[1] < int(self.config["time_sample"]),
                             self._ratelimiter,
                         )
                     )
 
-                    if (
-                        len(self._ratelimiter) > int(self.config["threshold"])
-                        and not self._lock
-                    ):
+                    if len(self._ratelimiter) > int(self.config["threshold"]) and not self._lock:
                         self._lock = True
                         report = io.BytesIO(
                             json.dumps(

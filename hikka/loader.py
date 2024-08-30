@@ -560,10 +560,7 @@ class Modules:
                 else [
                     (LOADED_MODULES_PATH / mod).resolve()
                     for mod in filter(
-                        lambda x: (
-                            x.endswith(f"{self.client.tg_id}.py")
-                            and not x.startswith("_")
-                        ),
+                        lambda x: (x.endswith(f"{self.client.tg_id}.py") and not x.startswith("_")),
                         os.listdir(LOADED_MODULES_DIR),
                     )
                 ]
@@ -591,9 +588,9 @@ class Modules:
             try:
                 mod_shortname = os.path.basename(mod).rsplit(".py", maxsplit=1)[0]
                 module_name = f"{__package__}.{MODULES_NAME}.{mod_shortname}"
-                user_friendly_origin = (
-                    "<core {}>" if origin == "<core>" else "<file {}>"
-                ).format(module_name)
+                user_friendly_origin = ("<core {}>" if origin == "<core>" else "<file {}>").format(
+                    module_name
+                )
 
                 logger.debug("Loading %s from filesystem", module_name)
 
@@ -656,7 +653,7 @@ class Modules:
             )
 
             if origin == "<string>":
-                Path(path).write_text(spec.loader.data.decode())
+                Path(path).write_text(spec.loader.data.decode(), encoding="utf-8")
 
                 logger.debug("Saved class %s to path %s", cls_name, path)
 
@@ -692,9 +689,7 @@ class Modules:
             _hikka_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841
 
         if instance.__origin__.startswith("<core"):
-            self._core_commands += list(
-                map(lambda x: x.lower(), list(instance.hikka_commands))
-            )
+            self._core_commands += list(map(lambda x: x.lower(), list(instance.hikka_commands)))
 
         for _command, cmd in instance.hikka_commands.items():
             # Restrict overwriting core modules' commands
@@ -845,9 +840,7 @@ class Modules:
 
         for module in self.modules:
             if module.__class__.__name__ == instance.__class__.__name__:
-                if not self._remove_core_protection and module.__origin__.startswith(
-                    "<core"
-                ):
+                if not self._remove_core_protection and module.__origin__.startswith("<core"):
                     raise CoreOverwriteError(
                         module=(
                             module.__class__.__name__[:-3]
@@ -890,8 +883,7 @@ class Modules:
                 continue
 
             if any(
-                alias.lower() == _alias.lower()
-                and alias.lower() not in self._core_commands
+                alias.lower() == _alias.lower() and alias.lower() not in self._core_commands
                 for _alias in aliases
             ):
                 return command_name
@@ -980,9 +972,7 @@ class Modules:
     async def send_ready(self):
         """Send all data to all modules"""
         await self.inline.register_manager()
-        await asyncio.gather(
-            *[self.send_ready_one_wrapper(mod) for mod in self.modules]
-        )
+        await asyncio.gather(*[self.send_ready_one_wrapper(mod) for mod in self.modules])
 
     async def send_ready_one(
         self,
@@ -1021,10 +1011,7 @@ class Modules:
             return
         except Exception as e:
             logger.exception(
-                (
-                    "Failed to send mod init complete signal for %s due to %s,"
-                    " attempting unload"
-                ),
+                ("Failed to send mod init complete signal for %s due to %s," " attempting unload"),
                 mod,
                 e,
             )
@@ -1069,9 +1056,7 @@ class Modules:
                 module.name.lower(),
                 module.__class__.__name__.lower(),
             ):
-                if not self._remove_core_protection and module.__origin__.startswith(
-                    "<core"
-                ):
+                if not self._remove_core_protection and module.__origin__.startswith("<core"):
                     raise CoreUnloadError(module.__class__.__name__)
 
                 worked += [module.__class__.__name__]

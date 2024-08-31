@@ -33,10 +33,6 @@ from telethon.tl.types import (  # type: ignore[import-untyped]
     UserFull,
 )
 
-from hikka.loader import Modules
-from hikka.validators import Validator
-from hikka.translations import Strings
-
 from . import version
 from ._reference_finder import replace_all_refs
 from .inline.types import (
@@ -105,9 +101,9 @@ class StringLoader(SourceLoader):
 
 
 class Module:
-    strings: Strings = {"name": "Unknown"}  # type: ignore[assignment]
+    strings: "Strings" = {"name": "Unknown"}  # type: ignore[assignment, name-defined]  # noqa: F821
 
-    allmodules: Modules
+    allmodules: "Modules"  # type: ignore  # noqa: F821
     name: str
 
     """There is no help for this module"""
@@ -851,7 +847,7 @@ class ConfigValue:
     default: typing.Any = None
     doc: typing.Union[typing.Callable[[], str], str] = "No description"
     value: typing.Any = field(default_factory=_Placeholder)
-    validator: typing.Optional[Validator] = None
+    validator: typing.Optional["Validator"] = None  # type: ignore  # noqa: F821
     on_change: typing.Optional[
         typing.Union[typing.Callable[[], typing.Awaitable], typing.Callable]
     ] = None

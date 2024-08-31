@@ -69,7 +69,6 @@ class HikkaInfoMod(loader.Module):
             if self.config["custom_message"]
             else (
                 f'🌘 <b>Hikkaduwa</b>\n\n'
-                f'😎 <b>{self.strings("owner")}:</b> {me}\n\n'
                 f'☀️ <b>{self.strings("commit")}:</b> {commit} on <code>{branch}</code>\n'
                 f'🌙 <b>{self.strings("version")}:</b> {_version}\n\n'
                 f'⚙️ <b>{self.strings("modules")}:</b> {modules_count}\n'

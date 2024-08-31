@@ -889,20 +889,7 @@ def get_platform_emoji() -> str:
     Returns custom emoji for current platform
     :return: Emoji entity in string
     """
-    from . import main
-
-    BASE = "".join(
-        (
-            "🌘",
-            "🌘",
-            "🌘",
-        )
-    )
-
-    if main.IS_TERMUX:
-        return BASE.format(5193051778001673828)
-
-    return BASE.format(5192765204898783881)
+    return "🌘🌘🌘"
 
 
 def uptime() -> int:

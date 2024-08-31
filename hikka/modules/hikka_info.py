@@ -46,6 +46,7 @@ class HikkaInfoMod(loader.Module):
             utils.escape_html(get_display_name(self._client.hikka_me)),
         )
         commit = utils.get_commit_url()
+        branch: str = utils.get_git_branch() or "Unknown"
         _version = f'<i>{".".join(list(map(str, list(version.__version__))))}</i>'
         prefix = f"«<code>{utils.escape_html(self.get_prefix())}</code>»"
         modules_count = len(self.allmodules.modules)
@@ -63,13 +64,13 @@ class HikkaInfoMod(loader.Module):
                 uptime=utils.formatted_uptime(),
                 cpu_usage=utils.get_cpu_usage(),
                 ram_usage=f"{utils.get_ram_usage()} MB",
-                branch=version.branch,
+                branch=branch,
             )
             if self.config["custom_message"]
             else (
                 f'🌘 <b>Hikkaduwa</b>\n\n'
                 f'😎 <b>{self.strings("owner")}:</b> {me}\n\n'
-                f'☀️ <b>{self.strings("commit")}:</b> {commit} on <code>{version.branch}</code>\n'
+                f'☀️ <b>{self.strings("commit")}:</b> {commit} on <code>{branch}</code>\n'
                 f'🌙 <b>{self.strings("version")}:</b> {_version}\n\n'
                 f'⚙️ <b>{self.strings("modules")}:</b> {modules_count}\n'
                 f'⌨️ <b>{self.strings("prefix")}:</b> {prefix}\n'

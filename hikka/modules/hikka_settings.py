@@ -676,7 +676,7 @@ class HikkaSettingsMod(loader.Module):
                 "🌘 <b>Hikkaduwa userbot</b>",
                 *version.__version__,
                 utils.get_commit_url(),
-                version.branch,
+                utils.get_git_branch() or "Unknown",
                 f"{telethon.__version__} #{telethon.tl.alltlobjects.LAYER}",
             ),
         )

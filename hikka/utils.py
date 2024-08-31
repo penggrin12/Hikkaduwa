@@ -1166,6 +1166,22 @@ def check_url(url: str) -> bool:
         return False
 
 
+def get_git_branch() -> typing.Optional[str]:
+    """
+    (Hikkaduwa)
+
+    Get current Hikkaduwa git branch
+    :return: Head branch
+    """
+
+    # TODO: ultra hacky
+    try:
+        with open(Path(".") / Path(".git") / Path("HEAD"), "r") as file:
+            return file.read().strip().replace("ref: refs/heads/", "")
+    except Exception:
+        return None
+
+
 def get_git_hash() -> typing.Union[str, bool]:
     """
     Get current Hikkaduwa git hash
@@ -1175,10 +1191,15 @@ def get_git_hash() -> typing.Union[str, bool]:
     # TODO: ultra hacky
     try:
         with open(
-            Path(".") / Path(".git") / Path("refs") / Path("heads") / Path("master"), "r"
+            Path(".")
+            / Path(".git")
+            / Path("refs")
+            / Path("heads")
+            / Path(get_git_branch() or "master"),
+            "r",
         ) as file:
             return file.read().strip()
-    except Exception as e:
+    except Exception:
         return False
 
 

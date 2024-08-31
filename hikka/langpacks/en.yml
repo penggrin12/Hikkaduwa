@@ -174,7 +174,7 @@ test:
 updater:
     name: "Updater"
     source: "📖 <b>Read the source code from</b> <a href='{}'>here</a>"
-    restarting_caption: "🕗 <b>Your {} is restarting...</b>"
+    restarting_caption: "🕗 <b>Your Hikkaduwa is restarting...</b>"
     downloading: "🕗 <b>Downloading updates...</b>"
     installing: "🕗 <b>Installing updates...</b>"
     origin_cfg_doc: "Git origin URL, for where to update from"

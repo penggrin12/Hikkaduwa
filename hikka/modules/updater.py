@@ -104,7 +104,7 @@ class UpdaterMod(loader.Module):
 
         msg_obj = await utils.answer(
             msg_obj,
-            self.strings("restarting_caption").format(utils.get_platform_emoji(), "Hikkaduwa"),
+            self.strings("restarting_caption"),
         )
 
         await self.process_restart_message(msg_obj)

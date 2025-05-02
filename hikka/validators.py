@@ -9,14 +9,14 @@ import re
 import typing
 
 import grapheme
-from emoji import get_emoji_unicode_dict
+from emoji import EMOJI_DATA
 
 from . import utils
 from .translations import SUPPORTED_LANGUAGES, translator
 
 ConfigAllowedTypes = typing.Union[tuple, list, str, int, bool, None]
 
-ALLOWED_EMOJIS = set(get_emoji_unicode_dict("en").values())
+ALLOWED_EMOJIS = set(EMOJI_DATA.keys())
 
 
 class ValidationError(Exception):
@@ -730,7 +730,7 @@ class Emoji(Validator):
             and (passed_length < min_len or passed_length > max_len)
         ):
             raise ValidationError(
-                f"Passed value ({value}) is not between {min_len} and {max_len} emojis" " long"
+                f"Passed value ({value}) is not between {min_len} and {max_len} emojis long"
             )
 
         if min_len is not None and passed_length < min_len:

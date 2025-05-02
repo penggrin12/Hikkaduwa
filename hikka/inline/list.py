@@ -138,7 +138,7 @@ class List(InlineUnit):
 
         unit_id = utils.rand(16)
 
-        perms_map = None if manual_security else self._find_caller_sec_map()
+        perms_map = None
 
         self._units[unit_id] = {
             "type": "list",

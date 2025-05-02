@@ -205,7 +205,7 @@ class Gallery(InlineUnit):
             logger.exception("Error while parsing first photo in gallery")
             return False
 
-        perms_map = None if manual_security else self._find_caller_sec_map()
+        perms_map = None
 
         self._units[unit_id] = {
             "type": "gallery",

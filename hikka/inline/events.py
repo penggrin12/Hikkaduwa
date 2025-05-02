@@ -336,9 +336,7 @@ class Events(InlineUnit):
                     and "input" in button
                     and button["_switch_query"] == query.split()[0]
                     and chosen_inline_query.from_user.id
-                    in [self._me]
-                    + self._client.dispatcher.security._owner
-                    + unit.get("always_allow", [])
+                    in [self._me] + unit.get("always_allow", [])
                 ):
                     query = query.split(maxsplit=1)[1] if len(query.split()) > 1 else ""
 

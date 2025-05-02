@@ -233,21 +233,7 @@ class Utils(InlineUnit):
 
     async def check_inline_security(self, *, func: typing.Callable, user: int) -> bool:
         """Checks if user with id `user` is allowed to run function `func`"""
-        # return await self._client.dispatcher.security.check(
-        #     message=None,
-        #     func=func,
-        #     user_id=user,
-        #     inline_cmd=self._reverse_method_lookup(func),
-        # )
         return user == self._client._tg_id
-
-    def _find_caller_sec_map(self) -> typing.Optional[typing.Callable[[], int]]:
-        try:
-            caller = utils.find_caller()
-            if not caller:
-                return None
-
-            logger.debug("Found caller: %s", caller)
 
             return lambda: self._client.dispatcher.security.get_flags(
                 getattr(caller, "__self__", caller),

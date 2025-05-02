@@ -117,8 +117,6 @@ class CommandDispatcher:
         self._ratelimit_max_user = db.get(__name__, "ratelimit_max_user", 30)
         self._ratelimit_max_chat = db.get(__name__, "ratelimit_max_chat", 100)
 
-        self.security = None  # we still keeping?
-
         self._me = self._client.hikka_me.id
         self._cached_usernames = [
             (

@@ -25,7 +25,7 @@ Hikkaduwa is a powerful and modular Telegram userbot. This fork, maintained by [
 
 ## Requirements
 
-* **Python:** 3.9 or higher
+* **Python:** 3.9 or higher (haven't yet tested on <3.12)
 * **UV:** The `uv` package installer is recommended ([Installation Guide](https://github.com/astral-sh/uv#installation)).
 * **Telegram API Credentials:** API ID and API Hash from <https://my.telegram.org>.
 * **Dependencies:** See `pyproject.toml` for the full list (includes `telethon`, `aiogram`, `requests`, etc.). These are installed automatically by `uv`.

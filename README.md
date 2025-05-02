@@ -1,138 +1,77 @@
-<h2>⚠️⚠️⚠️ ALMOST EVERYTHING BELOW DOESNT APPLY TO HIKKADUWA ⚠️⚠️⚠️</h2> <br>
-I will update it later.
-<hr>
+# Hikkaduwa Userbot 🏳️‍⚧️
 
-<b>Warning: </b>If you are a paranoid person, you should not use this userbot. This userbot is not a virus, but it can be used for malicious purposes. You are responsible for all actions taken by your account.  
-  
-**Important notice**: Versions `1.6.4` and `1.7.0` will NOT be released due to the reasons mentioned in the chanelog.  
-The development will start from scratch with a new project, which will be announced later.  
-As of March 2025, you can apply for an early stage of alpha-testing through the official channels.  
+Hikkaduwa is a powerful and modular Telegram userbot. This fork, maintained by [Penggrin](https://github.com/penggrin12), aims to be a **lightweight version** of the upstream Hikka project developed by [Dan Gazizullin (hikariatama)](https://t.me/hikariatama).
 
-<hr>
-<h2><img src="https://github.com/hikariatama/assets/raw/master/1326-command-window-line-flat.webp" height="54" align="middle"> Installation</h2>
+![Lines of code](https://img.shields.io/endpoint?url=https://ghloc.vercel.app/api/penggrin12/Hikkaduwa/badge?filter=.py$&style=flat&logoColor=white&label=Lines%20of%20Code)
+![GitHub Open issues](https://img.shields.io/github/issues/penggrin12/Hikkaduwa)
+![GitHub Closed pull requests](https://img.shields.io/github/issues-pr-closed/penggrin12/Hikkaduwa)  
+![Python Version](https://img.shields.io/badge/python-3.9+-blue)
+![License](https://img.shields.io/badge/license-AGPLv3-red)
 
-### Installation page
 
-<img src="https://github.com/hikariatama/assets/raw/master/install_qr.gif" height="256">
+## Key Features
 
-<a href="https://t.me/lavhostbot?start=SGlra2E"><img src="https://user-images.githubusercontent.com/36935426/167272288-85f00779-4b98-47da-8d0d-ea2c6370b979.png" height="40"></a>
+* **Modular Architecture:** Easily extend functionality by loading custom modules.
+* **Inline Features:** Supports inline forms, galleries, lists, and custom inline command handlers via its own bot.
+* **Configuration System:** Interactive configuration for modules and core settings (`.config` command).
+* **Terminal Access:** Execute shell commands directly from Telegram.
+* **API Rate Limiting:** Built-in protection against hitting Telegram API limits.
+* **Code Evaluation:** Evaluate Python code on the fly.
+* **Advanced Logging:** Configurable logging levels and Telegram log forwarding.
+* **Help System:** Get help for specific modules or list all available commands.
+* **Translations:** Supports multiple languages through language packs.
+* **Aliases:** Create custom shortcuts for commands.
+* **Watchers:** Automate actions based on incoming/outgoing messages with various filters.
 
-<h2>Local installation:</h2>
-Simply run this command out of <b>root</b> and follow the instructions of installer:<br>
-<code>. <(wget -qO- https://hikariatama.ru/get_hikka)</code><br>
-<br>
-<b>Manual installation (no script):</b><br>
-<code>apt update && apt install git libcairo2 -y && git clone https://github.com/penggrin12/Hikkaduwa && cd Hikka && pip install -r requirements.txt && python3 -m hikka</code><br.>
-<i>If you are on VPS\VDS, type <code>--proxy-pass</code> in the end of command to open SSH tunnel to your Hikka web interface, or use <code>--no-web</code> to complete setup in console</i><br>
-<br>
-<b>Some further details:</b>
+## Requirements
 
-<details>
- <summary>Pre-installed automatic database backuper</summary>
- <img src="https://user-images.githubusercontent.com/36935426/202905566-964d2904-f3ce-4a14-8f05-0e7840e1b306.png" width="300">
-</details>
-<details>
- <summary>Welcome installation info</summary>
- <img src="https://user-images.githubusercontent.com/36935426/202905720-6319993b-697c-4b09-a194-209c110c79fd.png" width="300">
- <img src="https://user-images.githubusercontent.com/36935426/202905746-2a511129-0208-4581-bb27-7539bd7b53c9.png" width="300">
-</details>
+* **Python:** 3.9 or higher
+* **UV:** The `uv` package installer is recommended ([Installation Guide](https://github.com/astral-sh/uv#installation)).
+* **Telegram API Credentials:** API ID and API Hash from <https://my.telegram.org>.
+* **Dependencies:** See `pyproject.toml` for the full list (includes `telethon`, `aiogram`, `requests`, etc.). These are installed automatically by `uv`.
+* **FFMPEG:** (Optional) Required by some modules for media processing.
 
-<hr>
-<h2><img src="https://github.com/hikariatama/assets/raw/master/35-edit-flat.webp" height="54" align="middle"> Changes</h2>
+## Installation & Setup
 
-<ul>
- <li>🆕 <b>Latest Telegram layer</b> with reactions, video stickers and other stuff</li>
- <li>🔓 <b>Security</b> improvements, including <b>native entity caching</b> and <b>targeted security rules</b></li>
- <li>🎨 <b>UI/UX</b> improvements</li>
- <li>📼 Improved and new <b>core modules</b></li>
- <li>⏱ Quick <b>bug fixes</b> (compared to official FTG and GeekTG)</li>
- <li>▶️ <b>Inline forms, galleries and lists</b></li>
- <li>🔁 Full <b>backward compatibility</b> with FTG, GeekTG and Dragon Userbot modules</li>
-</ul>
-<hr>
-<h2 border="none"><img src="https://github.com/hikariatama/assets/raw/master/1312-micro-sd-card-flat.webp" height="54" align="middle"> Requirements</h2>
-<ul>
- <li>Python 3.8+</li>
- <li>API_ID and HASH from <a href="https://my.telegram.org/apps" color="#2594cb">Telegram</a></li>
-</ul>
-<hr>
-<h2 border="none"><img src="https://github.com/hikariatama/assets/raw/master/680-it-developer-flat.webp" height="54" align="middle"> Documentation</h2>
+1.  **Install `uv` (if you haven't already):**
+    Follow the official `uv` [installation instructions](https://github.com/astral-sh/uv#installation). A common method is:
+    ```bash
+    # Linux/macOS
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    # Windows (requires Python installed)
+    pip install uv
+    # Or see other methods like pipx, brew, etc. in the uv docs
+    ```
+2.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/penggrin12/Hikkaduwa.git
+    cd Hikkaduwa
+    ```
+3.  **Create and activate a virtual environment:**
+    ```bash
+    uv sync
+    ```
+4.  **Run:**
+    * Run the userbot for the first time:
+        ```bash
+        uv run python -m hikka
+        ```
+    * Follow the on-screen instructions to enter your Telegram API ID and API Hash.
+    * Then, You will be prompted to log in using either your phone number or a QR code.
 
-Check out <a href="https://dev.hikka.pw">dev.hikka.pw</a> for developers' documentation and <a href="https://hikka.pw">hikka.pw</a> for users' documentation<br>
+## Basic Usage
 
-<hr>
-<h2 border="none"><img src="https://github.com/hikariatama/assets/raw/master/981-consultation-flat.webp" height="54" align="middle"> <a href="https://t.me/hikka_talks">Support</a></h2>
-<hr>
-<h2 border="none"><img src="https://github.com/hikariatama/assets/raw/master/541-hand-washing-step-12-flat.webp" height="54" align="middle"> Features</h2>
-<table>
- <tr>
-  <td>
-   <img src="https://github.com/hikariatama/assets/raw/master/1286-three-3-key-flat.webp" height="32" align="middle"><b> Forms - bored of writing? Use buttons!</b>
-  </td>
-  <td>
-   <img src="https://github.com/hikariatama/assets/raw/master/61-camera-flat.webp" height="32" align="middle"><b> Galleries - scroll your favorite photos in Telegram</b>
-  </td>
- </tr>
- <tr>
-  <td>
-   <img src="https://user-images.githubusercontent.com/36935426/202842205-9a3906f8-37b1-47f4-acd1-ae441f84aeab.gif">
-  </td>
-  <td>
-   <img src="https://user-images.githubusercontent.com/36935426/202842215-b7bddaf2-f544-4823-80b4-5c2cccaf2157.gif">
-  </td>
- </tr>
-</table>
-<table>
- <tr>
-  <td>
-   <img src="https://github.com/hikariatama/assets/raw/master/216-arrow-5-flat.webp" height="32" align="middle"><b> Inline - share userbot with your friends</b>
-  </td>
-  <td>
-   <img src="https://github.com/hikariatama/assets/raw/master/1054-amazon-echo-speaker-flat.webp" height="32" align="middle"><b> Bot interactions - "No PM"? No problem. Feedback bot at your service</b>
-  </td>
- </tr>
- <tr>
-  <td>
-   <img src="https://user-images.githubusercontent.com/36935426/202842234-e53f616d-7423-4a64-a5da-fb71282ad2c4.gif">
-  </td>
-  <td>
-   <img src="https://user-images.githubusercontent.com/36935426/160476037-9537f1c7-8b72-408f-b84c-b89825930bf5.gif">
-  </td>
- </tr>
-</table>
-<table>
- <tr>
-  <td>
-   <img src="https://github.com/hikariatama/assets/raw/master/1140-error-flat.webp" height="32" align="middle"><b> InlineLogs - traceback directly in message, caused error</b>
-  </td>
-  <td>
-   <img src="https://github.com/hikariatama/assets/raw/master/35-edit-flat.webp" height="32" align="middle"><b> Grep - execute command and get only required lines</b>
-  </td>
- </tr>
- <tr>
-  <td>
-   <img src="https://user-images.githubusercontent.com/36935426/202842250-b60d218e-9df4-47f6-8c67-b2ef641b4d2d.gif">
-  </td>
-  <td>
-   <img src="https://user-images.githubusercontent.com/36935426/202842263-ee2d5c94-3fd5-43b3-b8ac-2397b69e0fc6.gif">
-  </td>
- </tr>
-</table>
+* **Command Prefix:** By default, commands start with `.` (e.g., `.help`, `.ping`). This can be changed using `.setprefix`.
+* **Inline Bot:** Use the userbot's features inline by mentioning its associated bot username (obtained during setup or via `.ch_hikka_bot`).
+* **Help:** Use the `.help` command to see available modules and commands. Use `.help <module_name>` for specific module help.
+* **Configuration:** Use the `.config` command for an interactive menu to configure modules and core settings.
 
-<b>👨‍👦 NoNick, NoNickUser, NoNickCmd, NoNickChat - use another account for userbot</b>
-<img src="https://user-images.githubusercontent.com/36935426/202842278-37fbc518-1679-45d7-92f5-9e519275630d.png">
+## License
 
-<hr>
-<i>⚠️ This project is provided as-is. Developer doesn't take ANY responsibility over any problems, caused by userbot. By installing Hikka you take all risks on you. This is but not limited to account bans, deleted (by Telegram algorithms) messages, SCAM-modules, leaked sessions (due to SCAM-modules). It is <b>highly</b> recommended to enable the API Flood protection (.api_fw_protection) and not to install many modules at once. By using Hikka you give your consent to any actions made by your account in background in purposes of automatization. Please, consider reading https://core.telegram.org/api/terms for more information.</i>
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**. See the [LICENSE](https://www.gnu.org/licenses/agpl-3.0.html) file for details.
 
-<b>Special thanks to:</b>
+## Authors & Credits
 
-<ul>
-    <li><a href="https://gitlab.com/hackintosh5">Hackintosh5</a> for FTG, which is the base of project</li>
-    <li><a href="https://t.me/kazunimo">Kazunimo</a> for Turkish translation pack</li>
-    <li><a href="https://t.me/hegaNET">Hegakura</a> for Tatar translation pack</li>
-    <li><a href="https://t.me/tiefeschwarz">Aldehydesäure</a> for German translation pack</li>
-    <li><a href="https://t.me/amorescam">Amore</a> for Uzbek translation pack</li>
-    <li><a href="https://t.me/lonami">Lonami</a> for Telethon, which is the base of Hikka-TL</li>
-    <li><a href="https://github.com/delivrance">Dan</a> for pyrogram, which is the base of Hikka-Pyro</li>
-</ul>
+* **Fork Developer:** [Penggrin](https://github.com/penggrin12)
+* **Upstream GitHub Repository:** [https://github.com/hikariatama/Hikka](https://github.com/hikariatama/Hikka)
+* **Upstream Developer:** [Dan Gazizullin (hikariatama)](https://t.me/hikariatama)

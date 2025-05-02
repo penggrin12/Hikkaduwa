@@ -37,7 +37,6 @@ import typing
 from getpass import getpass
 from pathlib import Path
 
-import telethon
 from telethon import events
 from telethon.errors import (
     ApiIdInvalidError,
@@ -55,9 +54,11 @@ from telethon.password import compute_check
 from telethon.sessions import MemorySession, SQLiteSession
 from telethon.tl.functions.account import GetPasswordRequest
 from telethon.tl.functions.auth import CheckPasswordRequest
+from telethon.tl.types.account import Password
+from telethon.tl.types.auth import Authorization
+from telethon.types import User
 
-from . import database, loader, utils, version
-from .platform import IS_TERMUX, IS_WINDOWS, IS_WSL
+from . import database, loader
 from .dispatcher import CommandDispatcher
 from .qr import QRCode
 from .tl_cache import CustomTelegramClient
@@ -119,7 +120,7 @@ def get_app_name() -> str:
     :return: App name
     :example: "Cresco Cibus Consilium"
     """
-    if not (app_name := get_config_key("app_name")):
+    if not (app_name := typing.cast(str, get_config_key("app_name"))):
         app_name = generate_app_name()
         save_config_key("app_name", app_name)
 
@@ -141,7 +142,7 @@ def run_config():
     return configurator.api_config()
 
 
-def get_config_key(key: str) -> typing.Union[str, bool]:
+def get_config_key(key: str) -> typing.Union[str | int | float | dict | list, bool]:
     """
     Parse and return key from config
     :param key: Key name in config
@@ -153,7 +154,7 @@ def get_config_key(key: str) -> typing.Union[str, bool]:
         return False
 
 
-def save_config_key(key: str, value: str) -> bool:
+def save_config_key(key: str, value: str | int | float | dict | list) -> bool:
     """
     Save `key` with `value` to config
     :param key: Key name in config
@@ -183,7 +184,7 @@ def gen_port(cfg: str = "port", no8080: bool = False) -> int:
     """
 
     # But for own server we generate new free port, and assign to it
-    if port := get_config_key(cfg):
+    if port := typing.cast(int, get_config_key(cfg)):
         return port
 
     # If we didn't get port from config, generate new one
@@ -195,7 +196,7 @@ def gen_port(cfg: str = "port", no8080: bool = False) -> int:
     return port
 
 
-def parse_arguments() -> dict:
+def parse_arguments() -> argparse.Namespace:
     """
     Parses the arguments
     :returns: Dictionary with arguments
@@ -394,7 +395,7 @@ class Hikka:
             )
         except FileNotFoundError:
             try:
-                from . import api_token
+                from . import api_token  # type: ignore[reportAttributeAccessIssue]
             except ImportError:
                 try:
                     api_token = api_token_type(
@@ -404,7 +405,7 @@ class Hikka:
                 except KeyError:
                     api_token = None
 
-        self.api_token = api_token
+        self.api_token: api_token_type | None = api_token
 
     async def _get_token(self):
         """Reads or waits for user to enter API credentials"""
@@ -418,12 +419,13 @@ class Hikka:
 
     async def save_client_session(self, client: CustomTelegramClient):
         if hasattr(client, "tg_id"):
-            telegram_id = client.tg_id
+            telegram_id = client.tg_id  # type: ignore[reportAttributeAccessIssue]
         else:
-            if not (me := await client.get_me()):
+            if not (me := typing.cast(User, await client.get_me())):
                 raise RuntimeError("Attempted to save non-inited session")
 
             telegram_id = me.id
+
             client._tg_id = telegram_id
             client.tg_id = telegram_id
             client.hikka_me = me
@@ -436,25 +438,24 @@ class Hikka:
         )
 
         session.set_dc(
-            client.session.dc_id,
-            client.session.server_address,
-            client.session.port,
+            client.session.dc_id,  # type: ignore[reportAttributeAccessIssue]
+            client.session.server_address,  # type: ignore[reportAttributeAccessIssue]
+            client.session.port,  # type: ignore[reportAttributeAccessIssue]
         )
 
-        session.auth_key = client.session.auth_key
+        session.auth_key = client.session.auth_key  # type: ignore[reportAttributeAccessIssue]
 
         session.save()
-        client.session = session
+        client.session = session  # type: ignore[reportAttributeAccessIssue]
         # Set db attribute to this client in order to save
         # custom bot nickname from web
-        # TODO: still needed?
         client.hikka_db = database.Database(client)
-        await client.hikka_db.init()
+        await client.hikka_db.init()  # type: ignore[reportAttributeAccessIssue]
 
     async def _phone_login(self, client: CustomTelegramClient) -> bool:
         phone = input("Enter phone: ")
 
-        await client.start(phone)
+        await typing.cast(typing.Coroutine, client.start(phone))
 
         await self.save_client_session(client)
         self.clients += [client]
@@ -463,6 +464,8 @@ class Hikka:
     async def _initial_setup(self) -> bool:
         """Responsible for first start"""
         if self.arguments.no_auth:
+            return False
+        if not self.api_token:
             return False
 
         client = CustomTelegramClient(
@@ -481,8 +484,7 @@ class Hikka:
         await client.connect()
 
         print(
-            "You can use QR-code to login from another device (your friend's"
-            " phone, for example)."
+            "You can use QR-code to login from another device (your friend's phone, for example)."
         )
 
         if input("Use QR code? [y/N]: ").lower() != "y":
@@ -512,23 +514,25 @@ class Hikka:
                 except SessionPasswordNeededError:
                     return True
                 except KeyboardInterrupt:
-                    return None
+                    return False
 
             return False
 
-        if (qr_logined := await qr_login_poll()) is None:
+        if (qr_loggedin := await qr_login_poll()) is None:
             return await self._phone_login(client)
 
-        if qr_logined:
-            password = await client(GetPasswordRequest())
+        if qr_loggedin:
+            password: Password = typing.cast(Password, await client(GetPasswordRequest()))
+            hint: str = f'. Hint: "{password.hint}"' if password.hint else ""
             while True:
-                _2fa = getpass(f"Enter 2FA password ({password.hint}): ")
+                _2fa: str = getpass(
+                    f"Enter the 2FA password (Your input is hidden{hint}): "
+                ).strip()
                 try:
                     await client._on_login(
-                        (
-                            await client(
-                                CheckPasswordRequest(compute_check(password, _2fa.strip()))
-                            )
+                        typing.cast(
+                            Authorization,
+                            await client(CheckPasswordRequest(compute_check(password, _2fa))),
                         ).user
                     )
                 except PasswordHashInvalidError:
@@ -544,7 +548,7 @@ class Hikka:
                         f"{minutes} minute(-s) " if minutes else "",
                         f"{hours} hour(-s) " if hours else "",
                     )
-                    print("You got FloodWait error! Please wait" f" {hours}{minutes}{seconds}")
+                    print(f"You got FloodWait error! Please wait {hours}{minutes}{seconds}")
                     return False
                 else:
                     break
@@ -559,6 +563,9 @@ class Hikka:
         Reads session from disk and inits them
         :returns: `True` if at least one client started successfully
         """
+        if not self.api_token:
+            return False
+
         for session in self.sessions.copy():
             try:
                 client = CustomTelegramClient(
@@ -575,8 +582,13 @@ class Hikka:
                     system_lang_code="en-US",
                 )
 
-                await client.start(phone=(lambda: input("Enter phone: ")))
-                client.phone = "never gonna give you up"
+                await typing.cast(
+                    typing.Coroutine,
+                    (client.start(phone=(lambda: input("Enter phone number: ")))),
+                )
+                setattr(
+                    client, "phone", "***"
+                )  # assuming this is private in the telethon's TelegramClient
 
                 self.clients += [client]
             except sqlite3.OperationalError:
@@ -614,7 +626,7 @@ class Hikka:
         """Wrapper around amain"""
         async with client:
             first = True
-            me = await client.get_me()
+            me: User = typing.cast(User, await client.get_me())
             client._tg_id = me.id
             client.tg_id = me.id
             client.hikka_me = me
@@ -624,61 +636,22 @@ class Hikka:
     async def _badge(self, client: CustomTelegramClient):
         """Call the badge in shell"""
         try:
-            # import git
-
-            # repo = git.Repo()
-
-            # build = utils.get_git_hash()
-            # diff = repo.git.log([f"HEAD..origin/{version.branch}", "--oneline"])
-            # upd = "Update required" if diff else "Up-to-date"
-
-            logo = (
+            logo: str = (
                 "█ █ █ █▄▀ █▄▀ ▄▀█\n"
                 "█▀█ █ █ █ █ █ █▀█\n\n"
-                # f"• Build: {build[:7]}\n"
                 f"• Version: {'.'.join(list(map(str, list(__version__))))}\n"
-                # f"• {upd}\n"
             )
 
             if not self.omit_log:
                 print(logo)
-                # logging.debug(
-                #     "\n🌘 Hikkaduwa %s #%s (%s) started\n%s",
-                #     ".".join(list(map(str, list(__version__)))),
-                #     build[:7],
-                #     upd,
-                #     web_url,
-                # )
                 logging.debug(
                     "\n🌘 Hikkaduwa %s started",
                     ".".join(list(map(str, list(__version__)))),
                 )
                 self.omit_log = True
 
-            # await client.hikka_inline.bot.send_animation(
-            #     logging.getLogger().handlers[0].get_logid_by_client(client.tg_id),
-            #     "https://github.com/hikariatama/assets/raw/master/hikka_banner.mp4",
-            #     # caption=(
-            #     #     "🌘 <b>Hikkaduwa {} started!</b>\n\n🌳 <b>GitHub commit SHA: <a"
-            #     #     ' href="https://github.com/hikariatama/Hikka/commit/{}">{}</a></b>\n✊'
-            #     #     " <b>Update status: {}</b>\n<b>{}</b>".format(
-            #     #         ".".join(list(map(str, list(__version__)))),
-            #     #         build,
-            #     #         build[:7],
-            #     #         upd,
-            #     #         web_url,
-            #     #     )
-            #     # ),
-            #     caption=(
-            #         "🌘 <b>Hikkaduwa {} started!</b>"
-            #         .format(
-            #             ".".join(list(map(str, list(__version__)))),
-            #         )
-            #     ),
-            # )
-
             await client.hikka_inline.bot.send_message(
-                logging.getLogger().handlers[0].get_logid_by_client(client.tg_id),
+                logging.getLogger().handlers[0].get_logid_by_client(client.tg_id),  # type: ignore
                 "🌘 <b>Hikkaduwa {} started!</b>".format(
                     ".".join(list(map(str, list(__version__)))),
                 ),
@@ -701,16 +674,15 @@ class Hikka:
         """Inits and adds dispatcher instance to client"""
         dispatcher = CommandDispatcher(modules, client, db)
         client.dispatcher = dispatcher
-        modules.check_security = dispatcher.check_security
 
         client.add_event_handler(
             dispatcher.handle_incoming,
-            events.NewMessage,
+            events.NewMessage(),
         )
 
         client.add_event_handler(
             dispatcher.handle_incoming,
-            events.ChatAction,
+            events.ChatAction(),
         )
 
         client.add_event_handler(
@@ -731,7 +703,7 @@ class Hikka:
     async def amain(self, first: bool, client: CustomTelegramClient):
         """Entrypoint for async init, run once for each user"""
         client.parse_mode = "HTML"
-        await client.start()
+        await typing.cast(typing.Coroutine, client.start())
 
         db = database.Database(client)
         client.hikka_db = db
@@ -755,7 +727,8 @@ class Hikka:
         if first:
             await self._badge(client)
 
-        await client.run_until_disconnected()
+        if (x := client.run_until_disconnected()) is not None:
+            await x
 
     async def _main(self):
         """Main entrypoint"""

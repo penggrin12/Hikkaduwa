@@ -25,6 +25,7 @@ from telethon.tl.types import (
     UpdateShort,
     UserFull,
 )
+from telethon.types import User
 from telethon.utils import is_list_like
 
 from .types import (
@@ -34,6 +35,12 @@ from .types import (
     CacheRecordPerms,
     Module,
 )
+
+if typing.TYPE_CHECKING:
+    from .loader import Modules
+    from .database import Database
+    from .dispatcher import CommandDispatcher
+    from .inline.core import InlineManager
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +63,15 @@ def hashable(value: typing.Any) -> bool:
 class CustomTelegramClient(TelegramClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # those get set somewhere else
+        self.loader: "Modules"
+        self.hikka_db: "Database"
+        self.dispatcher: "CommandDispatcher"
+        self.hikka_inline: "InlineManager"
+        self.tg_id: int
+        self._tg_id: int
+        self.hikka_me: User
 
         self._hikka_entity_cache: typing.Dict[
             typing.Union[str, int],
@@ -328,7 +344,7 @@ class CustomTelegramClient(TelegramClient):
                 )
             except StopIteration:
                 logger.debug(
-                    ("Can't parse hashable from entity %s, using legacy fullchannel" " request"),
+                    ("Can't parse hashable from entity %s, using legacy fullchannel request"),
                     entity,
                 )
                 return await self(GetFullChannelRequest(channel=entity))
@@ -377,7 +393,7 @@ class CustomTelegramClient(TelegramClient):
                 )
             except StopIteration:
                 logger.debug(
-                    ("Can't parse hashable from entity %s, using legacy fulluser" " request"),
+                    ("Can't parse hashable from entity %s, using legacy fulluser request"),
                     entity,
                 )
                 return await self(GetFullUserRequest(entity))

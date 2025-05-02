@@ -138,7 +138,7 @@ def run_config():
     """Load configurator.py"""
     from . import configurator
 
-    return configurator.api_config(IS_TERMUX or None)
+    return configurator.api_config()
 
 
 def get_config_key(key: str) -> typing.Union[str, bool]:

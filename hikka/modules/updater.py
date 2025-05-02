@@ -21,6 +21,7 @@ from telethon.tl.functions.messages import (
 )
 from telethon.tl.types import DialogFilter, Message
 from telethon.tl.types.messages import DialogFilters
+from telethon.types import DialogFilterDefault, TextWithEntities
 
 from .. import loader, main, utils, version
 from .._internal import restart
@@ -263,16 +264,13 @@ class UpdaterMod(loader.Module):
         if any(getattr(folder, "title", None) == "hikka" for folder in folders.filters):
             return
 
-        try:
-            folder_id = (
-                max(
-                    folders.filters,
-                    key=lambda x: x.id,
-                ).id
-                + 1
+        folder_id: int = (
+            max(
+                [f.id for f in folders.filters if isinstance(f, DialogFilter)],
+                default=0,
             )
-        except ValueError:
-            folder_id = 2
+            + 1
+        )
 
         try:
             await self._client(
@@ -280,7 +278,7 @@ class UpdaterMod(loader.Module):
                     folder_id,
                     DialogFilter(
                         folder_id,
-                        title="hikka",
+                        title=TextWithEntities(text="hikka", entities=[]),
                         pinned_peers=(
                             [await self._client.get_input_entity(self._client.loader.inline.bot_id)]
                             if self._client.loader.inline.init_complete

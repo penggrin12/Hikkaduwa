@@ -6,34 +6,12 @@
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-import getpass
 import os
-import subprocess
 import sys
 
-from ._internal import restart
 
-
-def deps():
-    subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "--upgrade",
-            "-q",
-            "--disable-pip-version-check",
-            "--no-warn-script-location",
-            "-r",
-            "requirements.txt",
-        ],
-        check=True,
-    )
-
-
-if sys.version_info < (3, 8, 0):
-    print("🚫 Error: you must use at least Python version 3.8.0")
+if sys.version_info < (3, 9, 0):
+    print("🚫 Error: you must use at least Python version 3.9.0")
 elif __package__ != "hikka":  # In case they did python __main__.py
     print("🚫 Error: you cannot run this as a script; you must execute as a package")
 else:
@@ -42,27 +20,16 @@ else:
     except Exception:
         pass
     else:
-        try:
-            import telethon  # noqa: F811
+        import telethon  # noqa: F811
 
-            if telethon.__version__ != "1.36.0":
-                raise ImportError
-        except ImportError:
-            print("🔄 Installing dependencies...")
-            deps()
-            restart()
+        if telethon.__version__ != "1.40.0":
+            raise ImportError
 
-    try:
-        from . import log
+    from . import log
 
-        log.init()
+    log.init()
 
-        from . import main
-    except ImportError as e:
-        print(e)  # TODO: redo this betterrr
-        print(f"{str(e)}\n🔄 Attempting dependencies installation... Just wait ⏱")
-        deps()
-        restart()
+    from . import main
 
     if "HIKKA_DO_NOT_RESTART" in os.environ:
         del os.environ["HIKKA_DO_NOT_RESTART"]

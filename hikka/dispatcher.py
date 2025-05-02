@@ -119,7 +119,6 @@ class CommandDispatcher:
 
         self.security = None  # we still keeping?
 
-        self.check_security = lambda: False
         self._me = self._client.hikka_me.id
         self._cached_usernames = [
             (

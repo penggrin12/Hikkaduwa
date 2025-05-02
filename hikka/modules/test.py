@@ -91,7 +91,7 @@ class TestMod(loader.Module):
             handler.handledbuffer = []
             handler.tg_buff = ""
 
-        await utils.answer(message, self.strings("logs_cleared"))
+        await utils.answer(message, self.strings("logs_cleared"))  # type: ignore[reportCallIssue]
 
     @loader.command()
     async def logs(
@@ -113,7 +113,7 @@ class TestMod(loader.Module):
         if not isinstance(lvl, int):
             try:
                 if not self.inline.init_complete or not await self.inline.form(
-                    text=self.strings("choose_loglevel"),
+                    text=self.strings("choose_loglevel"),  # type: ignore[reportCallIssue]
                     reply_markup=utils.chunks(
                         [
                             {
@@ -130,12 +130,12 @@ class TestMod(loader.Module):
                         ],
                         2,
                     )
-                    + [[{"text": self.strings("cancel"), "action": "close"}]],
+                    + [[{"text": self.strings("cancel"), "action": "close"}]],  # type: ignore[reportCallIssue]
                     message=message,
                 ):
                     raise
             except Exception:
-                await utils.answer(message, self.strings("set_loglevel"))
+                await utils.answer(message, self.strings("set_loglevel"))  # type: ignore[reportCallIssue]
 
             return
 
@@ -168,14 +168,14 @@ class TestMod(loader.Module):
                     raise
 
                 cfg = {
-                    "text": self.strings("confidential").format(named_lvl),
+                    "text": self.strings("confidential").format(named_lvl),  # type: ignore[reportCallIssue]
                     "reply_markup": [
                         {
-                            "text": self.strings("send_anyway"),
+                            "text": self.strings("send_anyway"),  # type: ignore[reportCallIssue]
                             "callback": self.logs,
                             "args": [True, lvl],
                         },
-                        {"text": self.strings("cancel"), "action": "close"},
+                        {"text": self.strings("cancel"), "action": "close"},  # type: ignore[reportCallIssue]
                     ],
                 }
                 if isinstance(message, Message):
@@ -186,16 +186,16 @@ class TestMod(loader.Module):
             except Exception:
                 await utils.answer(
                     message,
-                    self.strings("confidential_text").format(named_lvl),
+                    self.strings("confidential_text").format(named_lvl),  # type: ignore[reportCallIssue]
                 )
 
             return
 
         if len(logs) <= 2:
             if isinstance(message, Message):
-                await utils.answer(message, self.strings("no_logs").format(named_lvl))
+                await utils.answer(message, self.strings("no_logs").format(named_lvl))  # type: ignore[reportCallIssue]
             else:
-                await message.edit(self.strings("no_logs").format(named_lvl))
+                await message.edit(self.strings("no_logs").format(named_lvl))  # type: ignore[reportCallIssue]
                 await message.unload()
 
             return
@@ -224,13 +224,13 @@ class TestMod(loader.Module):
             await utils.answer(
                 message,
                 logs,
-                caption=self.strings("logs_caption").format(named_lvl, *other),
+                caption=self.strings("logs_caption").format(named_lvl, *other),  # type: ignore[reportCallIssue]
             )
         else:
             await self._client.send_file(
                 message.form["chat"],
                 logs,
-                caption=self.strings("logs_caption").format(named_lvl, *other),
+                caption=self.strings("logs_caption").format(named_lvl, *other),  # type: ignore[reportCallIssue]
                 reply_to=message.form["top_msg_id"],
             )
 
@@ -240,11 +240,11 @@ class TestMod(loader.Module):
             time_sleep = float(utils.get_args_raw(message))
             await utils.answer(
                 message,
-                self.strings("suspended").format(time_sleep),
+                self.strings("suspended").format(time_sleep),  # type: ignore[reportCallIssue]
             )
             time.sleep(time_sleep)
         except ValueError:
-            await utils.answer(message, self.strings("suspend_invalid_time"))
+            await utils.answer(message, self.strings("suspend_invalid_time"))  # type: ignore[reportCallIssue]
 
     @loader.command()
     async def ping(self, message: Message):
@@ -253,11 +253,11 @@ class TestMod(loader.Module):
 
         await utils.answer(
             message,
-            self.strings("results_ping").format(
+            self.strings("results_ping").format(  # type: ignore[reportCallIssue]
                 round((time.perf_counter_ns() - start) / 10**6, 3),
                 utils.formatted_uptime(),
             )
-            + (("\n\n" + self.strings("ping_hint")) if random.choice([0, 0, 1]) == 1 else ""),
+            + (("\n\n" + self.strings("ping_hint")) if random.choice([0, 0, 1]) == 1 else ""),  # type: ignore[reportCallIssue]
         )
 
     async def client_ready(self):

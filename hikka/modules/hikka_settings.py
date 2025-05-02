@@ -49,7 +49,7 @@ class HikkaSettingsMod(loader.Module):
         ], self._db.get(main.__name__, "disabled_watchers", {})
 
     async def _uninstall(self, call: InlineCall):
-        await call.edit(self.strings("uninstall"))
+        await call.edit(self.strings("uninstall"))  # type: ignore[reportCallIssue]
 
         async with self._client.conversation("@BotFather") as conv:
             for msg in [
@@ -117,18 +117,18 @@ class HikkaSettingsMod(loader.Module):
 
     async def _uninstall_confirm_step_2(self, call: InlineCall):
         await call.edit(
-            self.strings("deauth_confirm_step2"),
+            self.strings("deauth_confirm_step2"),  # type: ignore[reportCallIssue]
             utils.chunks(
                 list(
                     sorted(
                         [
                             {
-                                "text": self.strings("deauth_yes"),
+                                "text": self.strings("deauth_yes"),  # type: ignore[reportCallIssue]
                                 "callback": self._uninstall,
                             },
                             *[
                                 {
-                                    "text": self.strings(f"deauth_no_{i}"),
+                                    "text": self.strings(f"deauth_no_{i}"),  # type: ignore[reportCallIssue]
                                     "action": "close",
                                 }
                                 for i in range(1, 4)
@@ -142,7 +142,7 @@ class HikkaSettingsMod(loader.Module):
             + [
                 [
                     {
-                        "text": self.strings("deauth_cancel"),
+                        "text": self.strings("deauth_cancel"),  # type: ignore[reportCallIssue]
                         "action": "close",
                     }
                 ]
@@ -152,14 +152,14 @@ class HikkaSettingsMod(loader.Module):
     @loader.command()
     async def uninstall_hikka(self, message: Message):
         await self.inline.form(
-            self.strings("deauth_confirm"),
+            self.strings("deauth_confirm"),  # type: ignore[reportCallIssue]
             message,
             [
                 {
-                    "text": self.strings("deauth_confirm_btn"),
+                    "text": self.strings("deauth_confirm_btn"),  # type: ignore[reportCallIssue]
                     "callback": self._uninstall_confirm_step_2,
                 },
-                {"text": self.strings("deauth_cancel"), "action": "close"},
+                {"text": self.strings("deauth_cancel"), "action": "close"},  # type: ignore[reportCallIssue]
             ],
         )
 
@@ -170,18 +170,18 @@ class HikkaSettingsMod(loader.Module):
             f"♻️ {watcher}" for watcher in watchers if watcher not in list(disabled_watchers.keys())
         ]
         watchers += [f"💢 {k} {v}" for k, v in disabled_watchers.items()]
-        await utils.answer(message, self.strings("watchers").format("\n".join(watchers)))
+        await utils.answer(message, self.strings("watchers").format("\n".join(watchers)))  # type: ignore[reportCallIssue]
 
     @loader.command()
     async def watcherbl(self, message: Message):
         if not (args := utils.get_args_raw(message)):
-            await utils.answer(message, self.strings("args"))
+            await utils.answer(message, self.strings("args"))  # type: ignore[reportCallIssue]
             return
 
         watchers, disabled_watchers = self.get_watchers()
 
         if args.lower() not in map(lambda x: x.lower(), watchers):
-            await utils.answer(message, self.strings("mod404").format(args))
+            await utils.answer(message, self.strings("mod404").format(args))  # type: ignore[reportCallIssue]
             return
 
         args = next((x.lower() == args.lower() for x in watchers), False)
@@ -201,7 +201,7 @@ class HikkaSettingsMod(loader.Module):
 
             await utils.answer(
                 message,
-                self.strings("disabled").format(args) + " <b>in current chat</b>",
+                self.strings("disabled").format(args) + " <b>in current chat</b>",  # type: ignore[reportCallIssue]
             )
         else:
             for k in disabled_watchers.copy():
@@ -213,7 +213,7 @@ class HikkaSettingsMod(loader.Module):
 
             await utils.answer(
                 message,
-                self.strings("enabled").format(args) + " <b>in current chat</b>",
+                self.strings("enabled").format(args) + " <b>in current chat</b>",  # type: ignore[reportCallIssue]
             )
 
         self._db.set(main.__name__, "disabled_watchers", disabled_watchers)
@@ -221,7 +221,7 @@ class HikkaSettingsMod(loader.Module):
     @loader.command()
     async def watchercmd(self, message: Message):
         if not (args := utils.get_args_raw(message)):
-            return await utils.answer(message, self.strings("args"))
+            return await utils.answer(message, self.strings("args"))  # type: ignore[reportCallIssue]
 
         chats, pm, out, incoming = False, False, False, False
 
@@ -249,7 +249,7 @@ class HikkaSettingsMod(loader.Module):
         watchers, disabled_watchers = self.get_watchers()
 
         if args.lower() not in [watcher.lower() for watcher in watchers]:
-            return await utils.answer(message, self.strings("mod404").format(args))
+            return await utils.answer(message, self.strings("mod404").format(args))  # type: ignore[reportCallIssue]
 
         args = [watcher for watcher in watchers if watcher.lower() == args.lower()][0]
 
@@ -263,19 +263,19 @@ class HikkaSettingsMod(loader.Module):
             self._db.set(main.__name__, "disabled_watchers", disabled_watchers)
             await utils.answer(
                 message,
-                self.strings("enabled").format(args) + f" (<code>{disabled_watchers[args]}</code>)",
+                self.strings("enabled").format(args) + f" (<code>{disabled_watchers[args]}</code>)",  # type: ignore[reportCallIssue]
             )
             return
 
         if args in disabled_watchers and "*" in disabled_watchers[args]:
-            await utils.answer(message, self.strings("enabled").format(args))
+            await utils.answer(message, self.strings("enabled").format(args))  # type: ignore[reportCallIssue]
             del disabled_watchers[args]
             self._db.set(main.__name__, "disabled_watchers", disabled_watchers)
             return
 
         disabled_watchers[args] = ["*"]
         self._db.set(main.__name__, "disabled_watchers", disabled_watchers)
-        await utils.answer(message, self.strings("disabled").format(args))
+        await utils.answer(message, self.strings("disabled").format(args))  # type: ignore[reportCallIssue]
 
     async def inline__setting(self, call: InlineCall, key: str, state: bool = False):
         if callable(key):
@@ -285,14 +285,14 @@ class HikkaSettingsMod(loader.Module):
 
         if key == "no_nickname" and state and self.get_prefix() == ".":
             await call.answer(
-                self.strings("nonick_warning"),
+                self.strings("nonick_warning"),  # type: ignore[reportCallIssue]
                 show_alert=True,
             )
         else:
             await call.answer("Configuration value saved!")
 
         await call.edit(
-            self.strings("inline_settings"),
+            self.strings("inline_settings"),  # type: ignore[reportCallIssue]
             reply_markup=self._get_settings_markup(),
         )
 
@@ -303,7 +303,7 @@ class HikkaSettingsMod(loader.Module):
     ):
         if confirm_required:
             await call.edit(
-                self.strings("confirm_update"),
+                self.strings("confirm_update"),  # type: ignore[reportCallIssue]
                 reply_markup=[
                     {"text": "🪂 Update", "callback": self.inline__update},
                     {"text": "🚫 Cancel", "action": "close"},
@@ -317,24 +317,24 @@ class HikkaSettingsMod(loader.Module):
 
     async def _remove_core_protection(self, call: InlineCall):
         self._db.set(main.__name__, "remove_core_protection", True)
-        await call.edit(self.strings("core_protection_removed"))
+        await call.edit(self.strings("core_protection_removed"))  # type: ignore[reportCallIssue]
 
     @loader.command()
     async def remove_core_protection(self, message: Message):
         if self._db.get(main.__name__, "remove_core_protection", False):
-            await utils.answer(message, self.strings("core_protection_already_removed"))
+            await utils.answer(message, self.strings("core_protection_already_removed"))  # type: ignore[reportCallIssue]
             return
 
         await self.inline.form(
             message=message,
-            text=self.strings("core_protection_confirm"),
+            text=self.strings("core_protection_confirm"),  # type: ignore[reportCallIssue]
             reply_markup=[
                 {
-                    "text": self.strings("core_protection_btn"),
+                    "text": self.strings("core_protection_btn"),  # type: ignore[reportCallIssue]
                     "callback": self._remove_core_protection,
                 },
                 {
-                    "text": self.strings("btn_no"),
+                    "text": self.strings("btn_no"),  # type: ignore[reportCallIssue]
                     "action": "close",
                 },
             ],
@@ -347,7 +347,7 @@ class HikkaSettingsMod(loader.Module):
     ):
         if confirm_required:
             await call.edit(
-                self.strings("confirm_restart"),
+                self.strings("confirm_restart"),  # type: ignore[reportCallIssue]
                 reply_markup=[
                     {"text": "🔄 Restart", "callback": self.inline__restart},
                     {"text": "🚫 Cancel", "action": "close"},
@@ -423,7 +423,7 @@ class HikkaSettingsMod(loader.Module):
             [
                 (
                     {
-                        "text": self.strings("do_not_suggest_fs"),
+                        "text": self.strings("do_not_suggest_fs"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__setting,
                         "args": (
                             "disable_modules_fs",
@@ -432,7 +432,7 @@ class HikkaSettingsMod(loader.Module):
                     }
                     if self._db.get(main.__name__, "disable_modules_fs", False)
                     else {
-                        "text": self.strings("suggest_fs"),
+                        "text": self.strings("suggest_fs"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__setting,
                         "args": (
                             "disable_modules_fs",
@@ -444,7 +444,7 @@ class HikkaSettingsMod(loader.Module):
             [
                 (
                     {
-                        "text": self.strings("use_fs"),
+                        "text": self.strings("use_fs"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__setting,
                         "args": (
                             "permanent_modules_fs",
@@ -453,7 +453,7 @@ class HikkaSettingsMod(loader.Module):
                     }
                     if self._db.get(main.__name__, "permanent_modules_fs", False)
                     else {
-                        "text": self.strings("do_not_use_fs"),
+                        "text": self.strings("do_not_use_fs"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__setting,
                         "args": (
                             "permanent_modules_fs",
@@ -465,7 +465,7 @@ class HikkaSettingsMod(loader.Module):
             [
                 (
                     {
-                        "text": self.strings("suggest_subscribe"),
+                        "text": self.strings("suggest_subscribe"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__setting,
                         "args": (
                             "suggest_subscribe",
@@ -474,7 +474,7 @@ class HikkaSettingsMod(loader.Module):
                     }
                     if self._db.get(main.__name__, "suggest_subscribe", True)
                     else {
-                        "text": self.strings("do_not_suggest_subscribe"),
+                        "text": self.strings("do_not_suggest_subscribe"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__setting,
                         "args": (
                             "suggest_subscribe",
@@ -485,12 +485,12 @@ class HikkaSettingsMod(loader.Module):
             ],
             [
                 {
-                    "text": self.strings("btn_restart"),
+                    "text": self.strings("btn_restart"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__restart,
                     "args": (True,),
                 },
                 {
-                    "text": self.strings("btn_update"),
+                    "text": self.strings("btn_update"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__update,
                     "args": (True,),
                 },
@@ -512,7 +512,7 @@ class HikkaSettingsMod(loader.Module):
         self,
         call: InlineCall,
     ):
-        await call.edit(self.strings("inline_settings"), reply_markup=self._get_settings_markup())
+        await call.edit(self.strings("inline_settings"), reply_markup=self._get_settings_markup())  # type: ignore[reportCallIssue]
         # await self.inline.form(
         #     self.strings("inline_settings"),
         #     message=call.message,
@@ -524,7 +524,7 @@ class HikkaSettingsMod(loader.Module):
         @loader.command()
         async def settings(self, message: Message):
             await self.inline.form(
-                self.strings("inline_settings"),
+                self.strings("inline_settings"),  # type: ignore[reportCallIssue]
                 message=message,
                 reply_markup=self._get_settings_markup(),
             )
@@ -558,14 +558,14 @@ class HikkaSettingsMod(loader.Module):
     @loader.command()
     async def invokecmd(self, message: Message):
         if not (args := utils.get_args_raw(message)) or len(args.split()) < 2:
-            await utils.answer(message, self.strings("no_args"))
+            await utils.answer(message, self.strings("no_args"))  # type: ignore[reportCallIssue]
             return
 
         module = args.split()[0]
         method = args.split(maxsplit=1)[1]
 
         if module != "core" and not self.lookup(module):
-            await utils.answer(message, self.strings("module404").format(module))
+            await utils.answer(message, self.strings("module404").format(module))  # type: ignore[reportCallIssue]
             return
 
         if (
@@ -574,10 +574,10 @@ class HikkaSettingsMod(loader.Module):
             or module != "core"
             and method not in self._get_all_IDM(module)
         ):
-            await utils.answer(message, self.strings("invoke404").format(method))
+            await utils.answer(message, self.strings("invoke404").format(method))  # type: ignore[reportCallIssue]
             return
 
-        message = await utils.answer(message, self.strings("invoking").format(method, module))
+        message = await utils.answer(message, self.strings("invoking").format(method, module))  # type: ignore[reportCallIssue]
         result = ""
 
         if module == "core":
@@ -588,7 +588,7 @@ class HikkaSettingsMod(loader.Module):
                 result = f"Dropped {len(self._client._hikka_fulluser_cache)} cache records"
                 self._client._hikka_fulluser_cache = {}
             elif method == "flush_fullchannel_cache":
-                result = f"Dropped {len(self._client._hikka_fullchannel_cache)} cache" " records"
+                result = f"Dropped {len(self._client._hikka_fullchannel_cache)} cache records"
                 self._client._hikka_fullchannel_cache = {}
             elif method == "flush_perms_cache":
                 result = f"Dropped {len(self._client._hikka_perms_cache)} cache records"
@@ -624,7 +624,7 @@ class HikkaSettingsMod(loader.Module):
                 )
             elif method == "inspect_modules":
                 result = (
-                    "Loaded modules: {}\nLoaded core modules: {}\nLoaded user" " modules: {}"
+                    "Loaded modules: {}\nLoaded core modules: {}\nLoaded user modules: {}"
                 ).format(
                     len(self.allmodules.modules),
                     sum(
@@ -640,14 +640,14 @@ class HikkaSettingsMod(loader.Module):
 
         await utils.answer(
             message,
-            self.strings("invoke").format(method, utils.escape_html(result)),
+            self.strings("invoke").format(method, utils.escape_html(result)),  # type: ignore[reportCallIssue]
         )
 
     async def blacklistcommon(self, message: Message):
         args = utils.get_args(message)
 
         if len(args) > 2:
-            await utils.answer(message, self.strings("too_many_args"))
+            await utils.answer(message, self.strings("too_many_args"))  # type: ignore[reportCallIssue]
             return
 
         chatid = None
@@ -672,7 +672,7 @@ class HikkaSettingsMod(loader.Module):
     async def hikkacmd(self, message: Message):
         await utils.answer(
             message,
-            self.strings("hikka").format(
+            self.strings("hikka").format(  # type: ignore[reportCallIssue]
                 "🌘 <b>Hikkaduwa userbot</b>",
                 *version.__version__,
                 utils.get_commit_url(),
@@ -693,15 +693,15 @@ class HikkaSettingsMod(loader.Module):
     @loader.command()
     async def setprefix(self, message: Message):
         if not (args := utils.get_args_raw(message)):
-            await utils.answer(message, self.strings("what_prefix"))
+            await utils.answer(message, self.strings("what_prefix"))  # type: ignore[reportCallIssue]
             return
 
         if len(args) != 1:
-            await utils.answer(message, self.strings("prefix_incorrect"))
+            await utils.answer(message, self.strings("prefix_incorrect"))  # type: ignore[reportCallIssue]
             return
 
         if args == "s":
-            await utils.answer(message, self.strings("prefix_incorrect"))
+            await utils.answer(message, self.strings("prefix_incorrect"))  # type: ignore[reportCallIssue]
             return
 
         oldprefix = utils.escape_html(self.get_prefix())
@@ -712,7 +712,7 @@ class HikkaSettingsMod(loader.Module):
         )
         await utils.answer(
             message,
-            self.strings("prefix_set").format(
+            self.strings("prefix_set").format(  # type: ignore[reportCallIssue]
                 "👍",
                 newprefix=utils.escape_html(args[0]),
                 oldprefix=utils.escape_html(oldprefix),
@@ -723,7 +723,7 @@ class HikkaSettingsMod(loader.Module):
     async def aliases(self, message: Message):
         await utils.answer(
             message,
-            self.strings("aliases")
+            self.strings("aliases")  # type: ignore[reportCallIssue]
             + "\n".join(
                 [f"▫️ <code>{i}</code> &lt;- {y}" for i, y in self.allmodules.aliases.items()]
             ),
@@ -732,7 +732,7 @@ class HikkaSettingsMod(loader.Module):
     @loader.command()
     async def addalias(self, message: Message):
         if len(args := utils.get_args(message)) != 2:
-            await utils.answer(message, self.strings("alias_args"))
+            await utils.answer(message, self.strings("alias_args"))  # type: ignore[reportCallIssue]
             return
 
         alias, cmd = args
@@ -746,12 +746,12 @@ class HikkaSettingsMod(loader.Module):
             )
             await utils.answer(
                 message,
-                self.strings("alias_created").format(utils.escape_html(alias)),
+                self.strings("alias_created").format(utils.escape_html(alias)),  # type: ignore[reportCallIssue]
             )
         else:
             await utils.answer(
                 message,
-                self.strings("no_command").format(utils.escape_html(cmd)),
+                self.strings("no_command").format(utils.escape_html(cmd)),  # type: ignore[reportCallIssue]
             )
 
     @loader.command()
@@ -759,7 +759,7 @@ class HikkaSettingsMod(loader.Module):
         args = utils.get_args(message)
 
         if len(args) != 1:
-            await utils.answer(message, self.strings("delalias_args"))
+            await utils.answer(message, self.strings("delalias_args"))  # type: ignore[reportCallIssue]
             return
 
         alias = args[0]
@@ -767,7 +767,7 @@ class HikkaSettingsMod(loader.Module):
         if not self.allmodules.remove_alias(alias):
             await utils.answer(
                 message,
-                self.strings("no_alias").format(utils.escape_html(alias)),
+                self.strings("no_alias").format(utils.escape_html(alias)),  # type: ignore[reportCallIssue]
             )
             return
 
@@ -776,7 +776,7 @@ class HikkaSettingsMod(loader.Module):
         self.set("aliases", current)
         await utils.answer(
             message,
-            self.strings("alias_removed").format(utils.escape_html(alias)),
+            self.strings("alias_removed").format(utils.escape_html(alias)),  # type: ignore[reportCallIssue]
         )
 
     @loader.command()
@@ -786,11 +786,11 @@ class HikkaSettingsMod(loader.Module):
             message,
             reply_markup=[
                 {
-                    "text": self.strings("cleardb_confirm"),
+                    "text": self.strings("cleardb_confirm"),  # type: ignore[reportCallIssue]
                     "callback": self._inline__cleardb,
                 },
                 {
-                    "text": self.strings("cancel"),
+                    "text": self.strings("cancel"),  # type: ignore[reportCallIssue]
                     "action": "close",
                 },
             ],
@@ -805,7 +805,7 @@ class HikkaSettingsMod(loader.Module):
             or len(args) <= 4
             or any(litera not in (string.ascii_letters + string.digits + "_") for litera in args)
         ):
-            await utils.answer(message, self.strings("bot_username_invalid"))
+            await utils.answer(message, self.strings("bot_username_invalid"))  # type: ignore[reportCallIssue]
             return
 
         try:
@@ -814,14 +814,14 @@ class HikkaSettingsMod(loader.Module):
             pass
         else:
             if not await self._check_bot(args):
-                await utils.answer(message, self.strings("bot_username_occupied"))
+                await utils.answer(message, self.strings("bot_username_occupied"))  # type: ignore[reportCallIssue]
                 return
 
         self._db.set("hikka.inline", "custom_bot", args)
         self._db.set("hikka.inline", "bot_token", None)
-        await utils.answer(message, self.strings("bot_updated"))
+        await utils.answer(message, self.strings("bot_updated"))  # type: ignore[reportCallIssue]
 
     async def _inline__cleardb(self, call: InlineCall):
         self._db.clear()
         self._db.save()
-        await utils.answer(call, self.strings("db_cleared"))
+        await utils.answer(call, self.strings("db_cleared"))  # type: ignore[reportCallIssue]

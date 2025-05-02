@@ -70,25 +70,25 @@ class APIRatelimiterMod(loader.Module):
             loader.ConfigValue(
                 "time_sample",
                 15,
-                lambda: self.strings("_cfg_time_sample"),
+                lambda: self.strings("_cfg_time_sample"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Integer(minimum=1),
             ),
             loader.ConfigValue(
                 "threshold",
                 100,
-                lambda: self.strings("_cfg_threshold"),
+                lambda: self.strings("_cfg_threshold"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Integer(minimum=10),
             ),
             loader.ConfigValue(
                 "local_floodwait",
                 30,
-                lambda: self.strings("_cfg_local_floodwait"),
+                lambda: self.strings("_cfg_local_floodwait"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Integer(minimum=10, maximum=3600),
             ),
             loader.ConfigValue(
                 "forbidden_methods",
                 ["joinChannel", "importChatInvite"],
-                lambda: self.strings("_cfg_forbidden_methods"),
+                lambda: self.strings("_cfg_forbidden_methods"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.MultiChoice(
                     [
                         "sendReaction",
@@ -159,7 +159,7 @@ class APIRatelimiterMod(loader.Module):
                             self.tg_id,
                             report,
                             caption=self.inline.sanitise_text(
-                                self.strings("warning").format(
+                                self.strings("warning").format(  # type: ignore[reportCallIssue]
                                     self.config["local_floodwait"],
                                     prefix=utils.escape_html(self.get_prefix()),
                                 )
@@ -186,20 +186,20 @@ class APIRatelimiterMod(loader.Module):
     @loader.command()
     async def suspend_api_protect(self, message: Message):
         if not (args := utils.get_args_raw(message)) or not args.isdigit():
-            await utils.answer(message, self.strings("args_invalid"))
+            await utils.answer(message, self.strings("args_invalid"))  # type: ignore[reportCallIssue]
             return
 
         self._suspend_until = time.perf_counter() + int(args)
-        await utils.answer(message, self.strings("suspended_for").format(args))
+        await utils.answer(message, self.strings("suspended_for").format(args))  # type: ignore[reportCallIssue]
 
     @loader.command()
     async def api_fw_protection(self, message: Message):
         await self.inline.form(
             message=message,
-            text=self.strings("u_sure"),
+            text=self.strings("u_sure"),  # type: ignore[reportCallIssue]
             reply_markup=[
-                {"text": self.strings("btn_no"), "action": "close"},
-                {"text": self.strings("btn_yes"), "callback": self._finish},
+                {"text": self.strings("btn_no"), "action": "close"},  # type: ignore[reportCallIssue]
+                {"text": self.strings("btn_yes"), "callback": self._finish},  # type: ignore[reportCallIssue]
             ],
         )
 
@@ -210,4 +210,4 @@ class APIRatelimiterMod(loader.Module):
     async def _finish(self, call: InlineCall):
         state = self.get("disable_protection", True)
         self.set("disable_protection", not state)
-        await call.edit(self.strings("on" if state else "off"))
+        await call.edit(self.strings("on" if state else "off"))  # type: ignore[reportCallIssue]

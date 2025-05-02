@@ -40,7 +40,7 @@ class Evaluator(loader.Module):
 
             await utils.answer(
                 message,
-                self.strings("err").format(
+                self.strings("err").format(  # type: ignore[reportCallIssue]
                     "4985626654563894116",
                     utils.escape_html(utils.get_args_raw(message)),
                     self.censor(
@@ -63,7 +63,7 @@ class Evaluator(loader.Module):
         with contextlib.suppress(MessageIdInvalidError):
             await utils.answer(
                 message,
-                self.strings("eval").format(
+                self.strings("eval").format(  # type: ignore[reportCallIssue]
                     "4985626654563894116",
                     utils.escape_html(utils.get_args_raw(message)),
                     utils.escape_html(self.censor(str(result))),
@@ -74,19 +74,19 @@ class Evaluator(loader.Module):
         ret = ret.replace(str(self._client.hikka_me.phone), "&lt;phone&gt;")
 
         if redis := os.environ.get("REDIS_URL") or main.get_config_key("redis_uri"):
-            ret = ret.replace(redis, f'redis://{"*" * 26}')
+            ret = ret.replace(redis, f"redis://{'*' * 26}")
 
         if db := os.environ.get("DATABASE_URL") or main.get_config_key("db_uri"):
-            ret = ret.replace(db, f'postgresql://{"*" * 26}')
+            ret = ret.replace(db, f"postgresql://{'*' * 26}")
 
         if btoken := self._db.get("hikka.inline", "bot_token", False):
             ret = ret.replace(
                 btoken,
-                f'{btoken.split(":")[0]}:{"*" * 26}',
+                f"{btoken.split(':')[0]}:{'*' * 26}",
             )
 
         if htoken := self.lookup("loader").get("token", False):
-            ret = ret.replace(htoken, f'eugeo_{"*" * 26}')
+            ret = ret.replace(htoken, f"eugeo_{'*' * 26}")
 
         ret = ret.replace(
             StringSession.save(self._client.session),

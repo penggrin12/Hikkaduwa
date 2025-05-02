@@ -74,7 +74,7 @@ class MessageEditor:
         message: telethon.tl.types.Message,
         command: str,
         config,
-        strings,
+        strings: typing.Callable[[str], str],
         request_message,
     ):
         self.message = message
@@ -302,7 +302,7 @@ class TerminalMod(loader.Module):
             loader.ConfigValue(
                 "FLOOD_WAIT_PROTECT",
                 2,
-                lambda: self.strings("fw_protect"),
+                lambda: self.strings("fw_protect"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Integer(minimum=0),
             ),
         )
@@ -355,7 +355,7 @@ class TerminalMod(loader.Module):
         )
 
         if editor is None:
-            editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
+            editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)  # type: ignore[reportArgumentType]
 
         editor.update_process(sproc)
 
@@ -382,7 +382,7 @@ class TerminalMod(loader.Module):
     @loader.command()
     async def terminatecmd(self, message):
         if not message.is_reply:
-            await utils.answer(message, self.strings("what_to_kill"))
+            await utils.answer(message, self.strings("what_to_kill"))  # type: ignore[reportCallIssue]
             return
 
         if hash_msg(await message.get_reply_message()) in self.activecmds:
@@ -393,8 +393,8 @@ class TerminalMod(loader.Module):
                     self.activecmds[hash_msg(await message.get_reply_message())].kill()
             except Exception:
                 logger.exception("Killing process failed")
-                await utils.answer(message, self.strings("kill_fail"))
+                await utils.answer(message, self.strings("kill_fail"))  # type: ignore[reportCallIssue]
             else:
-                await utils.answer(message, self.strings("killed"))
+                await utils.answer(message, self.strings("killed"))  # type: ignore[reportCallIssue]
         else:
-            await utils.answer(message, self.strings("no_cmd"))
+            await utils.answer(message, self.strings("no_cmd"))  # type: ignore[reportCallIssue]

@@ -52,7 +52,7 @@ class Help(loader.Module):
     @loader.command()
     async def helphide(self, message: Message):
         if not (modules := utils.get_args(message)):
-            await utils.answer(message, self.strings("no_mod"))
+            await utils.answer(message, self.strings("no_mod"))  # type: ignore[reportCallIssue]
             return
 
         currently_hidden = self.get("hide", [])
@@ -71,7 +71,7 @@ class Help(loader.Module):
 
         await utils.answer(
             message,
-            self.strings("hidden_shown").format(
+            self.strings("hidden_shown").format(  # type: ignore[reportCallIssue]
                 len(hidden),
                 len(shown),
                 "\n".join([f"👁‍🗨 <i>{m}</i>" for m in hidden]),
@@ -141,17 +141,17 @@ class Help(loader.Module):
 
         if hasattr(module, "inline_handlers"):
             for name, fun in module.inline_handlers.items():
-                reply += "\n🤖" " <code>{}</code> {}".format(
+                reply += "\n🤖 <code>{}</code> {}".format(
                     f"@{self.inline.bot_username} {name}",
                     (
                         utils.escape_html(inspect.getdoc(fun))
                         if fun.__doc__
-                        else self.strings("undoc")
+                        else self.strings("undoc")  # type: ignore[reportCallIssue]
                     ),
                 )
 
         for name, fun in commands.items():
-            reply += "\n▫️" " <code>{}{}</code>{} {}".format(
+            reply += "\n▫️ <code>{}{}</code>{} {}".format(
                 utils.escape_html(self.get_prefix()),
                 name,
                 (
@@ -167,15 +167,15 @@ class Help(loader.Module):
                     if self.find_aliases(name)
                     else ""
                 ),
-                (utils.escape_html(inspect.getdoc(fun)) if fun.__doc__ else self.strings("undoc")),
+                (utils.escape_html(inspect.getdoc(fun)) if fun.__doc__ else self.strings("undoc")),  # type: ignore[reportCallIssue]
             )
 
         await utils.answer(
             message,
             reply
-            + (f"\n\n{self.strings('not_exact')}" if not exact else "")
+            + (f"\n\n{self.strings('not_exact')}" if not exact else "")  # type: ignore[reportCallIssue]
             + (
-                f"\n\n{self.strings('core_notice')}"
+                f"\n\n{self.strings('core_notice')}"  # type: ignore[reportCallIssue]
                 if module.__origin__.startswith("<core")
                 else ""
             ),
@@ -263,7 +263,7 @@ class Help(loader.Module):
                 else:
                     plain_ += [tmp]
 
-        reply = self.strings("all_header").format(
+        reply = self.strings("all_header").format(  # type: ignore[reportCallIssue]
             len(self.allmodules.modules),
             (
                 0
@@ -285,7 +285,7 @@ class Help(loader.Module):
                 (
                     ""
                     if self.lookup("Loader").fully_loaded
-                    else f"\n\n{self.strings('partial_load')}"
+                    else f"\n\n{self.strings('partial_load')}"  # type: ignore[reportCallIssue]
                 ),
             ),
         )
@@ -293,9 +293,9 @@ class Help(loader.Module):
     @loader.command()
     async def support(self, message):
         if message.out:
-            await self.request_join("@hikka_talks", self.strings("request_join"))
+            await self.request_join("@hikka_talks", self.strings("request_join"))  # type: ignore[reportCallIssue]
 
         await utils.answer(
             message,
-            self.strings("support").format("🌘"),
+            self.strings("support").format("🌘"),  # type: ignore[reportCallIssue]
         )

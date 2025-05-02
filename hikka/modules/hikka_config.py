@@ -74,9 +74,9 @@ class HikkaConfigMod(loader.Module):
             self.lookup(mod).config[option] = query
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.strings("validation_error").format(e.args[0]),
+                self.strings("validation_error").format(e.args[0]),  # type: ignore[reportCallIssue]
                 reply_markup={
-                    "text": self.strings("try_again"),
+                    "text": self.strings("try_again"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__configure_option,
                     "args": (mod, option),
                     "kwargs": {"obj_type": obj_type},
@@ -85,7 +85,7 @@ class HikkaConfigMod(loader.Module):
             return
 
         await call.edit(
-            self.strings(
+            self.strings(  # type: ignore[reportCallIssue]
                 "option_saved" if isinstance(obj_type, bool) else "option_saved_lib"
             ).format(
                 utils.escape_html(option),
@@ -95,12 +95,12 @@ class HikkaConfigMod(loader.Module):
             reply_markup=[
                 [
                     {
-                        "text": self.strings("back_btn"),
+                        "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__configure,
                         "args": (mod,),
                         "kwargs": {"obj_type": obj_type},
                     },
-                    {"text": self.strings("close_btn"), "action": "close"},
+                    {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
                 ]
             ],
             inline_message_id=inline_message_id,
@@ -117,7 +117,7 @@ class HikkaConfigMod(loader.Module):
         mod_instance.config[option] = mod_instance.config.getdef(option)
 
         await call.edit(
-            self.strings(
+            self.strings(  # type: ignore[reportCallIssue]
                 "option_reset" if isinstance(obj_type, bool) else "option_reset_lib"
             ).format(
                 utils.escape_html(option),
@@ -127,12 +127,12 @@ class HikkaConfigMod(loader.Module):
             reply_markup=[
                 [
                     {
-                        "text": self.strings("back_btn"),
+                        "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__configure,
                         "args": (mod,),
                         "kwargs": {"obj_type": obj_type},
                     },
-                    {"text": self.strings("close_btn"), "action": "close"},
+                    {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
                 ]
             ],
         )
@@ -149,9 +149,9 @@ class HikkaConfigMod(loader.Module):
             self.lookup(mod).config[option] = value
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.strings("validation_error").format(e.args[0]),
+                self.strings("validation_error").format(e.args[0]),  # type: ignore[reportCallIssue]
                 reply_markup={
-                    "text": self.strings("try_again"),
+                    "text": self.strings("try_again"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__configure_option,
                     "args": (mod, option),
                     "kwargs": {"obj_type": obj_type},
@@ -172,7 +172,7 @@ class HikkaConfigMod(loader.Module):
         )
 
         await call.edit(
-            self.strings(
+            self.strings(  # type: ignore[reportCallIssue]
                 "configuring_option" if isinstance(obj_type, bool) else "configuring_option_lib"
             ).format(
                 utils.escape_html(option),
@@ -185,7 +185,7 @@ class HikkaConfigMod(loader.Module):
                     else self.hide_value(self.lookup(mod).config[option])
                 ),
                 (
-                    self.strings("typehint").format(
+                    self.strings("typehint").format(  # type: ignore[reportCallIssue]
                         doc,
                         eng_art="n" if doc.lower().startswith(tuple("euioay")) else "",
                     )
@@ -209,7 +209,7 @@ class HikkaConfigMod(loader.Module):
                 *(
                     [
                         {
-                            "text": f"❌ {self.strings('set')} `False`",
+                            "text": f"❌ {self.strings('set')} `False`",  # type: ignore[reportCallIssue]
                             "callback": self.inline__set_bool,
                             "args": (mod, option, False),
                             "kwargs": {"obj_type": obj_type},
@@ -218,7 +218,7 @@ class HikkaConfigMod(loader.Module):
                     if self.lookup(mod).config[option]
                     else [
                         {
-                            "text": f"✅ {self.strings('set')} `True`",
+                            "text": f"✅ {self.strings('set')} `True`",  # type: ignore[reportCallIssue]
                             "callback": self.inline__set_bool,
                             "args": (mod, option, True),
                             "kwargs": {"obj_type": obj_type},
@@ -230,7 +230,7 @@ class HikkaConfigMod(loader.Module):
                 *(
                     [
                         {
-                            "text": self.strings("set_default_btn"),
+                            "text": self.strings("set_default_btn"),  # type: ignore[reportCallIssue]
                             "callback": self.inline__reset_default,
                             "args": (mod, option),
                             "kwargs": {"obj_type": obj_type},
@@ -242,12 +242,12 @@ class HikkaConfigMod(loader.Module):
             ],
             [
                 {
-                    "text": self.strings("back_btn"),
+                    "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__configure,
                     "args": (mod,),
                     "kwargs": {"obj_type": obj_type},
                 },
-                {"text": self.strings("close_btn"), "action": "close"},
+                {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
             ],
         ]
 
@@ -273,9 +273,9 @@ class HikkaConfigMod(loader.Module):
             self.lookup(mod).config[option] = self.lookup(mod).config[option] + query
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.strings("validation_error").format(e.args[0]),
+                self.strings("validation_error").format(e.args[0]),  # type: ignore[reportCallIssue]
                 reply_markup={
-                    "text": self.strings("try_again"),
+                    "text": self.strings("try_again"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__configure_option,
                     "args": (mod, option),
                     "kwargs": {"obj_type": obj_type},
@@ -284,7 +284,7 @@ class HikkaConfigMod(loader.Module):
             return
 
         await call.edit(
-            self.strings(
+            self.strings(  # type: ignore[reportCallIssue]
                 "option_saved" if isinstance(obj_type, bool) else "option_saved_lib"
             ).format(
                 utils.escape_html(option),
@@ -294,12 +294,12 @@ class HikkaConfigMod(loader.Module):
             reply_markup=[
                 [
                     {
-                        "text": self.strings("back_btn"),
+                        "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__configure,
                         "args": (mod,),
                         "kwargs": {"obj_type": obj_type},
                     },
-                    {"text": self.strings("close_btn"), "action": "close"},
+                    {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
                 ]
             ],
             inline_message_id=inline_message_id,
@@ -334,13 +334,13 @@ class HikkaConfigMod(loader.Module):
 
             if old_config_len == len(self.lookup(mod).config[option]):
                 raise loader.validators.ValidationError(
-                    f"Nothing from passed value ({self.prep_value(query)}) is not in" " target list"
+                    f"Nothing from passed value ({self.prep_value(query)}) is not in target list"
                 )
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.strings("validation_error").format(e.args[0]),
+                self.strings("validation_error").format(e.args[0]),  # type: ignore[reportCallIssue]
                 reply_markup={
-                    "text": self.strings("try_again"),
+                    "text": self.strings("try_again"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__configure_option,
                     "args": (mod, option),
                     "kwargs": {"obj_type": obj_type},
@@ -349,7 +349,7 @@ class HikkaConfigMod(loader.Module):
             return
 
         await call.edit(
-            self.strings(
+            self.strings(  # type: ignore[reportCallIssue]
                 "option_saved" if isinstance(obj_type, bool) else "option_saved_lib"
             ).format(
                 utils.escape_html(option),
@@ -359,12 +359,12 @@ class HikkaConfigMod(loader.Module):
             reply_markup=[
                 [
                     {
-                        "text": self.strings("back_btn"),
+                        "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__configure,
                         "args": (mod,),
                         "kwargs": {"obj_type": obj_type},
                     },
-                    {"text": self.strings("close_btn"), "action": "close"},
+                    {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
                 ]
             ],
             inline_message_id=inline_message_id,
@@ -380,8 +380,8 @@ class HikkaConfigMod(loader.Module):
         return [
             [
                 {
-                    "text": self.strings("enter_value_btn"),
-                    "input": self.strings("enter_value_desc"),
+                    "text": self.strings("enter_value_btn"),  # type: ignore[reportCallIssue]
+                    "input": self.strings("enter_value_desc"),  # type: ignore[reportCallIssue]
                     "handler": self.inline__set_config,
                     "args": (mod, option, call.inline_message_id),
                     "kwargs": {"obj_type": obj_type},
@@ -391,15 +391,15 @@ class HikkaConfigMod(loader.Module):
                 *(
                     [
                         {
-                            "text": self.strings("remove_item_btn"),
-                            "input": self.strings("remove_item_desc"),
+                            "text": self.strings("remove_item_btn"),  # type: ignore[reportCallIssue]
+                            "input": self.strings("remove_item_desc"),  # type: ignore[reportCallIssue]
                             "handler": self.inline__remove_item,
                             "args": (mod, option, call.inline_message_id),
                             "kwargs": {"obj_type": obj_type},
                         },
                         {
-                            "text": self.strings("add_item_btn"),
-                            "input": self.strings("add_item_desc"),
+                            "text": self.strings("add_item_btn"),  # type: ignore[reportCallIssue]
+                            "input": self.strings("add_item_desc"),  # type: ignore[reportCallIssue]
                             "handler": self.inline__add_item,
                             "args": (mod, option, call.inline_message_id),
                             "kwargs": {"obj_type": obj_type},
@@ -413,7 +413,7 @@ class HikkaConfigMod(loader.Module):
                 *(
                     [
                         {
-                            "text": self.strings("set_default_btn"),
+                            "text": self.strings("set_default_btn"),  # type: ignore[reportCallIssue]
                             "callback": self.inline__reset_default,
                             "args": (mod, option),
                             "kwargs": {"obj_type": obj_type},
@@ -425,12 +425,12 @@ class HikkaConfigMod(loader.Module):
             ],
             [
                 {
-                    "text": self.strings("back_btn"),
+                    "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__configure,
                     "args": (mod,),
                     "kwargs": {"obj_type": obj_type},
                 },
-                {"text": self.strings("close_btn"), "action": "close"},
+                {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
             ],
         ]
 
@@ -446,9 +446,9 @@ class HikkaConfigMod(loader.Module):
             self.lookup(mod).config[option] = value
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.strings("validation_error").format(e.args[0]),
+                self.strings("validation_error").format(e.args[0]),  # type: ignore[reportCallIssue]
                 reply_markup={
-                    "text": self.strings("try_again"),
+                    "text": self.strings("try_again"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__configure_option,
                     "args": (mod, option),
                     "kwargs": {"obj_type": obj_type},
@@ -457,7 +457,7 @@ class HikkaConfigMod(loader.Module):
             return
 
         await call.edit(
-            self.strings(
+            self.strings(  # type: ignore[reportCallIssue]
                 "option_saved" if isinstance(obj_type, bool) else "option_saved_lib"
             ).format(
                 utils.escape_html(option),
@@ -467,12 +467,12 @@ class HikkaConfigMod(loader.Module):
             reply_markup=[
                 [
                     {
-                        "text": self.strings("back_btn"),
+                        "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__configure,
                         "args": (mod,),
                         "kwargs": {"obj_type": obj_type},
                     },
-                    {"text": self.strings("close_btn"), "action": "close"},
+                    {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
                 ]
             ],
         )
@@ -496,9 +496,9 @@ class HikkaConfigMod(loader.Module):
             self.lookup(mod).config.reload()
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.strings("validation_error").format(e.args[0]),
+                self.strings("validation_error").format(e.args[0]),  # type: ignore[reportCallIssue]
                 reply_markup={
-                    "text": self.strings("try_again"),
+                    "text": self.strings("try_again"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__configure_option,
                     "args": (mod, option),
                     "kwargs": {"obj_type": obj_type},
@@ -522,8 +522,8 @@ class HikkaConfigMod(loader.Module):
         return [
             [
                 {
-                    "text": self.strings("enter_value_btn"),
-                    "input": self.strings("enter_value_desc"),
+                    "text": self.strings("enter_value_btn"),  # type: ignore[reportCallIssue]
+                    "input": self.strings("enter_value_desc"),  # type: ignore[reportCallIssue]
                     "handler": self.inline__set_config,
                     "args": (mod, option, call.inline_message_id),
                     "kwargs": {"obj_type": obj_type},
@@ -553,7 +553,7 @@ class HikkaConfigMod(loader.Module):
                 *(
                     [
                         {
-                            "text": self.strings("set_default_btn"),
+                            "text": self.strings("set_default_btn"),  # type: ignore[reportCallIssue]
                             "callback": self.inline__reset_default,
                             "args": (mod, option),
                             "kwargs": {"obj_type": obj_type},
@@ -565,12 +565,12 @@ class HikkaConfigMod(loader.Module):
             ],
             [
                 {
-                    "text": self.strings("back_btn"),
+                    "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__configure,
                     "args": (mod,),
                     "kwargs": {"obj_type": obj_type},
                 },
-                {"text": self.strings("close_btn"), "action": "close"},
+                {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
             ],
         ]
 
@@ -587,8 +587,8 @@ class HikkaConfigMod(loader.Module):
         return [
             [
                 {
-                    "text": self.strings("enter_value_btn"),
-                    "input": self.strings("enter_value_desc"),
+                    "text": self.strings("enter_value_btn"),  # type: ignore[reportCallIssue]
+                    "input": self.strings("enter_value_desc"),  # type: ignore[reportCallIssue]
                     "handler": self.inline__set_config,
                     "args": (mod, option, call.inline_message_id),
                     "kwargs": {"obj_type": obj_type},
@@ -618,7 +618,7 @@ class HikkaConfigMod(loader.Module):
                 *(
                     [
                         {
-                            "text": self.strings("set_default_btn"),
+                            "text": self.strings("set_default_btn"),  # type: ignore[reportCallIssue]
                             "callback": self.inline__reset_default,
                             "args": (mod, option),
                             "kwargs": {"obj_type": obj_type},
@@ -630,12 +630,12 @@ class HikkaConfigMod(loader.Module):
             ],
             [
                 {
-                    "text": self.strings("back_btn"),
+                    "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__configure,
                     "args": (mod,),
                     "kwargs": {"obj_type": obj_type},
                 },
-                {"text": self.strings("close_btn"), "action": "close"},
+                {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
             ],
         ]
 
@@ -670,7 +670,7 @@ class HikkaConfigMod(loader.Module):
                 [
                     [
                         {
-                            "text": self.strings("hide_value"),
+                            "text": self.strings("hide_value"),  # type: ignore[reportCallIssue]
                             "callback": self.inline__configure_option,
                             "args": (mod, config_opt, False),
                             "kwargs": {"obj_type": obj_type},
@@ -681,7 +681,7 @@ class HikkaConfigMod(loader.Module):
                 else [
                     [
                         {
-                            "text": self.strings("show_hidden"),
+                            "text": self.strings("show_hidden"),  # type: ignore[reportCallIssue]
                             "callback": self.inline__configure_option,
                             "args": (mod, config_opt, True),
                             "kwargs": {"obj_type": obj_type},
@@ -710,14 +710,14 @@ class HikkaConfigMod(loader.Module):
             args += [""]
         else:
             args += [
-                self.strings("typehint").format(
+                self.strings("typehint").format(  # type: ignore[reportCallIssue]
                     doc,
                     eng_art="n" if doc.lower().startswith(tuple("euioay")) else "",
                 )
             ]
             if validator.internal_id == "Boolean":
                 await call.edit(
-                    self.strings(
+                    self.strings(  # type: ignore[reportCallIssue]
                         "configuring_option"
                         if isinstance(obj_type, bool)
                         else "configuring_option_lib"
@@ -729,7 +729,7 @@ class HikkaConfigMod(loader.Module):
 
             if validator.internal_id == "Series":
                 await call.edit(
-                    self.strings(
+                    self.strings(  # type: ignore[reportCallIssue]
                         "configuring_option"
                         if isinstance(obj_type, bool)
                         else "configuring_option_lib"
@@ -741,7 +741,7 @@ class HikkaConfigMod(loader.Module):
 
             if validator.internal_id == "Choice":
                 await call.edit(
-                    self.strings(
+                    self.strings(  # type: ignore[reportCallIssue]
                         "configuring_option"
                         if isinstance(obj_type, bool)
                         else "configuring_option_lib"
@@ -753,7 +753,7 @@ class HikkaConfigMod(loader.Module):
 
             if validator.internal_id == "MultiChoice":
                 await call.edit(
-                    self.strings(
+                    self.strings(  # type: ignore[reportCallIssue]
                         "configuring_option"
                         if isinstance(obj_type, bool)
                         else "configuring_option_lib"
@@ -764,15 +764,15 @@ class HikkaConfigMod(loader.Module):
                 return
 
         await call.edit(
-            self.strings(
+            self.strings(  # type: ignore[reportCallIssue]
                 "configuring_option" if isinstance(obj_type, bool) else "configuring_option_lib"
             ).format(*args),
             reply_markup=additonal_button_row
             + [
                 [
                     {
-                        "text": self.strings("enter_value_btn"),
-                        "input": self.strings("enter_value_desc"),
+                        "text": self.strings("enter_value_btn"),  # type: ignore[reportCallIssue]
+                        "input": self.strings("enter_value_desc"),  # type: ignore[reportCallIssue]
                         "handler": self.inline__set_config,
                         "args": (mod, config_opt, call.inline_message_id),
                         "kwargs": {"obj_type": obj_type},
@@ -780,7 +780,7 @@ class HikkaConfigMod(loader.Module):
                 ],
                 [
                     {
-                        "text": self.strings("set_default_btn"),
+                        "text": self.strings("set_default_btn"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__reset_default,
                         "args": (mod, config_opt),
                         "kwargs": {"obj_type": obj_type},
@@ -788,12 +788,12 @@ class HikkaConfigMod(loader.Module):
                 ],
                 [
                     {
-                        "text": self.strings("back_btn"),
+                        "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__configure,
                         "args": (mod,),
                         "kwargs": {"obj_type": obj_type},
                     },
-                    {"text": self.strings("close_btn"), "action": "close"},
+                    {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
                 ],
             ],
         )
@@ -815,7 +815,7 @@ class HikkaConfigMod(loader.Module):
         ]
 
         await call.edit(
-            self.strings(
+            self.strings(  # type: ignore[reportCallIssue]
                 "configuring_mod" if isinstance(obj_type, bool) else "configuring_lib"
             ).format(
                 utils.escape_html(mod),
@@ -833,11 +833,11 @@ class HikkaConfigMod(loader.Module):
             + [
                 [
                     {
-                        "text": self.strings("back_btn"),
+                        "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__global_config,
                         "kwargs": {"obj_type": obj_type},
                     },
-                    {"text": self.strings("close_btn"), "action": "close"},
+                    {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
                 ]
             ],
         )
@@ -845,20 +845,20 @@ class HikkaConfigMod(loader.Module):
     async def inline__choose_category(self, call: typing.Union[Message, InlineCall]):
         await utils.answer(
             call,
-            self.strings("choose_core"),
+            self.strings("choose_core"),  # type: ignore[reportCallIssue]
             reply_markup=[
                 [
                     {
-                        "text": self.strings("settings"),
+                        "text": self.strings("settings"),  # type: ignore[reportCallIssue]
                         "callback": self.lookup("HikkaSettings").inline__settings,
                     },
                     {
-                        "text": self.strings("builtin"),
+                        "text": self.strings("builtin"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__global_config,
                         "kwargs": {"obj_type": True},
                     },
                     {
-                        "text": self.strings("external"),
+                        "text": self.strings("external"),  # type: ignore[reportCallIssue]
                         "callback": self.inline__global_config,
                     },
                 ],
@@ -866,7 +866,7 @@ class HikkaConfigMod(loader.Module):
                     [
                         [
                             {
-                                "text": self.strings("libraries"),
+                                "text": self.strings("libraries"),  # type: ignore[reportCallIssue]
                                 "callback": self.inline__global_config,
                                 "kwargs": {"obj_type": "library"},
                             }
@@ -876,7 +876,7 @@ class HikkaConfigMod(loader.Module):
                     and any(hasattr(lib, "config") for lib in self.allmodules.libraries)
                     else []
                 ),
-                [{"text": self.strings("close_btn"), "action": "close"}],
+                [{"text": self.strings("close_btn"), "action": "close"}],  # type: ignore[reportCallIssue]
             ],
         )
 
@@ -926,15 +926,15 @@ class HikkaConfigMod(loader.Module):
         kb += [
             [
                 {
-                    "text": self.strings("back_btn"),
+                    "text": self.strings("back_btn"),  # type: ignore[reportCallIssue]
                     "callback": self.inline__choose_category,
                 },
-                {"text": self.strings("close_btn"), "action": "close"},
+                {"text": self.strings("close_btn"), "action": "close"},  # type: ignore[reportCallIssue]
             ]
         ]
 
         await call.edit(
-            self.strings("configure" if isinstance(obj_type, bool) else "configure_lib"),
+            self.strings("configure" if isinstance(obj_type, bool) else "configure_lib"),  # type: ignore[reportCallIssue]
             reply_markup=kb,
         )
 
@@ -959,23 +959,23 @@ class HikkaConfigMod(loader.Module):
         args = utils.get_args_raw(message).split(maxsplit=2)
 
         if len(args) < 3:
-            await utils.answer(message, self.strings("args"))
+            await utils.answer(message, self.strings("args"))  # type: ignore[reportCallIssue]
             return
 
         mod, option, value = args
 
         if not (instance := self.lookup(mod)):
-            await utils.answer(message, self.strings("no_mod"))
+            await utils.answer(message, self.strings("no_mod"))  # type: ignore[reportCallIssue]
             return
 
         if option not in instance.config:
-            await utils.answer(message, self.strings("no_option"))
+            await utils.answer(message, self.strings("no_option"))  # type: ignore[reportCallIssue]
             return
 
         instance.config[option] = value
         await utils.answer(
             message,
-            self.strings(
+            self.strings(  # type: ignore[reportCallIssue]
                 "option_saved" if isinstance(instance, loader.Module) else "option_saved_lib"
             ).format(
                 utils.escape_html(option),

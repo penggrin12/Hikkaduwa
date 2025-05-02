@@ -71,7 +71,7 @@ class LoaderMod(loader.Module):
             loader.ConfigValue(
                 "MODULES_REPO",
                 "https://mods.hikariatama.ru",
-                lambda: self.strings("repo_config_doc"),
+                lambda: self.strings("repo_config_doc"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Link(),
             ),
             loader.ConfigValue(
@@ -82,18 +82,18 @@ class LoaderMod(loader.Module):
                     "https://github.com/MoriSummerz/ftg-mods/raw/main",
                     "https://gitlab.com/CakesTwix/friendly-userbot-modules/-/raw/master",
                 ],
-                lambda: self.strings("add_repo_config_doc"),
+                lambda: self.strings("add_repo_config_doc"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Series(validator=loader.validators.Link()),
             ),
             loader.ConfigValue(
                 "share_link",
-                doc=lambda: self.strings("share_link_doc"),
+                doc=lambda: self.strings("share_link_doc"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Boolean(),
             ),
             loader.ConfigValue(
                 "basic_auth",
                 None,
-                lambda: self.strings("basic_auth_doc"),
+                lambda: self.strings("basic_auth_doc"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Hidden(loader.validators.RegExp(r"^.*:.*$")),
             ),
         )
@@ -188,7 +188,7 @@ class LoaderMod(loader.Module):
             await self.inline.list(
                 message,
                 [
-                    self.strings("avail_header")
+                    self.strings("avail_header")  # type: ignore[reportCallIssue]
                     + f"\n☁️ {repo.strip('/')}\n\n"
                     + "\n".join(
                         [
@@ -253,7 +253,7 @@ class LoaderMod(loader.Module):
     ) -> dict:
         return {
             repo: {
-                f"Mod/{repo_id}/{i}": f'{repo.strip("/")}/{link}.py'
+                f"Mod/{repo_id}/{i}": f"{repo.strip('/')}/{link}.py"
                 for i, link in enumerate(set(await self._get_repo(repo)))
             }
             for repo_id, repo in enumerate(
@@ -299,21 +299,21 @@ class LoaderMod(loader.Module):
 
                 if not url:
                     if message is not None:
-                        await utils.answer(message, self.strings("no_module"))
+                        await utils.answer(message, self.strings("no_module"))  # type: ignore[reportCallIssue]
 
                     return False
 
             if message:
                 message = await utils.answer(
                     message,
-                    self.strings("installing").format(module_name),
+                    self.strings("installing").format(module_name),  # type: ignore[reportCallIssue]
                 )
 
             try:
                 r = await self._storage.fetch(url, auth=self.config["basic_auth"])
             except requests.exceptions.HTTPError:
                 if message is not None:
-                    await utils.answer(message, self.strings("no_module"))
+                    await utils.answer(message, self.strings("no_module"))  # type: ignore[reportCallIssue]
 
                 return False
 
@@ -338,7 +338,7 @@ class LoaderMod(loader.Module):
         if mode == "all_yes":
             self._db.set(main.__name__, "permanent_modules_fs", True)
             self._db.set(main.__name__, "disable_modules_fs", False)
-            await call.answer(self.strings("will_save_fs"))
+            await call.answer(self.strings("will_save_fs"))  # type: ignore[reportCallIssue]
             save = True
         elif mode == "all_no":
             self._db.set(main.__name__, "disable_modules_fs", True)
@@ -360,7 +360,7 @@ class LoaderMod(loader.Module):
         msg = message if message.file else (await message.get_reply_message())
 
         if msg is None or msg.media is None:
-            await utils.answer(message, self.strings("provide_module"))
+            await utils.answer(message, self.strings("provide_module"))  # type: ignore[reportCallIssue]
             return
 
         path_ = None
@@ -371,7 +371,7 @@ class LoaderMod(loader.Module):
         try:
             doc = doc.decode()
         except UnicodeDecodeError:
-            await utils.answer(message, self.strings("bad_unicode"))
+            await utils.answer(message, self.strings("bad_unicode"))  # type: ignore[reportCallIssue]
             return
 
         if (
@@ -388,31 +388,31 @@ class LoaderMod(loader.Module):
                 message = await message.respond("🌘", reply_to=utils.get_topic(message))
 
             if await self.inline.form(
-                self.strings("module_fs"),
+                self.strings("module_fs"),  # type: ignore[reportCallIssue]
                 message=message,
                 reply_markup=[
                     [
                         {
-                            "text": self.strings("save"),
+                            "text": self.strings("save"),  # type: ignore[reportCallIssue]
                             "callback": self._inline__load,
                             "args": (doc, path_, "once"),
                         },
                         {
-                            "text": self.strings("no_save"),
+                            "text": self.strings("no_save"),  # type: ignore[reportCallIssue]
                             "callback": self._inline__load,
                             "args": (doc, path_, "no"),
                         },
                     ],
                     [
                         {
-                            "text": self.strings("save_for_all"),
+                            "text": self.strings("save_for_all"),  # type: ignore[reportCallIssue]
                             "callback": self._inline__load,
                             "args": (doc, path_, "all_yes"),
                         }
                     ],
                     [
                         {
-                            "text": self.strings("never_save"),
+                            "text": self.strings("never_save"),  # type: ignore[reportCallIssue]
                             "callback": self._inline__load,
                             "args": (doc, path_, "all_no"),
                         }
@@ -457,7 +457,7 @@ class LoaderMod(loader.Module):
             "ffmpeg -version 1>/dev/null 2>/dev/null"
         ):
             if isinstance(message, Message):
-                await utils.answer(message, self.strings("ffmpeg_required"))
+                await utils.answer(message, self.strings("ffmpeg_required"))  # type: ignore[reportCallIssue]
             return
 
         if (
@@ -465,7 +465,7 @@ class LoaderMod(loader.Module):
             and not self.inline.init_complete
         ):
             if isinstance(message, Message):
-                await utils.answer(message, self.strings("inline_init_failed"))
+                await utils.answer(message, self.strings("inline_init_failed"))  # type: ignore[reportCallIssue]
             return
 
         if re.search(r"# ?scope: ?hikka_min", doc):
@@ -480,7 +480,7 @@ class LoaderMod(loader.Module):
                         m = message
 
                     await self.inline.form(
-                        self.strings("version_incompatible").format(ver),
+                        self.strings("version_incompatible").format(ver),  # type: ignore[reportCallIssue]
                         m,
                         reply_markup=[
                             {
@@ -498,7 +498,7 @@ class LoaderMod(loader.Module):
         developer = re.search(r"# ?meta developer: ?(.+)", doc)
         developer = developer.group(1) if developer else False
 
-        blob_link = self.strings("blob_link") if blob_link else ""
+        blob_link = self.strings("blob_link") if blob_link else ""  # type: ignore[reportCallIssue]
 
         if utils.check_url(name):
             url = copy.deepcopy(name)
@@ -548,7 +548,7 @@ class LoaderMod(loader.Module):
 
             await utils.answer(
                 message,
-                self.strings(f"overwrite_{e.type}").format(
+                self.strings(f"overwrite_{e.type}").format(  # type: ignore[reportCallIssue]
                     *(
                         (e.target,)
                         if e.type == "module"
@@ -574,7 +574,7 @@ class LoaderMod(loader.Module):
 
             except ImportError as e:
                 logger.info(
-                    ("Module loading failed, attemping dependency" " installation (%s)"),
+                    ("Module loading failed, attemping dependency installation (%s)"),
                     e.name,
                 )
                 # Let's try to reinstall dependencies
@@ -590,8 +590,7 @@ class LoaderMod(loader.Module):
                     )
                 except TypeError:
                     logger.warning(
-                        "No valid pip packages specified in code, attemping"
-                        " installation from error"
+                        "No valid pip packages specified in code, attemping installation from error"
                     )
                     requirements = [
                         {
@@ -610,7 +609,7 @@ class LoaderMod(loader.Module):
                     if message is not None:
                         await utils.answer(
                             message,
-                            self.strings("requirements_restart").format(e.name),
+                            self.strings("requirements_restart").format(e.name),  # type: ignore[reportCallIssue]
                         )
 
                     return
@@ -618,8 +617,8 @@ class LoaderMod(loader.Module):
                 if message is not None:
                     await utils.answer(
                         message,
-                        self.strings("requirements_installing").format(
-                            "\n".join("▫️" f" {req}" for req in requirements)
+                        self.strings("requirements_installing").format(  # type: ignore[reportCallIssue]
+                            "\n".join(f"▫️ {req}" for req in requirements)
                         ),
                     )
 
@@ -646,12 +645,12 @@ class LoaderMod(loader.Module):
                         if "com.termux" in os.environ.get("PREFIX", ""):
                             await utils.answer(
                                 message,
-                                self.strings("requirements_failed_termux"),
+                                self.strings("requirements_failed_termux"),  # type: ignore[reportCallIssue]
                             )
                         else:
                             await utils.answer(
                                 message,
-                                self.strings("requirements_failed"),
+                                self.strings("requirements_failed"),  # type: ignore[reportCallIssue]
                             )
 
                     return
@@ -675,19 +674,19 @@ class LoaderMod(loader.Module):
                 if message:
                     await utils.answer(
                         message,
-                        ("😖" f" <b>{utils.escape_html(str(e))}</b>"),
+                        (f"😖 <b>{utils.escape_html(str(e))}</b>"),
                     )
                 return
         except Exception as e:
             logger.exception("Loading external module failed due to %s", e)
 
             if message is not None:
-                await utils.answer(message, self.strings("load_failed"))
+                await utils.answer(message, self.strings("load_failed"))  # type: ignore[reportCallIssue]
 
             return
 
         if hasattr(instance, "__version__") and isinstance(instance.__version__, tuple):
-            version = "<b><i>" f" (v{'.'.join(list(map(str, list(instance.__version__))))})</i></b>"
+            version = f"<b><i> (v{'.'.join(list(map(str, list(instance.__version__))))})</i></b>"
         else:
             version = ""
 
@@ -707,7 +706,7 @@ class LoaderMod(loader.Module):
                                 ) = instance.hikka_wait_channel_approve
                                 message = await utils.answer(
                                     message,
-                                    self.strings("wait_channel_approve").format(
+                                    self.strings("wait_channel_approve").format(  # type: ignore[reportCallIssue]
                                         module,
                                         channel.username,
                                         utils.escape_html(channel.title),
@@ -739,7 +738,7 @@ class LoaderMod(loader.Module):
                 if message:
                     await utils.answer(
                         message,
-                        ("😖" f" <b>{utils.escape_html(str(e))}</b>"),
+                        (f"😖 <b>{utils.escape_html(str(e))}</b>"),
                     )
                 return
             except loader.SelfUnload as e:
@@ -753,7 +752,7 @@ class LoaderMod(loader.Module):
                 if message:
                     await utils.answer(
                         message,
-                        ("😖" f" <b>{utils.escape_html(str(e))}</b>"),
+                        (f"😖 <b>{utils.escape_html(str(e))}</b>"),
                     )
                 return
             except loader.SelfSuspend as e:
@@ -761,17 +760,14 @@ class LoaderMod(loader.Module):
                 if message:
                     await utils.answer(
                         message,
-                        (
-                            "🥶 <b>Module suspended itself\nReason:"
-                            f" {utils.escape_html(str(e))}</b>"
-                        ),
+                        (f"🥶 <b>Module suspended itself\nReason: {utils.escape_html(str(e))}</b>"),
                     )
                 return
         except Exception as e:
             logger.exception("Module threw because of %s", e)
 
             if message is not None:
-                await utils.answer(message, self.strings("load_failed"))
+                await utils.answer(message, self.strings("load_failed"))  # type: ignore[reportCallIssue]
 
             return
 
@@ -832,7 +828,7 @@ class LoaderMod(loader.Module):
         modhelp = ""
 
         if instance.__doc__:
-            modhelp += "<i>\nℹ️" f" {utils.escape_html(inspect.getdoc(instance))}</i>\n"
+            modhelp += f"<i>\nℹ️ {utils.escape_html(inspect.getdoc(instance))}</i>\n"
 
         subscribe = ""
         subscribe_markup = None
@@ -842,9 +838,9 @@ class LoaderMod(loader.Module):
             value = getattr(instance, key)
             if isinstance(value, loader.Library):
                 depends_from.append(
-                    "▫️" " <code>{}</code> <b>{}</b> <code>{}</code>".format(
+                    "▫️ <code>{}</code> <b>{}</b> <code>{}</code>".format(
                         value.__class__.__name__,
-                        self.strings("by"),
+                        self.strings("by"),  # type: ignore[reportCallIssue]
                         (
                             value.developer
                             if isinstance(getattr(value, "developer", None), str)
@@ -854,7 +850,7 @@ class LoaderMod(loader.Module):
                 )
 
         depends_from = (
-            self.strings("depends_from").format("\n".join(depends_from)) if depends_from else ""
+            self.strings("depends_from").format("\n".join(depends_from)) if depends_from else ""  # type: ignore[reportCallIssue]
         )
 
         def loaded_msg(use_subscribe: bool = True):
@@ -867,7 +863,7 @@ class LoaderMod(loader.Module):
                 subscribe, \
                 blob_link, \
                 depends_from
-            return self.strings("loaded").format(
+            return self.strings("loaded").format(  # type: ignore[reportCallIssue]
                 modname.strip(),
                 version,
                 utils.ascii_face(),
@@ -875,7 +871,7 @@ class LoaderMod(loader.Module):
                 developer if not subscribe or not use_subscribe else "",
                 depends_from,
                 (
-                    self.strings("modlink").format(origin)
+                    self.strings("modlink").format(origin)  # type: ignore[reportCallIssue]
                     if origin != "<string>" and self.config["share_link"]
                     else ""
                 ),
@@ -890,12 +886,12 @@ class LoaderMod(loader.Module):
                     and getattr(developer_entity, "left", True)
                     and self._db.get(main.__name__, "suggest_subscribe", True)
                 ):
-                    subscribe = self.strings("suggest_subscribe").format(
+                    subscribe = self.strings("suggest_subscribe").format(  # type: ignore[reportCallIssue]
                         f"@{utils.escape_html(developer_entity.username)}"
                     )
                     subscribe_markup = [
                         {
-                            "text": self.strings("subscribe"),
+                            "text": self.strings("subscribe"),  # type: ignore[reportCallIssue]
                             "callback": self._inline__subscribe,
                             "args": (
                                 developer_entity.id,
@@ -904,7 +900,7 @@ class LoaderMod(loader.Module):
                             ),
                         },
                         {
-                            "text": self.strings("no_subscribe"),
+                            "text": self.strings("no_subscribe"),  # type: ignore[reportCallIssue]
                             "callback": self._inline__subscribe,
                             "args": (
                                 developer,
@@ -914,7 +910,7 @@ class LoaderMod(loader.Module):
                         },
                     ]
 
-            developer = self.strings("developer").format(
+            developer = self.strings("developer").format(  # type: ignore[reportCallIssue]
                 utils.escape_html(developer)
                 if isinstance(developer_entity, Channel)
                 else f"<code>{utils.escape_html(developer)}</code>"
@@ -934,7 +930,7 @@ class LoaderMod(loader.Module):
                 "▫️",
                 utils.escape_html(self.get_prefix()),
                 _name,
-                (utils.escape_html(inspect.getdoc(fun)) if fun.__doc__ else self.strings("undoc")),
+                (utils.escape_html(inspect.getdoc(fun)) if fun.__doc__ else self.strings("undoc")),  # type: ignore[reportCallIssue]
             )
 
         if self.inline.init_complete:
@@ -942,12 +938,12 @@ class LoaderMod(loader.Module):
                 instance.inline_handlers.items(),
                 key=lambda x: x[0],
             ):
-                modhelp += self.strings("ihandler").format(
+                modhelp += self.strings("ihandler").format(  # type: ignore[reportCallIssue]
                     f"@{self.inline.bot_username} {_name}",
                     (
                         utils.escape_html(inspect.getdoc(fun))
                         if fun.__doc__
-                        else self.strings("undoc")
+                        else self.strings("undoc")  # type: ignore[reportCallIssue]
                     ),
                 )
 
@@ -966,23 +962,23 @@ class LoaderMod(loader.Module):
         if not subscribe:
             self.set("do_not_subscribe", self.get("do_not_subscribe", []) + [entity])
             await utils.answer(call, msg())
-            await call.answer(self.strings("not_subscribed"))
+            await call.answer(self.strings("not_subscribed"))  # type: ignore[reportCallIssue]
             return
 
         await self._client(JoinChannelRequest(entity))
         await utils.answer(call, msg())
-        await call.answer(self.strings("subscribed"))
+        await call.answer(self.strings("subscribed"))  # type: ignore[reportCallIssue]
 
     @loader.command(alias="ulm")
     async def unloadmod(self, message: Message):
         if not (args := utils.get_args_raw(message)):
-            await utils.answer(message, self.strings("no_class"))
+            await utils.answer(message, self.strings("no_class"))  # type: ignore[reportCallIssue]
             return
 
         instance = self.lookup(args)
 
         if issubclass(instance.__class__, loader.Library):
-            await utils.answer(message, self.strings("cannot_unload_lib"))
+            await utils.answer(message, self.strings("cannot_unload_lib"))  # type: ignore[reportCallIssue]
             return
 
         try:
@@ -990,7 +986,7 @@ class LoaderMod(loader.Module):
         except CoreUnloadError as e:
             await utils.answer(
                 message,
-                self.strings("unload_core").format(e.module),
+                self.strings("unload_core").format(e.module),  # type: ignore[reportCallIssue]
             )
             return
 
@@ -1005,12 +1001,12 @@ class LoaderMod(loader.Module):
             )
 
         msg = (
-            self.strings("unloaded").format(
+            self.strings("unloaded").format(  # type: ignore[reportCallIssue]
                 "✅",
                 ", ".join([(mod[:-3] if mod.endswith("Mod") else mod) for mod in worked]),
             )
             if worked
-            else self.strings("not_unloaded")
+            else self.strings("not_unloaded")  # type: ignore[reportCallIssue]
         )
 
         await utils.answer(message, msg)
@@ -1018,15 +1014,15 @@ class LoaderMod(loader.Module):
     @loader.command()
     async def clearmodules(self, message: Message):
         await self.inline.form(
-            self.strings("confirm_clearmodules"),
+            self.strings("confirm_clearmodules"),  # type: ignore[reportCallIssue]
             message,
             reply_markup=[
                 {
-                    "text": self.strings("clearmodules"),
+                    "text": self.strings("clearmodules"),  # type: ignore[reportCallIssue]
                     "callback": self._inline__clearmodules,
                 },
                 {
-                    "text": self.strings("cancel"),
+                    "text": self.strings("cancel"),  # type: ignore[reportCallIssue]
                     "action": "close",
                 },
             ],
@@ -1037,7 +1033,7 @@ class LoaderMod(loader.Module):
         if not (args := utils.get_args_raw(message)) or (
             not utils.check_url(args) and not utils.check_url(f"https://{args}")
         ):
-            await utils.answer(message, self.strings("no_repo"))
+            await utils.answer(message, self.strings("no_repo"))  # type: ignore[reportCallIssue]
             return
 
         if args.endswith("/"):
@@ -1060,33 +1056,33 @@ class LoaderMod(loader.Module):
             if not r.text.strip():
                 raise ValueError
         except Exception:
-            await utils.answer(message, self.strings("no_repo"))
+            await utils.answer(message, self.strings("no_repo"))  # type: ignore[reportCallIssue]
             return
 
         if args in self.config["ADDITIONAL_REPOS"]:
-            await utils.answer(message, self.strings("repo_exists").format(args))
+            await utils.answer(message, self.strings("repo_exists").format(args))  # type: ignore[reportCallIssue]
             return
 
         self.config["ADDITIONAL_REPOS"] += [args]
 
-        await utils.answer(message, self.strings("repo_added").format(args))
+        await utils.answer(message, self.strings("repo_added").format(args))  # type: ignore[reportCallIssue]
 
     @loader.command()
     async def delrepo(self, message: Message):
         if not (args := utils.get_args_raw(message)) or not utils.check_url(args):
-            await utils.answer(message, self.strings("no_repo"))
+            await utils.answer(message, self.strings("no_repo"))  # type: ignore[reportCallIssue]
             return
 
         if args.endswith("/"):
             args = args[:-1]
 
         if args not in self.config["ADDITIONAL_REPOS"]:
-            await utils.answer(message, self.strings("repo_not_exists"))
+            await utils.answer(message, self.strings("repo_not_exists"))  # type: ignore[reportCallIssue]
             return
 
         self.config["ADDITIONAL_REPOS"].remove(args)
 
-        await utils.answer(message, self.strings("repo_deleted").format(args))
+        await utils.answer(message, self.strings("repo_deleted").format(args))  # type: ignore[reportCallIssue]
 
     async def _inline__clearmodules(self, call: InlineCall):
         self.set("loaded_modules", {})
@@ -1097,7 +1093,7 @@ class LoaderMod(loader.Module):
             except Exception:
                 logger.debug("Failed to remove %s", file.path, exc_info=True)
 
-        await utils.answer(call, self.strings("all_modules_deleted"))
+        await utils.answer(call, self.strings("all_modules_deleted"))  # type: ignore[reportCallIssue]
         await self.lookup("Updater").restart_common(call)
 
     async def _update_modules(self):

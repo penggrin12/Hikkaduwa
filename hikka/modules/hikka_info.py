@@ -21,12 +21,12 @@ class HikkaInfoMod(loader.Module):
             loader.ConfigValue(
                 "custom_message",
                 None,
-                doc=lambda: self.strings("_cfg_cst_msg"),
+                doc=lambda: self.strings("_cfg_cst_msg"),  # type: ignore[reportCallIssue]
             ),
             loader.ConfigValue(
                 "custom_button",
                 ["🥂 Fork's Github page", "https://github.com/penggrin12/Hikkaduwa"],
-                lambda: self.strings("_cfg_cst_btn"),
+                lambda: self.strings("_cfg_cst_btn"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Union(
                     loader.validators.Series(loader.validators.String(), fixed_len=2),
                     loader.validators.NoneType(),
@@ -35,7 +35,7 @@ class HikkaInfoMod(loader.Module):
             loader.ConfigValue(
                 "banner_url",
                 None,
-                lambda: self.strings("_cfg_banner"),
+                lambda: self.strings("_cfg_banner"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Link(),
             ),
         )
@@ -47,7 +47,7 @@ class HikkaInfoMod(loader.Module):
         )
         commit = utils.get_commit_url()
         branch: str = utils.get_git_branch() or "Unknown"
-        _version = f'<i>{".".join(list(map(str, list(version.__version__))))}</i>'
+        _version = f"<i>{'.'.join(list(map(str, list(version.__version__))))}</i>"
         prefix = f"«<code>{utils.escape_html(self.get_prefix())}</code>»"
         modules_count = len(self.allmodules.modules)
         platform = utils.get_named_platform()
@@ -68,15 +68,15 @@ class HikkaInfoMod(loader.Module):
             )
             if self.config["custom_message"]
             else (
-                f'🌘 <b>Hikkaduwa</b>\n\n'
-                f'☀️ <b>{self.strings("commit")}:</b> {commit} on <code>{branch}</code>\n'
-                f'🌙 <b>{self.strings("version")}:</b> {_version}\n\n'
-                f'⚙️ <b>{self.strings("modules")}:</b> {modules_count}\n'
-                f'⌨️ <b>{self.strings("prefix")}:</b> {prefix}\n'
-                f'⌛️ <b>{self.strings("uptime")}:</b> {utils.formatted_uptime()}\n\n'
-                f'⚡️ <b>{self.strings("cpu_usage")}:</b> <i>~{utils.get_cpu_usage()} %</i>\n'
-                f'💼 <b>{self.strings("ram_usage")}:</b> <i>~{utils.get_ram_usage()} MB</i>\n'
-                f'<b>{platform}</b>'
+                f"🌘 <b>Hikkaduwa</b>\n\n"
+                f"☀️ <b>{self.strings('commit')}:</b> {commit} on <code>{branch}</code>\n"  # type: ignore[reportCallIssue]
+                f"🌙 <b>{self.strings('version')}:</b> {_version}\n\n"  # type: ignore[reportCallIssue]
+                f"⚙️ <b>{self.strings('modules')}:</b> {modules_count}\n"  # type: ignore[reportCallIssue]
+                f"⌨️ <b>{self.strings('prefix')}:</b> {prefix}\n"  # type: ignore[reportCallIssue]
+                f"⌛️ <b>{self.strings('uptime')}:</b> {utils.formatted_uptime()}\n\n"  # type: ignore[reportCallIssue]
+                f"⚡️ <b>{self.strings('cpu_usage')}:</b> <i>~{utils.get_cpu_usage()} %</i>\n"  # type: ignore[reportCallIssue]
+                f"💼 <b>{self.strings('ram_usage')}:</b> <i>~{utils.get_ram_usage()} MB</i>\n"  # type: ignore[reportCallIssue]
+                f"<b>{platform}</b>"
             )
         )
 
@@ -101,12 +101,12 @@ class HikkaInfoMod(loader.Module):
 
     @loader.command()
     async def hikkainfo(self, message: Message):
-        await utils.answer(message, self.strings("desc"))
+        await utils.answer(message, self.strings("desc"))  # type: ignore[reportCallIssue]
 
     @loader.command()
     async def setinfo(self, message: Message):
         if not (args := utils.get_args_html(message)):
-            return await utils.answer(message, self.strings("setinfo_no_args"))
+            return await utils.answer(message, self.strings("setinfo_no_args"))  # type: ignore[reportCallIssue]
 
         self.config["custom_message"] = args
-        await utils.answer(message, self.strings("setinfo_success"))
+        await utils.answer(message, self.strings("setinfo_success"))  # type: ignore[reportCallIssue]

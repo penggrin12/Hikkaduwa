@@ -1,6 +1,14 @@
 <h2>⚠️⚠️⚠️ ALMOST EVERYTHING BELOW DOESNT APPLY TO HIKKADUWA ⚠️⚠️⚠️</h2> <br>
 I will update it later.
 <hr>
+
+<b>Warning: </b>If you are a paranoid person, you should not use this userbot. This userbot is not a virus, but it can be used for malicious purposes. You are responsible for all actions taken by your account.  
+  
+**Important notice**: Versions `1.6.4` and `1.7.0` will NOT be released due to the reasons mentioned in the chanelog.  
+The development will start from scratch with a new project, which will be announced later.  
+As of March 2025, you can apply for an early stage of alpha-testing through the official channels.  
+
+<hr>
 <h2><img src="https://github.com/hikariatama/assets/raw/master/1326-command-window-line-flat.webp" height="54" align="middle"> Installation</h2>
 
 ### Installation page

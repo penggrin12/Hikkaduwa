@@ -1,4 +1,4 @@
-# Hikkaduwa Userbot 🏳️‍⚧️
+# Hikkaduwa Userbot 
 
 Hikkaduwa is a powerful and modular Telegram userbot. This fork, maintained by [Penggrin](https://github.com/penggrin12), aims to be a **lightweight version** of the upstream Hikka project developed by [Dan Gazizullin (hikariatama)](https://t.me/hikariatama).
 
@@ -73,5 +73,5 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 ## Authors & Credits
 
 * **Fork Developer:** [Penggrin](https://github.com/penggrin12)
-* **Upstream GitHub Repository:** [https://github.com/hikariatama/Hikka](https://github.com/hikariatama/Hikka)
+* **Upstream GitHub Repository:** [https://github.com/beveiled/hikka](https://github.com/beveiled/hikka)
 * **Upstream Developer:** [Dan Gazizullin (hikariatama)](https://t.me/hikariatama)

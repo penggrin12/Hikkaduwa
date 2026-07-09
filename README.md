@@ -73,5 +73,5 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 ## Authors & Credits
 
 * **Fork Developer:** [Penggrin](https://github.com/penggrin12)
-* **Upstream GitHub Repository:** [https://github.com/beveiled/hikka](https://github.com/beveiled/hikka)
+* **Upstream GitHub Repository:** [https://github.com/hikariatama/hikka](https://github.com/beveiled/hikka)
 * **Upstream Developer:** [Dan Gazizullin (hikariatama)](https://t.me/hikariatama)

@@ -96,7 +96,11 @@ class HikkaInfoMod(loader.Module):
             message=message,
             text=self._render_info(True),
             reply_markup=self._get_mark(),
-            **({"photo": self.config["banner_url"]} if self.config["banner_url"] else {}),
+            **(
+                {"photo": self.config["banner_url"]}
+                if self.config["banner_url"]
+                else {}
+            ),
         )
 
     @loader.command()

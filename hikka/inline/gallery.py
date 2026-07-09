@@ -257,8 +257,7 @@ class Gallery(InlineUnit):
                 status_message = await (
                     message.edit if message.out else message.respond
                 )(
-                    "🌘"
-                    + self.translator.getkey("inline.opening_gallery"),
+                    "🌘" + self.translator.getkey("inline.opening_gallery"),
                     **({"reply_to": utils.get_topic(message)} if message.out else {}),
                 )
             except Exception:
@@ -586,7 +585,9 @@ class Gallery(InlineUnit):
         return (
             caption
             if isinstance(caption, str)
-            else caption() if callable(caption) else ""
+            else caption()
+            if callable(caption)
+            else ""
         )
 
     def _gallery_markup(self, unit_id: str) -> InlineKeyboardMarkup:

@@ -235,14 +235,6 @@ class Utils(InlineUnit):
         """Checks if user with id `user` is allowed to run function `func`"""
         return user == self._client._tg_id
 
-            return lambda: self._client.dispatcher.security.get_flags(
-                getattr(caller, "__self__", caller),
-            )
-        except Exception:
-            logger.debug("Can't parse security mask in form", exc_info=True)
-
-        return None
-
     def _normalize_markup(
         self, reply_markup: HikkaReplyMarkup
     ) -> typing.List[typing.List[typing.Dict[str, typing.Any]]]:

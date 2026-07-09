@@ -1,15 +1,15 @@
 [project]
 name = "hikkaduwa"
 version = "0.1.0"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "aiogram<3",
-    "aiohttp==3.11.18",
-    "emoji==2.14.1",
+    "aiohttp==3.14.1",
+    "emoji==2.15.0",
     "grapheme==0.6.0",
     "meval==2.5",
-    "psutil==7.0.0",
-    "requests==2.32.3",
-    "ruamel-yaml==0.18.10",
-    "telethon==1.40.0",
+    "psutil==7.2.2",
+    "requests==2.34.2",
+    "ruamel-yaml==0.19.1",
+    "telethon==1.44.0",
 ]

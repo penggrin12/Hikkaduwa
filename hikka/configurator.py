@@ -29,7 +29,9 @@ def api_config() -> None:
         sys.exit(0)
 
     while api_hash := input("Enter API hash: "):
-        if len(api_hash) == 32 and all(symbol in string.hexdigits for symbol in api_hash):
+        if len(api_hash) == 32 and all(
+            symbol in string.hexdigits for symbol in api_hash
+        ):
             break
 
         print("Invalid hash")

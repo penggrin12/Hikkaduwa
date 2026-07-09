@@ -83,7 +83,9 @@ class Help(loader.Module):
         """Find aliases for command"""
         aliases = []
         _command = self.allmodules.commands[command]
-        if getattr(_command, "alias", None) and not (aliases := getattr(_command, "aliases", None)):
+        if getattr(_command, "alias", None) and not (
+            aliases := getattr(_command, "aliases", None)
+        ):
             aliases = [_command.alias]
 
         return aliases or []
@@ -91,7 +93,9 @@ class Help(loader.Module):
     async def modhelp(self, message: Message, args: str):
         exact = True
         if not (module := self.lookup(args)):
-            if method := self.allmodules.dispatch(args.lower().strip(self.get_prefix()))[1]:
+            if method := self.allmodules.dispatch(
+                args.lower().strip(self.get_prefix())
+            )[1]:
                 module = method.__self__
             else:
                 module = self.lookup(
@@ -99,7 +103,10 @@ class Help(loader.Module):
                         (
                             reversed(
                                 sorted(
-                                    [module.strings["name"] for module in self.allmodules.modules],
+                                    [
+                                        module.strings["name"]
+                                        for module in self.allmodules.modules
+                                    ],
                                     key=lambda x: difflib.SequenceMatcher(
                                         None,
                                         args.lower(),
@@ -167,7 +174,11 @@ class Help(loader.Module):
                     if self.find_aliases(name)
                     else ""
                 ),
-                (utils.escape_html(inspect.getdoc(fun)) if fun.__doc__ else self.strings("undoc")),  # type: ignore[reportCallIssue]
+                (
+                    utils.escape_html(inspect.getdoc(fun))
+                    if fun.__doc__
+                    else self.strings("undoc")
+                ),  # type: ignore[reportCallIssue]
             )
 
         await utils.answer(
@@ -219,7 +230,9 @@ class Help(loader.Module):
                 and not getattr(mod, "inline_handlers", None)
                 and not getattr(mod, "callback_handlers", None)
             ):
-                no_commands_ += ["\n{} <code>{}</code>".format(self.config["empty_emoji"], name)]
+                no_commands_ += [
+                    "\n{} <code>{}</code>".format(self.config["empty_emoji"], name)
+                ]
                 continue
 
             core = mod.__origin__.startswith("<core")
@@ -232,9 +245,7 @@ class Help(loader.Module):
 
             for cmd in commands:
                 if first:
-                    tmp += (
-                        f": {'<blockquote expandable>' if self.config['use_quotes'] else ''}( {cmd}"
-                    )
+                    tmp += f": {'<blockquote expandable>' if self.config['use_quotes'] else ''}( {cmd}"
                     first = False
                 else:
                     tmp += f" | {cmd}"
@@ -268,7 +279,10 @@ class Help(loader.Module):
             (
                 0
                 if force
-                else sum(module.__class__.__name__ in hidden for module in self.allmodules.modules)
+                else sum(
+                    module.__class__.__name__ in hidden
+                    for module in self.allmodules.modules
+                )
                 + len(no_commands_)
             ),
         )

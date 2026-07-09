@@ -54,7 +54,9 @@ class UpdaterMod(loader.Module):
                 or not self.inline.init_complete
                 or not await self.inline.form(
                     message=message,
-                    text=self.strings("secure_boot_confirm" if secure_boot else "restart_confirm"),  # type: ignore[reportCallIssue]
+                    text=self.strings(
+                        "secure_boot_confirm" if secure_boot else "restart_confirm"
+                    ),  # type: ignore[reportCallIssue]
                     reply_markup=[
                         {
                             "text": self.strings("btn_restart"),  # type: ignore[reportCallIssue]
@@ -222,7 +224,11 @@ class UpdaterMod(loader.Module):
                         folder_id,
                         title=TextWithEntities(text="hikka", entities=[]),
                         pinned_peers=(
-                            [await self._client.get_input_entity(self._client.loader.inline.bot_id)]
+                            [
+                                await self._client.get_input_entity(
+                                    self._client.loader.inline.bot_id
+                                )
+                            ]
                             if self._client.loader.inline.init_complete
                             else []
                         ),
@@ -249,7 +255,8 @@ class UpdaterMod(loader.Module):
                             )
                             or (
                                 self._client.loader.inline.init_complete
-                                and dialog.entity.id == self._client.loader.inline.bot_id
+                                and dialog.entity.id
+                                == self._client.loader.inline.bot_id
                             )
                             or dialog.entity.id
                             in [
@@ -295,7 +302,9 @@ class UpdaterMod(loader.Module):
         self.set("restart_ts", None)
 
         ms = self.get("selfupdatemsg")
-        msg = self.strings("secure_boot_complete" if secure_boot else "success").format(took)  # type: ignore[reportCallIssue]
+        msg = self.strings("secure_boot_complete" if secure_boot else "success").format(
+            took
+        )  # type: ignore[reportCallIssue]
 
         if ms is None:
             return

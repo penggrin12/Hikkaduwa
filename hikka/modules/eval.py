@@ -124,7 +124,9 @@ class Evaluator(loader.Module):
         return {
             **dict(
                 filter(
-                    lambda x: x[0][0] != "_" and x[0][0].upper() == x[0][0] and callable(x[1]),
+                    lambda x: (
+                        x[0][0] != "_" and x[0][0].upper() == x[0][0] and callable(x[1])
+                    ),
                     obj.__dict__.items(),
                 )
             ),
@@ -133,10 +135,13 @@ class Evaluator(loader.Module):
                     [
                         self.get_sub(y[1], _depth + 1).items()
                         for y in filter(
-                            lambda x: x[0][0] != "_"
-                            and isinstance(x[1], ModuleType)
-                            and x[1] != obj
-                            and x[1].__package__.rsplit(".", _depth)[0] == "telethon.tl",
+                            lambda x: (
+                                x[0][0] != "_"
+                                and isinstance(x[1], ModuleType)
+                                and x[1] != obj
+                                and x[1].__package__.rsplit(".", _depth)[0]
+                                == "telethon.tl"
+                            ),
                             obj.__dict__.items(),
                         )
                     ]

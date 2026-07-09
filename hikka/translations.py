@@ -143,7 +143,9 @@ class Translator(BaseTranslator):
 
         for language in SUPPORTED_LANGUAGES:
             if language not in self.raw_data and (PACKS / f"{language}.yml").exists():
-                self.raw_data[language] = self._get_pack_content(PACKS / f"{language}.yml")
+                self.raw_data[language] = self._get_pack_content(
+                    PACKS / f"{language}.yml"
+                )
 
         return any_
 
@@ -158,7 +160,10 @@ class ExternalTranslator(BaseTranslator):
         return self.data[lang].get(key, False) or key
 
     def getdict(self, key: str, **kwargs) -> dict:
-        return {lang: fmt(self.data[lang].get(key, False) or key, kwargs) for lang in self.data}
+        return {
+            lang: fmt(self.data[lang].get(key, False) or key, kwargs)
+            for lang in self.data
+        }
 
 
 class Strings:

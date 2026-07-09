@@ -37,7 +37,7 @@ from telethon import events
 from telethon.errors import FloodWaitError, RPCError
 from telethon.tl.types import Message
 
-from . import main, utils, features
+from . import features, main, utils
 from .database import Database
 from .loader import Modules
 from .tl_cache import CustomTelegramClient
@@ -126,7 +126,9 @@ class CommandDispatcher:
             )
         ]
 
-        self._cached_usernames.extend(getattr(self._client.hikka_me, "usernames", None) or [])
+        self._cached_usernames.extend(
+            getattr(self._client.hikka_me, "usernames", None) or []
+        )
 
         self.raw_handlers = []
 
@@ -137,7 +139,9 @@ class CommandDispatcher:
 
         if message.sender_id:
             user = self._ratelimit_storage_user[message.sender_id]
-            severity = (5 if getattr(func, "ratelimit", False) else 2) * ((user + chat) // 30 + 1)
+            severity = (5 if getattr(func, "ratelimit", False) else 2) * (
+                (user + chat) // 30 + 1
+            )
             user += severity
             self._ratelimit_storage_user[message.sender_id] = user
             if user > self._ratelimit_max_user:
@@ -152,7 +156,9 @@ class CommandDispatcher:
                 severity,
             )
         else:
-            severity = (5 if getattr(func, "ratelimit", False) else 2) * (chat // 15 + 1)
+            severity = (5 if getattr(func, "ratelimit", False) else 2) * (
+                chat // 15 + 1
+            )
 
         chat += severity
 
@@ -299,15 +305,6 @@ class CommandDispatcher:
                     " due to RPC (Telegram) error:</b>"
                     f" <code>{utils.escape_html(str(exc))}</code>"
                 )
-                txt = (
-                    # FIXME: translations no more
-                    self._client.loader.lookup("translations")
-                    .strings("rpc_error")
-                    .format(
-                        utils.escape_html(message.message),
-                        utils.escape_html(str(exc)),
-                    )
-                )
         else:
             if not self._db.get(main.__name__, "inlinelogs", True):
                 txt = (
@@ -355,12 +352,16 @@ class CommandDispatcher:
             "in": lambda: not getattr(m, "out", True),
             "only_messages": lambda: isinstance(m, Message),
             "editable": (
-                lambda: not getattr(m, "out", False)
-                and not getattr(m, "fwd_from", False)
-                and not getattr(m, "sticker", False)
-                and not getattr(m, "via_bot_id", False)
+                lambda: (
+                    not getattr(m, "out", False)
+                    and not getattr(m, "fwd_from", False)
+                    and not getattr(m, "sticker", False)
+                    and not getattr(m, "via_bot_id", False)
+                )
             ),
-            "no_media": lambda: (not isinstance(m, Message) or not getattr(m, "media", False)),
+            "no_media": lambda: (
+                not isinstance(m, Message) or not getattr(m, "media", False)
+            ),
             "only_media": lambda: isinstance(m, Message) and getattr(m, "media", False),
             "only_photos": lambda: utils.mime_type(m).startswith("image/"),
             "only_videos": lambda: utils.mime_type(m).startswith("video/"),
@@ -373,14 +374,18 @@ class CommandDispatcher:
             ),
             "no_channels": lambda: not getattr(m, "is_channel", False),
             "no_groups": (
-                lambda: not getattr(m, "is_group", False)
-                or getattr(m, "private", False)
-                or getattr(m, "is_channel", False)
+                lambda: (
+                    not getattr(m, "is_group", False)
+                    or getattr(m, "private", False)
+                    or getattr(m, "is_channel", False)
+                )
             ),
             "only_groups": (
-                lambda: getattr(m, "is_group", False)
-                or not getattr(m, "private", False)
-                and not getattr(m, "is_channel", False)
+                lambda: (
+                    getattr(m, "is_group", False)
+                    or not getattr(m, "private", False)
+                    and not getattr(m, "is_channel", False)
+                )
             ),
             "no_pm": lambda: not getattr(m, "private", False),
             "only_pm": lambda: getattr(m, "private", False),
@@ -399,17 +404,23 @@ class CommandDispatcher:
             "startswith": lambda: (
                 isinstance(m, Message) and m.raw_text.startswith(func.startswith)
             ),
-            "endswith": lambda: (isinstance(m, Message) and m.raw_text.endswith(func.endswith)),
+            "endswith": lambda: (
+                isinstance(m, Message) and m.raw_text.endswith(func.endswith)
+            ),
             "contains": lambda: isinstance(m, Message) and func.contains in m.raw_text,
             "filter": lambda: callable(func.filter) and func.filter(m),
             "from_id": lambda: getattr(m, "sender_id", None) == func.from_id,
-            "chat_id": lambda: utils.get_chat_id(m)
-            == (
-                func.chat_id
-                if not str(func.chat_id).startswith("-100")
-                else int(str(func.chat_id)[4:])
+            "chat_id": lambda: (
+                utils.get_chat_id(m)
+                == (
+                    func.chat_id
+                    if not str(func.chat_id).startswith("-100")
+                    else int(str(func.chat_id)[4:])
+                )
             ),
-            "regex": lambda: (isinstance(m, Message) and re.search(func.regex, m.raw_text)),
+            "regex": lambda: (
+                isinstance(m, Message) and re.search(func.regex, m.raw_text)
+            ),
         }
 
         return (

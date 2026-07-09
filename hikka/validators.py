@@ -113,7 +113,9 @@ class Integer(Validator):
             )
         )
         _digits = (
-            translator.getdict("validators.digits", digits=digits) if digits is not None else {}
+            translator.getdict("validators.digits", digits=digits)
+            if digits is not None
+            else {}
         )
 
         if minimum is not None and minimum != 0:
@@ -124,7 +126,9 @@ class Integer(Validator):
                         digits=_digits.get(lang, ""),
                         minimum=minimum,
                     )
-                    for lang, text in translator.getdict("validators.integer_min").items()
+                    for lang, text in translator.getdict(
+                        "validators.integer_min"
+                    ).items()
                 }
                 if maximum is None and maximum != 0
                 else {
@@ -134,12 +138,16 @@ class Integer(Validator):
                         minimum=minimum,
                         maximum=maximum,
                     )
-                    for lang, text in translator.getdict("validators.integer_range").items()
+                    for lang, text in translator.getdict(
+                        "validators.integer_range"
+                    ).items()
                 }
             )
         elif maximum is None and maximum != 0:
             doc = {
-                lang: text.format(sign=_signs.get(lang, ""), digits=_digits.get(lang, ""))
+                lang: text.format(
+                    sign=_signs.get(lang, ""), digits=_digits.get(lang, "")
+                )
                 for lang, text in translator.getdict("validators.integer").items()
             }
         else:
@@ -303,7 +311,9 @@ class Series(Validator):
             else:
                 _len = translator.getdict("validators.max_len", max_len=max_len)
         elif max_len is not None:
-            _len = translator.getdict("validators.len_range", min_len=min_len, max_len=max_len)
+            _len = translator.getdict(
+                "validators.len_range", min_len=min_len, max_len=max_len
+            )
         else:
             _len = translator.getdict("validators.min_len", min_len=min_len)
 
@@ -339,13 +349,19 @@ class Series(Validator):
             value = list(value)
 
         if min_len is not None and len(value) < min_len:
-            raise ValidationError(f"Passed value ({value}) contains less than {min_len} items")
+            raise ValidationError(
+                f"Passed value ({value}) contains less than {min_len} items"
+            )
 
         if max_len is not None and len(value) > max_len:
-            raise ValidationError(f"Passed value ({value}) contains more than {max_len} items")
+            raise ValidationError(
+                f"Passed value ({value}) contains more than {max_len} items"
+            )
 
         if fixed_len is not None and len(value) != fixed_len:
-            raise ValidationError(f"Passed value ({value}) must contain exactly {fixed_len} items")
+            raise ValidationError(
+                f"Passed value ({value}) must contain exactly {fixed_len} items"
+            )
 
         value = [item.strip() if isinstance(item, str) else item for item in value]
 
@@ -406,7 +422,9 @@ class String(Validator):
                 if max_len is None:
                     doc = translator.getdict("validators.string")
                 else:
-                    doc = translator.getdict("validators.string_max_len", max_len=max_len)
+                    doc = translator.getdict(
+                        "validators.string_max_len", max_len=max_len
+                    )
             elif max_len is not None:
                 doc = translator.getdict(
                     "validators.string_len_range", min_len=min_len, max_len=max_len
@@ -434,14 +452,29 @@ class String(Validator):
         min_len: typing.Optional[int],
         max_len: typing.Optional[int],
     ) -> str:
-        if isinstance(length, int) and len(list(grapheme.graphemes(str(value)))) != length:
-            raise ValidationError(f"Passed value ({value}) must be a length of {length}")
+        if (
+            isinstance(length, int)
+            and len(list(grapheme.graphemes(str(value)))) != length
+        ):
+            raise ValidationError(
+                f"Passed value ({value}) must be a length of {length}"
+            )
 
-        if isinstance(min_len, int) and len(list(grapheme.graphemes(str(value)))) < min_len:
-            raise ValidationError(f"Passed value ({value}) must be a length of at least {min_len}")
+        if (
+            isinstance(min_len, int)
+            and len(list(grapheme.graphemes(str(value)))) < min_len
+        ):
+            raise ValidationError(
+                f"Passed value ({value}) must be a length of at least {min_len}"
+            )
 
-        if isinstance(max_len, int) and len(list(grapheme.graphemes(str(value)))) > max_len:
-            raise ValidationError(f"Passed value ({value}) must be a length of up to {max_len}")
+        if (
+            isinstance(max_len, int)
+            and len(list(grapheme.graphemes(str(value)))) > max_len
+        ):
+            raise ValidationError(
+                f"Passed value ({value}) must be a length of up to {max_len}"
+            )
 
         return str(value)
 
@@ -526,8 +559,12 @@ class Float(Validator):
                 }
                 if maximum is None and maximum != 0
                 else {
-                    lang: text.format(sign=_signs.get(lang, ""), minimum=minimum, maximum=maximum)
-                    for lang, text in translator.getdict("validators.float_range").items()
+                    lang: text.format(
+                        sign=_signs.get(lang, ""), minimum=minimum, maximum=maximum
+                    )
+                    for lang, text in translator.getdict(
+                        "validators.float_range"
+                    ).items()
                 }
             )
 
@@ -690,7 +727,9 @@ class Emoji(Validator):
         if length is not None:
             doc = translator.getdict("validators.emoji_fixed_len", length=length)
         elif min_len is not None and max_len is not None:
-            doc = translator.getdict("validators.emoji_len_range", min_len=min_len, max_len=max_len)
+            doc = translator.getdict(
+                "validators.emoji_len_range", min_len=min_len, max_len=max_len
+            )
         elif min_len is not None:
             doc = translator.getdict("validators.emoji_min_len", min_len=min_len)
         elif max_len is not None:
@@ -734,7 +773,9 @@ class Emoji(Validator):
             )
 
         if min_len is not None and passed_length < min_len:
-            raise ValidationError(f"Passed value ({value}) is not at least {min_len} emojis long")
+            raise ValidationError(
+                f"Passed value ({value}) is not at least {min_len} emojis long"
+            )
 
         if max_len is not None and passed_length > max_len:
             raise ValidationError(
@@ -742,7 +783,9 @@ class Emoji(Validator):
             )
 
         if any(emoji not in ALLOWED_EMOJIS for emoji in grapheme.graphemes(value)):
-            raise ValidationError(f"Passed value ({value}) is not a valid string with emojis")
+            raise ValidationError(
+                f"Passed value ({value}) is not a valid string with emojis"
+            )
 
         return value
 

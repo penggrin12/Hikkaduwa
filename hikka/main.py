@@ -190,7 +190,9 @@ def gen_port(cfg: str = "port", no8080: bool = False) -> int:
     # If we didn't get port from config, generate new one
     # First, try to randomly get port
     while port := random.randint(1024, 65536):
-        if socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(("localhost", port)):
+        if socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(
+            ("localhost", port)
+        ):
             break
 
     return port
@@ -292,7 +294,9 @@ class SuperList(list):
                         return [await getattr(_, attr)(*args, **kwargs) for _ in self]
 
                     return foobar
-                return lambda *args, **kwargs: [getattr(_, attr)(*args, **kwargs) for _ in self]
+                return lambda *args, **kwargs: [
+                    getattr(_, attr)(*args, **kwargs) for _ in self
+                ]
 
             return [getattr(x, attr) for x in self]
 
@@ -317,7 +321,10 @@ class Hikka:
             BASE_DIR = self.arguments.data_root
             BASE_PATH = Path(BASE_DIR)
             CONFIG_PATH = BASE_PATH / "config.json"
-        self.loop = asyncio.get_event_loop()
+        try:
+            self.loop = asyncio.get_event_loop()
+        except RuntimeError:
+            self.loop = asyncio.new_event_loop()
 
         self.clients = SuperList()
         self.ready = asyncio.Event()
@@ -522,7 +529,9 @@ class Hikka:
             return await self._phone_login(client)
 
         if qr_loggedin:
-            password: Password = typing.cast(Password, await client(GetPasswordRequest()))
+            password: Password = typing.cast(
+                Password, await client(GetPasswordRequest())
+            )
             hint: str = f'. Hint: "{password.hint}"' if password.hint else ""
             while True:
                 _2fa: str = getpass(
@@ -532,7 +541,9 @@ class Hikka:
                     await client._on_login(
                         typing.cast(
                             Authorization,
-                            await client(CheckPasswordRequest(compute_check(password, _2fa))),
+                            await client(
+                                CheckPasswordRequest(compute_check(password, _2fa))
+                            ),
                         ).user
                     )
                 except PasswordHashInvalidError:
@@ -548,7 +559,9 @@ class Hikka:
                         f"{minutes} minute(-s) " if minutes else "",
                         f"{hours} hour(-s) " if hours else "",
                     )
-                    print(f"You got FloodWait error! Please wait {hours}{minutes}{seconds}")
+                    print(
+                        f"You got FloodWait error! Please wait {hours}{minutes}{seconds}"
+                    )
                     return False
                 else:
                     break
@@ -567,6 +580,7 @@ class Hikka:
             return False
 
         for session in self.sessions.copy():
+            logging.info(f"Using session file: {session}")
             try:
                 client = CustomTelegramClient(
                     session,
@@ -582,10 +596,7 @@ class Hikka:
                     system_lang_code="en-US",
                 )
 
-                await typing.cast(
-                    typing.Coroutine,
-                    (client.start(phone=(lambda: input("Enter phone number: ")))),
-                )
+                await client.start(phone=(lambda: input("Enter phone number: ")))  # type: ignore
                 setattr(
                     client, "phone", "***"
                 )  # assuming this is private in the telethon's TelegramClient

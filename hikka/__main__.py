@@ -10,21 +10,11 @@ import os
 import sys
 
 
-if sys.version_info < (3, 9, 0):
-    print("🚫 Error: you must use at least Python version 3.9.0")
+if sys.version_info < (3, 10, 0):
+    print("🚫 Error: you must use at least Python version 3.10.0")
 elif __package__ != "hikka":  # In case they did python __main__.py
     print("🚫 Error: you cannot run this as a script; you must execute as a package")
 else:
-    try:
-        import telethon
-    except Exception:
-        pass
-    else:
-        import telethon  # noqa: F811
-
-        if telethon.__version__ != "1.40.0":
-            raise ImportError
-
     from . import log
 
     log.init()

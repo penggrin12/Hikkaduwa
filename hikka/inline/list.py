@@ -184,8 +184,7 @@ class List(InlineUnit):
                 status_message = await (
                     message.edit if message.out else message.respond
                 )(
-                    "🌘"
-                    + self.translator.getkey("inline.opening_list"),
+                    "🌘" + self.translator.getkey("inline.opening_list"),
                     **({"reply_to": utils.get_topic(message)} if message.out else {}),
                 )
             except Exception:

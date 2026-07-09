@@ -269,8 +269,7 @@ class Form(InlineUnit):
                 status_message = await (
                     message.edit if message.out else message.respond
                 )(
-                    "🌘"
-                    + self.translator.getkey("inline.opening_form"),
+                    "🌘" + self.translator.getkey("inline.opening_form"),
                     **({"reply_to": utils.get_topic(message)} if message.out else {}),
                 )
             except Exception:
@@ -349,7 +348,7 @@ class Form(InlineUnit):
                 self.translator.getkey("inline.invoke_failed_logs").format(
                     utils.escape_html(
                         "\n".join(traceback.format_exc().splitlines()[1:])
-                    utils.escape_html("\n".join(traceback.format_exc().splitlines()[1:]))
+                    )
                 )
                 if self._db.get(main.__name__, "inlinelogs", True)
                 else self.translator.getkey("inline.invoke_failed")

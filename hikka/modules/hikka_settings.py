@@ -167,10 +167,14 @@ class HikkaSettingsMod(loader.Module):
     async def watchers(self, message: Message):
         watchers, disabled_watchers = self.get_watchers()
         watchers = [
-            f"♻️ {watcher}" for watcher in watchers if watcher not in list(disabled_watchers.keys())
+            f"♻️ {watcher}"
+            for watcher in watchers
+            if watcher not in list(disabled_watchers.keys())
         ]
         watchers += [f"💢 {k} {v}" for k, v in disabled_watchers.items()]
-        await utils.answer(message, self.strings("watchers").format("\n".join(watchers)))  # type: ignore[reportCallIssue]
+        await utils.answer(
+            message, self.strings("watchers").format("\n".join(watchers))
+        )  # type: ignore[reportCallIssue]
 
     @loader.command()
     async def watcherbl(self, message: Message):
@@ -186,7 +190,9 @@ class HikkaSettingsMod(loader.Module):
 
         args = next((x.lower() == args.lower() for x in watchers), False)
 
-        current_bl = [v for k, v in disabled_watchers.items() if k.lower() == args.lower()]
+        current_bl = [
+            v for k, v in disabled_watchers.items() if k.lower() == args.lower()
+        ]
         current_bl = current_bl[0] if current_bl else []
 
         chat = utils.get_chat_id(message)
@@ -263,7 +269,8 @@ class HikkaSettingsMod(loader.Module):
             self._db.set(main.__name__, "disabled_watchers", disabled_watchers)
             await utils.answer(
                 message,
-                self.strings("enabled").format(args) + f" (<code>{disabled_watchers[args]}</code>)",  # type: ignore[reportCallIssue]
+                self.strings("enabled").format(args)
+                + f" (<code>{disabled_watchers[args]}</code>)",  # type: ignore[reportCallIssue]
             )
             return
 
@@ -512,7 +519,9 @@ class HikkaSettingsMod(loader.Module):
         self,
         call: InlineCall,
     ):
-        await call.edit(self.strings("inline_settings"), reply_markup=self._get_settings_markup())  # type: ignore[reportCallIssue]
+        await call.edit(
+            self.strings("inline_settings"), reply_markup=self._get_settings_markup()
+        )  # type: ignore[reportCallIssue]
         # await self.inline.form(
         #     self.strings("inline_settings"),
         #     message=call.message,
@@ -577,15 +586,21 @@ class HikkaSettingsMod(loader.Module):
             await utils.answer(message, self.strings("invoke404").format(method))  # type: ignore[reportCallIssue]
             return
 
-        message = await utils.answer(message, self.strings("invoking").format(method, module))  # type: ignore[reportCallIssue]
+        message = await utils.answer(
+            message, self.strings("invoking").format(method, module)
+        )  # type: ignore[reportCallIssue]
         result = ""
 
         if module == "core":
             if method == "flush_entity_cache":
-                result = f"Dropped {len(self._client._hikka_entity_cache)} cache records"
+                result = (
+                    f"Dropped {len(self._client._hikka_entity_cache)} cache records"
+                )
                 self._client._hikka_entity_cache = {}
             elif method == "flush_fulluser_cache":
-                result = f"Dropped {len(self._client._hikka_fulluser_cache)} cache records"
+                result = (
+                    f"Dropped {len(self._client._hikka_fulluser_cache)} cache records"
+                )
                 self._client._hikka_fulluser_cache = {}
             elif method == "flush_fullchannel_cache":
                 result = f"Dropped {len(self._client._hikka_fullchannel_cache)} cache records"
@@ -594,7 +609,9 @@ class HikkaSettingsMod(loader.Module):
                 result = f"Dropped {len(self._client._hikka_perms_cache)} cache records"
                 self._client._hikka_perms_cache = {}
             elif method == "flush_loader_cache":
-                result = f"Dropped {await self.lookup('loader').flush_cache()} cache records"
+                result = (
+                    f"Dropped {await self.lookup('loader').flush_cache()} cache records"
+                )
             elif method == "flush_cache":
                 count = self.lookup("loader").flush_cache()
                 result = (
@@ -628,7 +645,8 @@ class HikkaSettingsMod(loader.Module):
                 ).format(
                     len(self.allmodules.modules),
                     sum(
-                        module.__origin__.startswith("<core") for module in self.allmodules.modules
+                        module.__origin__.startswith("<core")
+                        for module in self.allmodules.modules
                     ),
                     sum(
                         not module.__origin__.startswith("<core")
@@ -725,7 +743,10 @@ class HikkaSettingsMod(loader.Module):
             message,
             self.strings("aliases")  # type: ignore[reportCallIssue]
             + "\n".join(
-                [f"▫️ <code>{i}</code> &lt;- {y}" for i, y in self.allmodules.aliases.items()]
+                [
+                    f"▫️ <code>{i}</code> &lt;- {y}"
+                    for i, y in self.allmodules.aliases.items()
+                ]
             ),
         )
 
@@ -803,7 +824,10 @@ class HikkaSettingsMod(loader.Module):
             not args
             or not args.lower().endswith("bot")
             or len(args) <= 4
-            or any(litera not in (string.ascii_letters + string.digits + "_") for litera in args)
+            or any(
+                litera not in (string.ascii_letters + string.digits + "_")
+                for litera in args
+            )
         ):
             await utils.answer(message, self.strings("bot_username_invalid"))  # type: ignore[reportCallIssue]
             return

@@ -5,7 +5,7 @@ Hikkaduwa is a powerful and modular Telegram userbot. This fork, maintained by [
 ![Lines of code](https://img.shields.io/endpoint?url=https://ghloc.vercel.app/api/penggrin12/Hikkaduwa/badge?filter=.py$&style=flat&logoColor=white&label=Lines%20of%20Code)
 ![GitHub Open issues](https://img.shields.io/github/issues/penggrin12/Hikkaduwa)
 ![GitHub Closed pull requests](https://img.shields.io/github/issues-pr-closed/penggrin12/Hikkaduwa)  
-![Python Version](https://img.shields.io/badge/python-3.9+-blue)
+![Python Version](https://img.shields.io/badge/python-3.10+-blue)
 ![License](https://img.shields.io/badge/license-AGPLv3-red)
 
 
@@ -25,7 +25,7 @@ Hikkaduwa is a powerful and modular Telegram userbot. This fork, maintained by [
 
 ## Requirements
 
-* **Python:** 3.9 or higher (haven't yet tested on <3.12)
+* **Python:** 3.10 or higher (haven't yet tested on <3.12)
 * **UV:** The `uv` package installer is recommended ([Installation Guide](https://github.com/astral-sh/uv#installation)).
 * **Telegram API Credentials:** API ID and API Hash from <https://my.telegram.org>.
 * **Dependencies:** See `pyproject.toml` for the full list (includes `telethon`, `aiogram`, `requests`, etc.). These are installed automatically by `uv`.
@@ -34,14 +34,7 @@ Hikkaduwa is a powerful and modular Telegram userbot. This fork, maintained by [
 ## Installation & Setup
 
 1.  **Install `uv` (if you haven't already):**
-    Follow the official `uv` [installation instructions](https://github.com/astral-sh/uv#installation). A common method is:
-    ```bash
-    # Linux/macOS
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    # Windows (requires Python installed)
-    pip install uv
-    # Or see other methods like pipx, brew, etc. in the uv docs
-    ```
+    Follow the official [`uv` installation instructions](https://github.com/astral-sh/uv#installation).
 2.  **Clone the repository:**
     ```bash
     git clone https://github.com/penggrin12/Hikkaduwa.git

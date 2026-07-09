@@ -94,7 +94,9 @@ class LoaderMod(loader.Module):
                 "basic_auth",
                 None,
                 lambda: self.strings("basic_auth_doc"),  # type: ignore[reportCallIssue]
-                validator=loader.validators.Hidden(loader.validators.RegExp(r"^.*:.*$")),
+                validator=loader.validators.Hidden(
+                    loader.validators.RegExp(r"^.*:.*$")
+                ),
             ),
         )
 
@@ -198,7 +200,9 @@ class LoaderMod(loader.Module):
                                     f"<code>{i}</code>"
                                     for i in sorted(
                                         [
-                                            utils.escape_html(i.split("/")[-1].split(".")[0])
+                                            utils.escape_html(
+                                                i.split("/")[-1].split(".")[0]
+                                            )
                                             for i in mods.values()
                                         ]
                                     )
@@ -453,9 +457,9 @@ class LoaderMod(loader.Module):
         save_fs: bool = False,
         blob_link: bool = False,
     ):
-        if any(line.replace(" ", "") == "#scope:ffmpeg" for line in doc.splitlines()) and os.system(
-            "ffmpeg -version 1>/dev/null 2>/dev/null"
-        ):
+        if any(
+            line.replace(" ", "") == "#scope:ffmpeg" for line in doc.splitlines()
+        ) and os.system("ffmpeg -version 1>/dev/null 2>/dev/null"):
             if isinstance(message, Message):
                 await utils.answer(message, self.strings("ffmpeg_required"))  # type: ignore[reportCallIssue]
             return
@@ -760,7 +764,9 @@ class LoaderMod(loader.Module):
                 if message:
                     await utils.answer(
                         message,
-                        (f"🥶 <b>Module suspended itself\nReason: {utils.escape_html(str(e))}</b>"),
+                        (
+                            f"🥶 <b>Module suspended itself\nReason: {utils.escape_html(str(e))}</b>"
+                        ),
                     )
                 return
         except Exception as e:
@@ -790,7 +796,9 @@ class LoaderMod(loader.Module):
         )
 
         if pack_url and (
-            transations := await self.allmodules.translator.load_module_translations(pack_url)
+            transations := await self.allmodules.translator.load_module_translations(
+                pack_url
+            )
         ):
             instance.strings.external_strings = transations
 
@@ -850,7 +858,9 @@ class LoaderMod(loader.Module):
                 )
 
         depends_from = (
-            self.strings("depends_from").format("\n".join(depends_from)) if depends_from else ""  # type: ignore[reportCallIssue]
+            self.strings("depends_from").format("\n".join(depends_from))
+            if depends_from
+            else ""  # type: ignore[reportCallIssue]
         )
 
         def loaded_msg(use_subscribe: bool = True):
@@ -880,7 +890,9 @@ class LoaderMod(loader.Module):
             )
 
         if developer:
-            if developer.startswith("@") and developer not in self.get("do_not_subscribe", []):
+            if developer.startswith("@") and developer not in self.get(
+                "do_not_subscribe", []
+            ):
                 if (
                     developer_entity
                     and getattr(developer_entity, "left", True)
@@ -918,7 +930,10 @@ class LoaderMod(loader.Module):
         else:
             developer = ""
 
-        if any(line.replace(" ", "") == "#scope:disable_onload_docs" for line in doc.splitlines()):
+        if any(
+            line.replace(" ", "") == "#scope:disable_onload_docs"
+            for line in doc.splitlines()
+        ):
             await utils.answer(message, loaded_msg(), reply_markup=subscribe_markup)
             return
 
@@ -930,7 +945,11 @@ class LoaderMod(loader.Module):
                 "▫️",
                 utils.escape_html(self.get_prefix()),
                 _name,
-                (utils.escape_html(inspect.getdoc(fun)) if fun.__doc__ else self.strings("undoc")),  # type: ignore[reportCallIssue]
+                (
+                    utils.escape_html(inspect.getdoc(fun))
+                    if fun.__doc__
+                    else self.strings("undoc")
+                ),  # type: ignore[reportCallIssue]
             )
 
         if self.inline.init_complete:
@@ -1003,7 +1022,9 @@ class LoaderMod(loader.Module):
         msg = (
             self.strings("unloaded").format(  # type: ignore[reportCallIssue]
                 "✅",
-                ", ".join([(mod[:-3] if mod.endswith("Mod") else mod) for mod in worked]),
+                ", ".join(
+                    [(mod[:-3] if mod.endswith("Mod") else mod) for mod in worked]
+                ),
             )
             if worked
             else self.strings("not_unloaded")  # type: ignore[reportCallIssue]

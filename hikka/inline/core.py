@@ -69,14 +69,14 @@ class InlineManager(
         self.translator: Translator = allmodules.translator
 
         self._units: typing.Dict[str, dict] = {}
-        self._custom_map: typing.Dict[str, callable] = {}
+        self._custom_map: typing.Dict[str, typing.Callable] = {}
         self.fsm: typing.Dict[str, str] = {}
         self._error_events: typing.Dict[str, asyncio.Event] = {}
 
         self._markup_ttl = 60 * 60 * 24
         self.init_complete = False
 
-        self._token = db.get("hikka.inline", "bot_token", False)
+        self._token: str = typing.cast(str, db.get("hikka.inline", "bot_token", False))
 
         self._me: int = None
         self._name: str = None

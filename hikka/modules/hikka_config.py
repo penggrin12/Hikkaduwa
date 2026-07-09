@@ -39,7 +39,9 @@ class HikkaConfigMod(loader.Module):
         if isinstance(value, list) and value:
             return (
                 "</b><code>[</code>\n    "
-                + "\n    ".join([f"<code>{utils.escape_html(str(item))}</code>" for item in value])
+                + "\n    ".join(
+                    [f"<code>{utils.escape_html(str(item))}</code>" for item in value]
+                )
                 + "\n<code>]</code><b>"
             )
 
@@ -56,7 +58,8 @@ class HikkaConfigMod(loader.Module):
             self.prep_value(self.lookup(mod).config[option])
             if (
                 not self.lookup(mod).config._config[option].validator
-                or self.lookup(mod).config._config[option].validator.internal_id != "Hidden"
+                or self.lookup(mod).config._config[option].validator.internal_id
+                != "Hidden"
             )
             else self.hide_value(self.lookup(mod).config[option])
         )
@@ -164,7 +167,9 @@ class HikkaConfigMod(loader.Module):
             next(
                 (
                     validator.doc[lang]
-                    for lang in self._db.get(translations.__name__, "lang", "en").split(" ")
+                    for lang in self._db.get(translations.__name__, "lang", "en").split(
+                        " "
+                    )
                     if lang in validator.doc
                 ),
                 validator.doc["en"],
@@ -173,7 +178,9 @@ class HikkaConfigMod(loader.Module):
 
         await call.edit(
             self.strings(  # type: ignore[reportCallIssue]
-                "configuring_option" if isinstance(obj_type, bool) else "configuring_option_lib"
+                "configuring_option"
+                if isinstance(obj_type, bool)
+                else "configuring_option_lib"
             ).format(
                 utils.escape_html(option),
                 utils.escape_html(mod),
@@ -236,7 +243,8 @@ class HikkaConfigMod(loader.Module):
                             "kwargs": {"obj_type": obj_type},
                         }
                     ]
-                    if self.lookup(mod).config[option] != self.lookup(mod).config.getdef(option)
+                    if self.lookup(mod).config[option]
+                    != self.lookup(mod).config.getdef(option)
                     else []
                 )
             ],
@@ -419,7 +427,8 @@ class HikkaConfigMod(loader.Module):
                             "kwargs": {"obj_type": obj_type},
                         }
                     ]
-                    if self.lookup(mod).config[option] != self.lookup(mod).config.getdef(option)
+                    if self.lookup(mod).config[option]
+                    != self.lookup(mod).config.getdef(option)
                     else []
                 )
             ],
@@ -517,7 +526,9 @@ class HikkaConfigMod(loader.Module):
         obj_type: typing.Union[bool, str] = False,
     ) -> list:
         possible_values = list(
-            self.lookup(mod).config._config[option].validator.validate.keywords["possible_values"]
+            self.lookup(mod)
+            .config._config[option]
+            .validator.validate.keywords["possible_values"]
         )
         return [
             [
@@ -545,7 +556,8 @@ class HikkaConfigMod(loader.Module):
             )[
                 : (
                     6
-                    if self.lookup(mod).config[option] != self.lookup(mod).config.getdef(option)
+                    if self.lookup(mod).config[option]
+                    != self.lookup(mod).config.getdef(option)
                     else 7
                 )
             ],
@@ -559,7 +571,8 @@ class HikkaConfigMod(loader.Module):
                             "kwargs": {"obj_type": obj_type},
                         }
                     ]
-                    if self.lookup(mod).config[option] != self.lookup(mod).config.getdef(option)
+                    if self.lookup(mod).config[option]
+                    != self.lookup(mod).config.getdef(option)
                     else []
                 )
             ],
@@ -582,7 +595,9 @@ class HikkaConfigMod(loader.Module):
         obj_type: typing.Union[bool, str] = False,
     ) -> list:
         possible_values = list(
-            self.lookup(mod).config._config[option].validator.validate.keywords["possible_values"]
+            self.lookup(mod)
+            .config._config[option]
+            .validator.validate.keywords["possible_values"]
         )
         return [
             [
@@ -610,7 +625,8 @@ class HikkaConfigMod(loader.Module):
             )[
                 : (
                     6
-                    if self.lookup(mod).config[option] != self.lookup(mod).config.getdef(option)
+                    if self.lookup(mod).config[option]
+                    != self.lookup(mod).config.getdef(option)
                     else 7
                 )
             ],
@@ -624,7 +640,8 @@ class HikkaConfigMod(loader.Module):
                             "kwargs": {"obj_type": obj_type},
                         }
                     ]
-                    if self.lookup(mod).config[option] != self.lookup(mod).config.getdef(option)
+                    if self.lookup(mod).config[option]
+                    != self.lookup(mod).config.getdef(option)
                     else []
                 )
             ],
@@ -698,7 +715,9 @@ class HikkaConfigMod(loader.Module):
                 next(
                     (
                         validator.doc[lang]
-                        for lang in self._db.get(translations.__name__, "lang", "en").split(" ")
+                        for lang in self._db.get(
+                            translations.__name__, "lang", "en"
+                        ).split(" ")
                         if lang in validator.doc
                     ),
                     validator.doc["en"],
@@ -759,13 +778,17 @@ class HikkaConfigMod(loader.Module):
                         else "configuring_option_lib"
                     ).format(*args),
                     reply_markup=additonal_button_row
-                    + self._generate_multi_choice_markup(call, mod, config_opt, obj_type),
+                    + self._generate_multi_choice_markup(
+                        call, mod, config_opt, obj_type
+                    ),
                 )
                 return
 
         await call.edit(
             self.strings(  # type: ignore[reportCallIssue]
-                "configuring_option" if isinstance(obj_type, bool) else "configuring_option_lib"
+                "configuring_option"
+                if isinstance(obj_type, bool)
+                else "configuring_option_lib"
             ).format(*args),
             reply_markup=additonal_button_row
             + [
@@ -896,7 +919,9 @@ class HikkaConfigMod(loader.Module):
                 and (not mod.__origin__.startswith("<core") or obj_type)
             ]
         else:
-            to_config = [lib.name for lib in self.allmodules.libraries if hasattr(lib, "config")]
+            to_config = [
+                lib.name for lib in self.allmodules.libraries if hasattr(lib, "config")
+            ]
 
         to_config.sort()
 
@@ -918,7 +943,9 @@ class HikkaConfigMod(loader.Module):
 
         if len(to_config) > NUM_ROWS * ROW_SIZE:
             kb += self.inline.build_pagination(
-                callback=functools.partial(self.inline__global_config, obj_type=obj_type),
+                callback=functools.partial(
+                    self.inline__global_config, obj_type=obj_type
+                ),
                 total_pages=ceil(len(to_config) / (NUM_ROWS * ROW_SIZE)),
                 current_page=page + 1,
             )
@@ -934,7 +961,9 @@ class HikkaConfigMod(loader.Module):
         ]
 
         await call.edit(
-            self.strings("configure" if isinstance(obj_type, bool) else "configure_lib"),  # type: ignore[reportCallIssue]
+            self.strings(
+                "configure" if isinstance(obj_type, bool) else "configure_lib"
+            ),  # type: ignore[reportCallIssue]
             reply_markup=kb,
         )
 
@@ -976,7 +1005,9 @@ class HikkaConfigMod(loader.Module):
         await utils.answer(
             message,
             self.strings(  # type: ignore[reportCallIssue]
-                "option_saved" if isinstance(instance, loader.Module) else "option_saved_lib"
+                "option_saved"
+                if isinstance(instance, loader.Module)
+                else "option_saved_lib"
             ).format(
                 utils.escape_html(option),
                 utils.escape_html(mod),

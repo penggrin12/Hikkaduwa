@@ -53,12 +53,9 @@ class Events(InlineUnit):
             return
 
         cmd = query.split()[0].lower()
-        if (
-            cmd in self._allmodules.inline_handlers
-            and await self.check_inline_security(
-                func=self._allmodules.inline_handlers[cmd],
-                user=inline_query.from_user.id,
-            )
+        if cmd in self._allmodules.inline_handlers and await self.check_inline_security(
+            func=self._allmodules.inline_handlers[cmd],
+            user=inline_query.from_user.id,
         ):
             instance = InlineQuery(inline_query)
 

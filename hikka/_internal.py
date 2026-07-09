@@ -35,7 +35,9 @@ def restart_windows_test():
         [
             sys.executable,
             "-m",
-            os.path.relpath(os.path.abspath(os.path.dirname(os.path.abspath(__file__)))),
+            os.path.relpath(
+                os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+            ),
         ],
         stdin=sys.stdin,
         stdout=sys.stdout,

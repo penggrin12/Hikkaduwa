@@ -33,14 +33,17 @@ import sys
 import traceback
 import typing
 
-from telethon import events
-from telethon.errors import FloodWaitError, RPCError
-from telethon.tl.types import Message
+import pyrogram
+import pyrogram.errors
+from pyrogram.errors import FloodWait
+from pyrogram.types import Message
 
 from . import features, main, utils
-from .database import Database
-from .loader import Modules
-from .tl_cache import CustomTelegramClient
+
+if typing.TYPE_CHECKING:
+    from .client import HikkaClient
+    from .database import Database
+    from .loader import Modules
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +96,7 @@ ALL_TAGS = [
 ]
 
 
-def _decrement_ratelimit(delay, data, key, severity):
+def _decrement_ratelimit(delay, data, key, severity) -> None:
     def inner():
         data[key] = max(0, data[key] - severity)
 
@@ -103,22 +106,22 @@ def _decrement_ratelimit(delay, data, key, severity):
 class CommandDispatcher:
     def __init__(
         self,
-        modules: Modules,
-        client: CustomTelegramClient,
-        db: Database,
+        modules: "Modules",
+        client: "HikkaClient",
+        db: "Database",
     ):
-        self._modules = modules
-        self._client = client
-        self.client = client
-        self._db = db
+        self._modules: "Modules" = modules
+        self._client: "HikkaClient" = client
+        self.client: "HikkaClient" = client
+        self._db: "Database" = db
 
         self._ratelimit_storage_user = collections.defaultdict(int)
         self._ratelimit_storage_chat = collections.defaultdict(int)
         self._ratelimit_max_user = db.get(__name__, "ratelimit_max_user", 30)
         self._ratelimit_max_chat = db.get(__name__, "ratelimit_max_chat", 100)
 
-        self._me = self._client.hikka_me.id
-        self._cached_usernames = [
+        self._me: int = self._client.hikka_me.id
+        self._cached_usernames: list[str] = [
             (
                 self._client.hikka_me.username.lower()
                 if self._client.hikka_me.username
@@ -135,24 +138,24 @@ class CommandDispatcher:
     async def _handle_ratelimit(self, message: Message, func: typing.Callable) -> bool:
         func = getattr(func, "__func__", func)
         ret = True
-        chat = self._ratelimit_storage_chat[message.chat_id]
+        chat = self._ratelimit_storage_chat[message.chat.id]
 
-        if message.sender_id:
-            user = self._ratelimit_storage_user[message.sender_id]
+        if message.from_user:
+            user = self._ratelimit_storage_user[message.from_user.id]
             severity = (5 if getattr(func, "ratelimit", False) else 2) * (
                 (user + chat) // 30 + 1
             )
             user += severity
-            self._ratelimit_storage_user[message.sender_id] = user
+            self._ratelimit_storage_user[message.from_user.id] = user
             if user > self._ratelimit_max_user:
                 ret = False
             else:
-                self._ratelimit_storage_chat[message.chat_id] = chat
+                self._ratelimit_storage_chat[message.chat.id] = chat
 
             _decrement_ratelimit(
                 self._ratelimit_max_user * severity,
                 self._ratelimit_storage_user,
-                message.sender_id,
+                message.from_user.id,
                 severity,
             )
         else:
@@ -168,7 +171,7 @@ class CommandDispatcher:
         _decrement_ratelimit(
             self._ratelimit_max_chat * severity,
             self._ratelimit_storage_chat,
-            message.chat_id,
+            message.chat.id,
             severity,
         )
 
@@ -176,47 +179,42 @@ class CommandDispatcher:
 
     async def _handle_command(
         self,
-        event: typing.Union[events.NewMessage, events.MessageDeleted],
+        message: pyrogram.types.Message,
         watcher: bool = False,
-    ) -> typing.Union[bool, typing.Tuple[Message, str, str, typing.Callable]]:
-        if not hasattr(event, "message") or not hasattr(event.message, "message"):
+    ) -> (
+        tuple[pyrogram.types.Message, str, str, typing.Callable] | typing.Literal[False]
+    ):
+        if not message.text:
             return False
 
-        if not event.message.message:
+        prefix: str = typing.cast(
+            str, self._db.get(main.__name__, "command_prefix", ".")
+        )
+        if not message.text.startswith(prefix):
             return False
 
-        prefix = self._db.get(main.__name__, "command_prefix", False) or "."
-
-        if not event.message.message.startswith(prefix):
-            return False
-
-        message = utils.censor(event.message)
+        text: str = utils.censor(message.text)
 
         if (
-            event.sticker
-            or event.dice
-            or event.audio
-            or event.via_bot_id
-            or getattr(event, "reactions", False)
+            message.sticker or message.dice or message.audio or message.via_bot
+            # or message.reactions
         ):
             return False
 
-        if len(message.message) == 1:
+        if len(text) == len(prefix):
             return False  # Message is just the prefix
 
-        initiator = getattr(event, "sender_id", 0)
-
-        if initiator != self._me:
+        if (not message.from_user) or message.from_user.id != self._me:
             return False
 
-        command = message.message[1:].strip().split(maxsplit=1)[0]
+        command = message.text[1:].strip().split(maxsplit=1)[0]
 
         txt, func = self._modules.dispatch(command)
 
         if not func or not await self._handle_ratelimit(message, func):
             return False
 
-        if message.is_channel and message.edit_date and not message.is_group:
+        if message.chat.type == pyrogram.enums.ChatType.CHANNEL and message.edit_date:
             if features.WORK_IN_CHANNELS:
                 async for event in self._client.iter_admin_log(
                     utils.get_chat_id(message),
@@ -231,8 +229,8 @@ class CommandDispatcher:
                         break
 
         if (
-            message.is_channel
-            and message.is_group
+            message.chat.type == pyrogram.enums.ChatType.SUPERGROUP
+            and message.chat.title
             and message.chat.title.startswith("hikka-")
             and message.chat.title != "hikka-logs"
         ):
@@ -240,28 +238,25 @@ class CommandDispatcher:
                 logger.warning("Ignoring message in datachat \\ logging chat")
             return False
 
-        message.message = prefix + txt + message.message[len(prefix + command) :]
+        message.text = prefix + txt + message.text[len(prefix + command) :]
 
-        if await self._handle_tags(event, func):
+        if await self._handle_tags(message, func):
             return False
 
         return message, prefix, txt, func
 
-    async def handle_raw(self, event: events.Raw):
+    async def handle_raw(self, _, update: pyrogram.raw.base.Update, __, ___):
         """Handle raw events."""
         for handler in self.raw_handlers:
-            if isinstance(event, tuple(handler.updates)):
+            if isinstance(update, tuple(handler.updates)):
                 try:
-                    await handler(event)
+                    await handler(update)
                 except Exception as e:
                     logger.exception("Error in raw handler %s: %s", handler.id, e)
 
-    async def handle_command(
-        self,
-        event: typing.Union[events.NewMessage, events.MessageDeleted],
-    ):
+    async def handle_command(self, _, message: pyrogram.types.Message):
         """Handle all commands"""
-        message = await self._handle_command(event)
+        message = await self._handle_command(message)
         if not message:
             return
 
@@ -279,11 +274,11 @@ class CommandDispatcher:
         """Handle command exceptions."""
         exc = sys.exc_info()[1]
         logger.exception("Command failed", extra={"stack": inspect.stack()})
-        if isinstance(exc, RPCError):
-            if isinstance(exc, FloodWaitError):
-                hours = exc.seconds // 3600
-                minutes = (exc.seconds % 3600) // 60
-                seconds = exc.seconds % 60
+        if isinstance(exc, pyrogram.errors.RPCError):
+            if isinstance(exc, FloodWait):
+                hours = exc.value // 3600
+                minutes = (exc.value % 3600) // 60
+                seconds = exc.value % 60
                 hours = f"{hours} hours, " if hours else ""
                 minutes = f"{minutes} minutes, " if minutes else ""
                 seconds = f"{seconds} seconds" if seconds else ""
@@ -292,16 +287,12 @@ class CommandDispatcher:
                     # FIXME: translations no more
                     self._client.loader.lookup("translations")
                     .strings("fw_error")
-                    .format(
-                        utils.escape_html(message.message),
-                        fw_time,
-                        type(exc.request).__name__,
-                    )
+                    .format(utils.escape_html(message.text or ""), fw_time, "?")
                 )
             else:
                 txt = (
                     "🚫 <b>Call"
-                    f" </b><code>{utils.escape_html(message.message)}</code><b> failed"
+                    f" </b><code>{utils.escape_html(message.text or '')}</code><b> failed"
                     " due to RPC (Telegram) error:</b>"
                     f" <code>{utils.escape_html(str(exc))}</code>"
                 )
@@ -309,34 +300,34 @@ class CommandDispatcher:
             if not self._db.get(main.__name__, "inlinelogs", True):
                 txt = (
                     "🚫<b> Call</b>"
-                    f" <code>{utils.escape_html(message.message)}</code><b>"
+                    f" <code>{utils.escape_html(message.text or '')}</code><b>"
                     " failed!</b>"
                 )
             else:
                 exc = "\n".join(traceback.format_exc().splitlines()[1:])
                 txt = (
                     "🚫<b> Call</b>"
-                    f" <code>{utils.escape_html(message.message)}</code><b>"
+                    f" <code>{utils.escape_html(message.text or '')}</code><b>"
                     " failed!</b>\n\n<b>🧾"
                     f" Logs:</b>\n<code>{utils.escape_html(exc)}</code>"
                 )
 
         with contextlib.suppress(Exception):
-            await (message.edit if message.out else message.reply)(txt)
+            await (message.edit if message.outgoing else message.reply)(txt)
 
     async def watcher_exc(self, *_):
         logger.exception("Error running watcher", extra={"stack": inspect.stack()})
 
     async def _handle_tags(
         self,
-        event: typing.Union[events.NewMessage, events.MessageDeleted],
+        message: Message,
         func: typing.Callable,
     ) -> bool:
-        return bool(await self._handle_tags_ext(event, func))
+        return bool(await self._handle_tags_ext(message, func))
 
     async def _handle_tags_ext(
         self,
-        event: typing.Union[events.NewMessage, events.MessageDeleted],
+        message: Message,
         func: typing.Callable,
     ) -> str:
         """
@@ -345,7 +336,7 @@ class CommandDispatcher:
         :param func: The function to handle.
         :return: The reason for the tag to fail.
         """
-        m = event if isinstance(event, Message) else getattr(event, "message", event)
+        m = message
 
         reverse_mapping = {
             "out": lambda: getattr(m, "out", True),
@@ -426,11 +417,11 @@ class CommandDispatcher:
         return (
             "no_commands"
             if getattr(func, "no_commands", False)
-            and await self._handle_command(event, watcher=True)
+            and await self._handle_command(message, watcher=True)
             else (
                 "only_commands"
                 if getattr(func, "only_commands", False)
-                and not await self._handle_command(event, watcher=True)
+                and not await self._handle_command(message, watcher=True)
                 else next(
                     (
                         tag
@@ -444,12 +435,9 @@ class CommandDispatcher:
             )
         )
 
-    async def handle_incoming(
-        self,
-        event: typing.Union[events.NewMessage, events.MessageDeleted],
-    ):
+    async def handle_incoming(self, _, message: pyrogram.types.Message):
         """Handle all incoming messages"""
-        message = utils.censor(getattr(event, "message", event))
+        message = utils.censor(message)
 
         blacklist_chats = self._db.get(main.__name__, "blacklist_chats", [])
         whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
@@ -462,7 +450,7 @@ class CommandDispatcher:
             return
 
         for func in self._modules.watchers:
-            bl = self._db.get(main.__name__, "disabled_watchers", {})
+            bl = typing.cast(dict, self._db.get(main.__name__, "disabled_watchers", {}))
             modname = str(func.__self__.__class__.strings["name"])
 
             if (
@@ -485,12 +473,12 @@ class CommandDispatcher:
                 or whitelist_modules
                 and f"{str(utils.get_chat_id(message))}.{func.__self__.__module__}"
                 not in whitelist_modules
-                or await self._handle_tags(event, func)
+                or await self._handle_tags(message, func)
             ):
                 logger.debug(
                     "Ignored watcher of module %s because of %s",
                     modname,
-                    await self._handle_tags_ext(event, func),
+                    await self._handle_tags_ext(message, func),
                 )
                 continue
 
@@ -516,7 +504,7 @@ class CommandDispatcher:
     async def future_dispatcher(
         self,
         func: typing.Callable,
-        message: Message,
+        message: pyrogram.types.Message,
         exception_handler: typing.Callable,
         *args,
     ):

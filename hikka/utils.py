@@ -26,6 +26,7 @@ import asyncio
 import atexit as _atexit
 import contextlib
 import functools
+import html
 import inspect
 import io
 import json
@@ -42,85 +43,23 @@ from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 
+import asyncstdlib
+
 # import git
 import grapheme
+import pyrogram.errors
+import pyrogram.utils
 import requests
-import telethon
 from aiogram.types import Message as AiogramMessage
-from telethon import hints
-from telethon.tl.custom.message import Message
-from telethon.tl.functions.account import UpdateNotifySettingsRequest
-from telethon.tl.functions.channels import (
-    CreateChannelRequest,
-    EditAdminRequest,
-    EditPhotoRequest,
-    InviteToChannelRequest,
-)
-from telethon.tl.functions.messages import (
-    GetDialogFiltersRequest,
-    SetHistoryTTLRequest,
-    UpdateDialogFilterRequest,
-)
-from telethon.tl.types import (
-    Channel,
-    Chat,
-    ChatAdminRights,
-    InputDocument,
-    InputPeerNotifySettings,
-    MessageEntityBankCard,
-    MessageEntityBlockquote,
-    MessageEntityBold,
-    MessageEntityBotCommand,
-    MessageEntityCashtag,
-    MessageEntityCode,
-    MessageEntityEmail,
-    MessageEntityHashtag,
-    MessageEntityItalic,
-    MessageEntityMention,
-    MessageEntityMentionName,
-    MessageEntityPhone,
-    MessageEntityPre,
-    MessageEntitySpoiler,
-    MessageEntityStrike,
-    MessageEntityTextUrl,
-    MessageEntityUnderline,
-    MessageEntityUnknown,
-    MessageEntityUrl,
-    MessageMediaWebPage,
-    PeerChannel,
-    PeerChat,
-    PeerUser,
-    UpdateNewChannelMessage,
-    User,
-)
-from telethon.tl.types import Message as TLMessage
+from pyrogram.types import Chat, Message, MessageEntity, User
 
+from . import hints
 from ._internal import fw_protect
 from .inline.types import InlineCall, InlineMessage
-from .tl_cache import CustomTelegramClient
 from .types import HikkaReplyMarkup, ListLike, MessageLike, Module
 
-FormattingEntity = typing.Union[
-    MessageEntityUnknown,
-    MessageEntityMention,
-    MessageEntityHashtag,
-    MessageEntityBotCommand,
-    MessageEntityUrl,
-    MessageEntityEmail,
-    MessageEntityBold,
-    MessageEntityItalic,
-    MessageEntityCode,
-    MessageEntityPre,
-    MessageEntityTextUrl,
-    MessageEntityMentionName,
-    MessageEntityPhone,
-    MessageEntityCashtag,
-    MessageEntityUnderline,
-    MessageEntityStrike,
-    MessageEntityBlockquote,
-    MessageEntityBankCard,
-    MessageEntitySpoiler,
-]
+if typing.TYPE_CHECKING:
+    from .client import HikkaClient
 
 emoji_pattern = re.compile(
     "["
@@ -132,28 +71,76 @@ emoji_pattern = re.compile(
     flags=re.UNICODE,
 )
 
-parser = telethon.utils.sanitize_parse_mode("html")
+parser = pyrogram.client.Parser(None)
 logger = logging.getLogger(__name__)
 
 _T = typing.TypeVar("_T")
 
 
-def get_args_raw(message: TLMessage | str) -> str:
+def get_entity_id(entity: hints.Entity) -> int:
+    """
+    Get entity ID
+    :param entity: Entity to get ID from
+    :return: Entity ID
+    """
+    if entity.id is None:
+        raise ValueError("There is no entity id")
+    return entity.id
+
+
+async def entitylike_to_id(client: "HikkaClient", entity: hints.EntityLike) -> int:
+    if isinstance(entity, int):
+        return entity
+    elif isinstance(entity, (pyrogram.types.User, pyrogram.types.Chat)):
+        return get_entity_id(entity)
+    elif isinstance(entity, str):
+        if not (entity_id := (await client.get_chat(entity)).id):
+            raise ValueError(f"Can't get entity id from string {entity}")
+        return entity_id
+    elif isinstance(
+        entity,
+        (
+            pyrogram.raw.types.InputPeerUser,
+            pyrogram.raw.types.PeerUser,
+            pyrogram.raw.types.InputPeerUserFromMessage,
+        ),
+    ):
+        return entity.user_id
+    elif isinstance(
+        entity,
+        (
+            pyrogram.raw.types.InputPeerChannel,
+            pyrogram.raw.types.PeerChannel,
+            pyrogram.raw.types.InputPeerChannelFromMessage,
+        ),
+    ):
+        return entity.channel_id
+    elif isinstance(
+        entity, (pyrogram.raw.types.InputPeerChat, pyrogram.raw.types.PeerChat)
+    ):
+        return entity.chat_id
+    elif isinstance(entity, pyrogram.raw.types.InputPeerSelf):
+        return client.hikka_me.id
+
+    raise ValueError(f"Can't get entity id from entity type {type(entity)}")
+
+
+def get_args_raw(message: Message | str) -> str:
     """
     Get the parameters to the command as a raw string (not split)
     :param message: Message or string to get arguments from
     :return: Raw string of arguments
     """
-    if (text := getattr(message, "message", None)) is None:
-        if isinstance(message, str):
-            text = message
-        else:
+    if isinstance(message, str):
+        text = message
+    else:
+        if not (text := message.text):
             return ""
 
     return args[1] if len(args := text.split(maxsplit=1)) > 1 else ""
 
 
-def get_args(message: TLMessage | str) -> list[str]:
+def get_args(message: Message | str) -> list[str]:
     """
     Get arguments from message
     :param message: Message or string to get arguments from
@@ -169,33 +156,35 @@ def get_args(message: TLMessage | str) -> list[str]:
     return list(filter(lambda x: len(x) > 0, split))
 
 
-def get_args_html(message: TLMessage) -> str:
+def get_args_html(message: Message) -> str:
     """
     Get the parameters to the command as string with HTML (not split)
     :param message: Message to get arguments from
     :return: String with HTML arguments
     """
 
-    raw_args: str = get_args_raw(message)
-    if not raw_args:
-        return raw_args
+    raise NotImplementedError
 
-    raw_text, entities = parser.parse(message)
-    raw_text = parser.add_surrogate(raw_text)
-
-    try:
-        command_len = raw_text.index(" ") + 1
-    except ValueError:
-        return ""
-
-    return parser.unparse(
-        parser.del_surrogate(raw_text[command_len:]),
-        relocate_entities(entities, -command_len, raw_text[command_len:]),
-    )
+    # raw_args: str = get_args_raw(message)
+    # if not raw_args:
+    #     return raw_args
+    #
+    # raw_text, entities = parser.parse(message)
+    # raw_text = parser.add_surrogate(raw_text)
+    #
+    # try:
+    #     command_len = raw_text.index(" ") + 1
+    # except ValueError:
+    #     return ""
+    #
+    # return parser.unparse(
+    #     parser.del_surrogate(raw_text[command_len:]),
+    #     relocate_entities(entities, -command_len, raw_text[command_len:]),
+    # )
 
 
 def get_args_split_by(
-    message: TLMessage | str,
+    message: Message | str,
     separator: str,
 ) -> list[str]:
     """
@@ -211,23 +200,15 @@ def get_args_split_by(
 
 def get_chat_id(message: Message | AiogramMessage) -> int:
     """
-    Get the chat ID, but without -100 if its a channel
+    Get the chat ID, but without -100 if it's a channel
     :param message: Message to get chat ID from
     :return: Chat ID
     """
-    return telethon.utils.resolve_id(
-        getattr(message, "chat_id", None)
-        or getattr(getattr(message, "chat", None), "id", None)
-    )[0]
-
-
-def get_entity_id(entity: hints.Entity) -> int:
-    """
-    Get entity ID
-    :param entity: Entity to get ID from
-    :return: Entity ID
-    """
-    return telethon.utils.get_peer_id(entity)
+    if (message.chat is None) or (message.chat.id is None):
+        raise ValueError("There is no chat or chat id")
+    if message.chat.id < 0:
+        return pyrogram.utils.get_channel_id(message.chat.id)
+    return message.chat.id
 
 
 def escape_html(text: str, /) -> str:  # sourcery skip
@@ -236,12 +217,12 @@ def escape_html(text: str, /) -> str:  # sourcery skip
     :param text: Text to escape
     :return: Escaped text
     """
-    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return html.escape(str(text))
 
 
 def escape_quotes(text: str, /) -> str:
     """
-    Escape quotes to html quotes
+    Escape quotes to HTML quotes
     :param text: Text to escape
     :return: Escaped text
     """
@@ -265,33 +246,18 @@ def get_dir(mod: str) -> str:
     return os.path.abspath(os.path.dirname(os.path.abspath(mod)))
 
 
-async def get_user(message: Message) -> typing.Optional[User]:
+async def get_user(message: Message) -> User | None:
     """
     Get user who sent message, searching if not found easily
     :param message: Message to get user from
     :return: User who sent message
     """
-    try:
-        return await message.get_sender()
-    except ValueError:  # Not in database. Lets go looking for them.
-        logger.debug("User not in session cache. Searching...")
+    if message.from_user:
+        return message.from_user
 
-    if isinstance(message.peer_id, PeerUser):
-        await message.client.get_dialogs()
-        return await message.get_sender()
-
-    if isinstance(message.peer_id, (PeerChannel, PeerChat)):
-        async for user in message.client.iter_participants(
-            message.peer_id,
-            aggressive=True,
-        ):
-            if user.id == message.sender_id:
-                return user
-
-        logger.error("User isn't in the group where they sent the message")
-        return None
-
-    logger.error("`peer_id` is not a user, chat or channel")
+    logger.error(
+        f"Cannot find the user that sent {message.chat.id if message.chat else '?'}/{message.id}"
+    )
     return None
 
 
@@ -319,10 +285,10 @@ def run_async(
 
 
 def censor(
-    obj: typing.Any,
-    to_censor: typing.Optional[typing.Iterable[str]] = None,
+    obj: _T,
+    to_censor: typing.Iterable[str] | None = None,
     replace_with: str = "redacted_{count}_chars",
-):
+) -> _T:
     """
     May modify the original object, but don't rely on it
     :param obj: Object to censor, preferably telethon
@@ -343,10 +309,8 @@ def censor(
 
 
 def relocate_entities(
-    entities: typing.List[FormattingEntity],
-    offset: int,
-    text: typing.Optional[str] = None,
-) -> typing.List[FormattingEntity]:
+    entities: list[MessageEntity], offset: int, text: str | None = None
+) -> list[MessageEntity]:
     """
     Move all entities by offset (truncating at text)
     :param entities: List of entities
@@ -371,7 +335,7 @@ def relocate_entities(
 
 async def answer_file(
     message: MessageLike,
-    file: str | bytes | io.IOBase | InputDocument,
+    file: str | bytes | io.IOBase | pyrogram.types.InputMediaDocument,
     caption: str | None = None,
     **kwargs,
 ) -> MessageLike:
@@ -396,16 +360,29 @@ async def answer_file(
         if isinstance(message, int):
             raise ValueError('form["caller"] must not be an int')
 
-    if topic := get_topic(message):
-        kwargs.setdefault("reply_to", topic)
+    if isinstance(file, pyrogram.types.InputMediaDocument):
+        if file.media is None:
+            raise ValueError("file.media must not be None")
+        file = file.media
+    elif isinstance(file, bytes):
+        file = io.BytesIO(file)
+    elif isinstance(file, io.IOBase):
+        file = typing.cast(typing.BinaryIO, typing.cast(object, file))
+
+    # noinspection PyProtectedMember
+    client = message._client
+    if (client is None) or (message.chat is None) or (message.chat.id is None):
+        raise ValueError
 
     try:
-        response = await message.client.send_file(
-            message.peer_id,
+        response = await client.send_document(
+            message.chat.id,
             file,
-            caption=caption,
+            caption=caption or "",
             **kwargs,
         )
+        if response is None:
+            raise
     except Exception:
         if caption:
             logger.warning(
@@ -423,7 +400,7 @@ async def answer_file(
 
 async def answer(
     message: MessageLike | list[MessageLike],
-    response: str,
+    response: str | Message | bytes | io.BytesIO,
     *,
     reply_markup: HikkaReplyMarkup | None = None,
     **kwargs,
@@ -470,10 +447,15 @@ async def answer(
                 await message.edit(response, reply_markup, **kwargs)
                 return message
 
-            reply_markup = message.client.loader.inline._normalize_markup(reply_markup)
-            result = await message.client.loader.inline.form(
+            # noinspection PyProtectedMember
+            client = typing.cast("HikkaClient | None", message._client)
+            if (client is None) or (message.chat is None) or (message.chat.id is None):
+                raise ValueError
+
+            reply_markup = client.loader.inline.normalize_markup(reply_markup)
+            result = await client.loader.inline.form(
                 response,
-                message=message if message.out else get_chat_id(message),
+                message=message if message.outgoing else get_chat_id(message),
                 reply_markup=reply_markup,
                 **kwargs,
             )
@@ -483,21 +465,33 @@ async def answer(
         await message.edit(response)
         return message
 
-    kwargs.setdefault("link_preview", False)
+    kwargs.setdefault(
+        "link_preview_options", pyrogram.types.LinkPreviewOptions(is_disabled=True)
+    )
 
-    if not (edit := (message.out and not message.via_bot_id and not message.fwd_from)):
-        kwargs.setdefault("reply_to", getattr(message, "reply_to_msg_id", None))
-    elif "reply_to" in kwargs:
-        kwargs.pop("reply_to")
-
-    parse_mode = telethon.utils.sanitize_parse_mode(kwargs.pop("parse_mode", "HTML"))
+    if not (
+        edit := (message.outgoing and not message.via_bot and not message.forwards)
+    ):
+        kwargs.setdefault(
+            "reply_parameters",
+            pyrogram.types.ReplyParameters(message_id=message.reply_to_message_id)
+            if message.reply_to_message_id
+            else None,
+        )
+    elif "reply_parameters" in kwargs:
+        kwargs.pop("reply_parameters")
 
     if isinstance(response, str) and not kwargs.pop("asfile", False):
-        text, entities = parse_mode.parse(response)
+        parser_mode = (
+            pyrogram.enums.ParseMode.HTML
+            if kwargs.pop("parse_mode", "HTML") == "HTML"
+            else pyrogram.enums.ParseMode.MARKDOWN
+        )
+        text, entities = (await parser.parse(response, parser_mode)).values()
 
         if len(text) >= 4096 and not hasattr(message, "hikka_grepped"):
             try:
-                if not message.client.loader.inline.init_complete:
+                if not message._client.loader.inline.init_complete:
                     raise
 
                 strings = list(smart_split(text, entities, 4096))
@@ -505,7 +499,7 @@ async def answer(
                 if len(strings) > 10:
                     raise
 
-                list_ = await message.client.loader.inline.list(
+                list_ = await message._client.loader.inline.list(
                     message=message,
                     strings=strings,
                 )
@@ -518,95 +512,95 @@ async def answer(
                 file = io.BytesIO(text.encode("utf-8"))
                 file.name = "command_result.txt"
 
-                result = await message.client.send_file(
-                    message.peer_id,
-                    file,
-                    # FIXME: translations no more
-                    caption=message.client.loader.lookup("translations").strings(
-                        "too_long"
-                    ),
-                    reply_to=kwargs.get("reply_to") or get_topic(message),
+                reply_param = pyrogram.types.ReplyParameters(
+                    message_id=kwargs.get("reply_to") or get_topic(message)
                 )
 
-                if message.out:
+                result = await message.answer_document(
+                    file,
+                    # FIXME: translations no more
+                    caption=message._client.loader.lookup("translations").strings(
+                        "too_long"
+                    ),
+                    reply_parameters=reply_param if reply_param.message_id else None,
+                )
+                if not result:
+                    raise
+
+                if message.outgoing:
                     await message.delete()
 
                 return result
 
-        return await (message.edit if edit else message.respond)(
-            text,
-            parse_mode=lambda t: (t, entities),
+        return await (message.edit if edit else message.answer)(
+            text=text,
+            entities=message_entities_from_raw(
+                client=message._client, entities=entities
+            )
+            or None,
             **kwargs,
         )
     elif isinstance(response, Message):
         if message.media is None and (
-            response.media is None or isinstance(response.media, MessageMediaWebPage)
+            response.media is None
+            or response.media == pyrogram.enums.MessageMediaType.WEB_PAGE
         ):
             return await message.edit(
-                response.message,
-                parse_mode=lambda t: (t, response.entities or []),
-                link_preview=isinstance(response.media, MessageMediaWebPage),
+                text=response.html_text,
+                parse_mode=pyrogram.enums.ParseMode.HTML,
+                link_preview_options=pyrogram.types.LinkPreviewOptions(
+                    is_disabled=response.media
+                    != pyrogram.enums.MessageMediaType.WEB_PAGE
+                ),
             )
         else:
-            return await message.respond(response, **kwargs)
+            return await message.answer(
+                text=response.md_text,
+                parse_mode=pyrogram.enums.ParseMode.HTML,
+                **kwargs,
+            )
     else:
-        if isinstance(response, bytes):
-            response = io.BytesIO(response)
-        elif isinstance(response, str):
-            response = io.BytesIO(response.encode("utf-8"))
-
-        if name := kwargs.pop("filename", None):
-            response.name = name
-
-        if message.media is not None and edit:
-            await message.edit(file=response, **kwargs)
-            return message
-        else:
-            kwargs.setdefault(
-                "reply_to",
-                getattr(message, "reply_to_msg_id", get_topic(message)),
-            )
-            result = await message.client.send_file(message.peer_id, response, **kwargs)
-            if message.out:
-                await message.delete()
-            return result
+        return await answer_file(message, response, **kwargs)
 
     typing.assert_never(message)
 
 
-async def get_target(message: Message, arg_no: int = 0) -> typing.Optional[int]:
+async def get_target(message: Message, arg_no: int = 0) -> int | None:
     """
     Get target from message
     :param message: Message to get target from
     :param arg_no: Argument number to get target from
-    :return: Target
+    :return: Target's id if found
     """
 
     if any(
-        isinstance(entity, MessageEntityMentionName)
+        entity.type == pyrogram.enums.MessageEntityType.TEXT_MENTION
         for entity in (message.entities or [])
     ):
         e = sorted(
-            filter(lambda x: isinstance(x, MessageEntityMentionName), message.entities),
+            filter(
+                lambda x: x.type == pyrogram.enums.MessageEntityType.TEXT_MENTION,
+                message.entities,
+            ),
             key=lambda x: x.offset,
         )[0]
-        return e.user_id
+        return e.user.id if e and e.user else None
 
     if len(get_args(message)) > arg_no:
         user = get_args(message)[arg_no]
-    elif message.is_reply:
-        return (await message.get_reply_message()).sender_id
-    elif hasattr(message.peer_id, "user_id"):
-        user = message.peer_id.user_id
+    elif message.reply_to_message and message.reply_to_message.from_user:
+        return message.reply_to_message.from_user.id
+    elif message.from_user:
+        return message.from_user.id
     else:
         return None
 
     try:
-        entity = await message.client.get_entity(user)
+        entity = await message._client.get_chat(user)
     except ValueError:
         return None
     else:
-        if isinstance(entity, User):
+        if isinstance(entity, (User, Chat)):
             return entity.id
 
 
@@ -624,7 +618,7 @@ def merge(a: dict, b: dict, /) -> dict:
 
 
 async def set_avatar(
-    client: CustomTelegramClient,
+    client: "HikkaClient",
     peer: hints.Entity,
     avatar: str,
 ) -> bool:
@@ -635,6 +629,9 @@ async def set_avatar(
     :param avatar: Desired avatar's URL
     :return: Avatar is set successfully
     """
+    if peer.id is None:
+        raise ValueError("peer's id cannot be None")
+
     if isinstance(avatar, str) and check_url(avatar):
         f = (
             await run_sync(
@@ -648,34 +645,21 @@ async def set_avatar(
         return False
 
     await fw_protect()
-    res = await client(
-        EditPhotoRequest(
-            channel=peer,
-            photo=await client.upload_file(f, file_name="photo.png"),
-        )
-    )
+    if not (res := await client.set_chat_photo(chat_id=peer.id, photo=io.BytesIO(f))):
+        return False
 
     await fw_protect()
 
     try:
-        await client.delete_messages(
-            peer,
-            message_ids=[
-                next(
-                    update
-                    for update in res.updates
-                    if isinstance(update, UpdateNewChannelMessage)
-                ).message.id
-            ],
-        )
-    except Exception:
+        await res.delete()
+    except pyrogram.errors.RPCError:
         pass
 
     return True
 
 
 async def invite_inline_bot(
-    client: CustomTelegramClient,
+    client: "HikkaClient",
     peer: hints.EntityLike,
 ) -> None:
     """
@@ -686,26 +670,30 @@ async def invite_inline_bot(
     :raise RuntimeError: If error occurred while inviting bot
     """
 
+    peer_id: int = await entitylike_to_id(client, peer)
+
     try:
-        await client(InviteToChannelRequest(peer, [client.loader.inline.bot_username]))
+        await client.add_chat_members(
+            chat_id=peer_id, user_ids=client.loader.inline.bot_id
+        )
     except Exception as e:
         raise RuntimeError(
             "Can't invite inline bot to old asset chat, which is required by module"
         ) from e
 
     with contextlib.suppress(Exception):
-        await client(
-            EditAdminRequest(
-                channel=peer,
-                user_id=client.loader.inline.bot_username,
-                admin_rights=ChatAdminRights(ban_users=True),
-                rank="Hikkaduwa",
-            )
+        await client.promote_chat_member(
+            chat_id=peer_id,
+            user_id=client.loader.inline.bot_id,
+            privileges=pyrogram.types.ChatPrivileges(can_restrict_members=True),
+        )
+        await client.set_administrator_title(
+            chat_id=peer_id, user_id=client.loader.inline.bot_id, title="Hikkaduwa"
         )
 
 
 async def asset_channel(
-    client: CustomTelegramClient,
+    client: "HikkaClient",
     title: str,
     description: str,
     *,
@@ -713,10 +701,10 @@ async def asset_channel(
     silent: bool = False,
     archive: bool = False,
     invite_bot: bool = False,
-    avatar: typing.Optional[str] = None,
-    ttl: typing.Optional[int] = None,
-    _folder: typing.Optional[str] = None,
-) -> typing.Tuple[Channel, bool]:
+    avatar: str | None = None,
+    ttl: int | None = None,
+    _folder: str | None = None,
+) -> tuple[Chat, bool]:
     """
     Create new channel (if needed) and return its entity
     :param client: Telegram client to create channel by
@@ -730,41 +718,35 @@ async def asset_channel(
     :param ttl: Time to live for messages in channel
     :return: Peer and bool: is channel new or pre-existent
     """
-    if not hasattr(client, "_channels_cache"):
-        client._channels_cache = {}
-
     if (
-        title in client._channels_cache
-        and client._channels_cache[title]["exp"] > time.time()
+        title in client.channels_cache
+        and client.channels_cache[title]["exp"] > time.time()
     ):
-        return client._channels_cache[title]["peer"], False
+        peer = client.channels_cache[title]["peer"]
+        peer.id = pyrogram.utils.ZERO_CHANNEL_ID - peer.id
+        return peer, False
 
-    async for d in client.iter_dialogs():
-        if d.title == title:
-            client._channels_cache[title] = {"peer": d.entity, "exp": int(time.time())}
+    async for d in client.get_dialogs():
+        if d.chat.title == title:
+            client.channels_cache[title] = {"peer": d.chat, "exp": int(time.time())}
             if invite_bot:
-                if all(
-                    participant.id != client.loader.inline.bot_id
-                    for participant in (
-                        await client.get_participants(d.entity, limit=100)
-                    )
+                if await asyncstdlib.all(
+                    participant.user.id != client.loader.inline.bot_id
+                    async for participant in (d.chat.get_members(limit=100))
+                    if participant.user
                 ):
                     await fw_protect()
-                    await invite_inline_bot(client, d.entity)
+                    await invite_inline_bot(client, d.chat)
 
-            return d.entity, False
+            d.chat.id = pyrogram.utils.ZERO_CHANNEL_ID - d.chat.id
+            return d.chat, False
 
     await fw_protect()
 
-    peer = (
-        await client(
-            CreateChannelRequest(
-                title,
-                description,
-                megagroup=not channel,
-            )
-        )
-    ).chats[0]
+    peer: Chat = await client.create_channel(title=title, description=description)
+    peer_id: int | None = peer.id
+    if not peer_id:
+        raise ValueError(f"Can't create channel with title {title}")
 
     if invite_bot:
         await fw_protect()
@@ -775,7 +757,7 @@ async def asset_channel(
         await dnd(client, peer, archive)
     elif archive:
         await fw_protect()
-        await client.edit_folder(peer, 1)
+        await client.archive_chats(chat_ids=peer_id)
 
     if avatar:
         await fw_protect()
@@ -783,40 +765,15 @@ async def asset_channel(
 
     if ttl:
         await fw_protect()
-        await client(SetHistoryTTLRequest(peer=peer, period=ttl))
+        await client.set_chat_ttl(chat_id=peer_id, ttl_seconds=ttl)
 
-    if _folder:
-        if _folder != "hikka":
-            raise NotImplementedError
-
-        folders = await client(GetDialogFiltersRequest())
-
-        try:
-            folder = next(folder for folder in folders if folder.title == "hikka")
-        except Exception:
-            folder = None
-
-        if folder is not None and not any(
-            peer.id == getattr(folder_peer, "channel_id", None)
-            for folder_peer in folder.include_peers
-        ):
-            folder.include_peers += [await client.get_input_entity(peer)]
-
-            await client(
-                UpdateDialogFilterRequest(
-                    folder.id,
-                    folder,
-                )
-            )
-
-    client._channels_cache[title] = {"peer": peer, "exp": int(time.time())}
+    client.channels_cache[title] = {"peer": peer, "exp": int(time.time())}
+    peer.id = pyrogram.utils.ZERO_CHANNEL_ID - peer.id
     return peer, True
 
 
 async def dnd(
-    client: CustomTelegramClient,
-    peer: hints.Entity,
-    archive: bool = True,
+    client: "HikkaClient", peer: hints.EntityLike, archive: bool = True
 ) -> bool:
     """
     Mutes and optionally archives peer
@@ -824,29 +781,24 @@ async def dnd(
     :param archive: Archive peer, or just mute?
     :return: `True` on success, otherwise `False`
     """
+    peer_id = await entitylike_to_id(client, peer)
+
     try:
-        await client(
-            UpdateNotifySettingsRequest(
-                peer=peer,
-                settings=InputPeerNotifySettings(
-                    show_previews=False,
-                    silent=True,
-                    mute_until=2**31 - 1,
-                ),
-            )
+        await client.update_chat_notifications(
+            chat_id=peer_id, mute=True, show_previews=False
         )
 
         if archive:
             await fw_protect()
-            await client.edit_folder(peer, 1)
-    except Exception:
-        logger.exception("utils.dnd error")
+            await client.archive_chats(peer_id)
+    except Exception as e:
+        logger.exception("utils.dnd error", exc_info=e)
         return False
 
     return True
 
 
-def get_link(user: typing.Union[User, Channel], /) -> str:
+def get_link(user: User | Chat, /) -> str:
     """
     Get telegram permalink to entity
     :param user: User or channel
@@ -863,7 +815,7 @@ def get_link(user: typing.Union[User, Channel], /) -> str:
     )
 
 
-def chunks(_list: ListLike, n: int, /) -> typing.List[ListLike]:
+def chunks(_list: ListLike, n: int, /) -> list[ListLike]:
     """
     Split provided `_list` into chunks of `n`
     :param _list: List to split
@@ -987,9 +939,7 @@ def ascii_face() -> str:
     )
 
 
-def array_sum(
-    array: typing.List[typing.List[typing.Any]], /
-) -> typing.List[typing.Any]:
+def array_sum(array: list[list[_T]], /) -> list[_T]:
     """
     Performs basic sum operation on array
     :param array: Array to sum
@@ -1009,13 +959,13 @@ def rand(size: int, /) -> str:
     :return: Random string
     """
     return "".join(
-        [random.choice("abcdefghijklmnopqrstuvwxyz1234567890") for _ in range(size)]
+        [random.choice(string.ascii_lowercase + string.digits) for _ in range(size)]
     )
 
 
 def smart_split(
     text: str,
-    entities: typing.List[FormattingEntity],
+    entities: list[MessageEntity],
     length: int = 4096,
     split_on: ListLike = ("\n", " "),
     min_length: int = 1,
@@ -1033,7 +983,7 @@ def smart_split(
 
     :example:
         >>> utils.smart_split(
-            *telethon.extensions.html.parse(
+            *client.parser.parse(
                 "<b>Hello, world!</b>"
             )
         )
@@ -1055,6 +1005,7 @@ def smart_split(
             yield parser.unparse(
                 text[text_offset:],
                 list(sorted(pending_entities, key=lambda x: x.offset)),
+                is_html=True,
             )
             break
 
@@ -1155,14 +1106,15 @@ def smart_split(
         yield parser.unparse(
             current_text,
             list(sorted(current_entities, key=lambda x: x.offset)),
+            is_html=True,
         )
 
         text_offset = split_index + exclude
         bytes_offset += len(current_text.encode("utf-16le"))
 
 
-def _copy_tl(o, **kwargs):
-    d = o.to_dict()
+def _copy_tl(o: pyrogram.types.Object, **kwargs):
+    d = o.__dict__
     del d["_"]
     d.update(kwargs)
     return o.__class__(**d)
@@ -1180,7 +1132,7 @@ def check_url(url: str) -> bool:
         return False
 
 
-def get_git_branch() -> typing.Optional[str]:
+def get_git_branch() -> str | None:
     """
     (Hikkaduwa)
 
@@ -1196,7 +1148,7 @@ def get_git_branch() -> typing.Optional[str]:
         return None
 
 
-def get_git_hash() -> typing.Union[str, bool]:
+def get_git_hash() -> str | typing.Literal[False]:
     """
     Get current Hikkaduwa git hash
     :return: Git commit hash
@@ -1265,10 +1217,7 @@ def get_lang_flag(countrycode: str) -> str:
     return countrycode
 
 
-def get_entity_url(
-    entity: typing.Union[User, Channel],
-    openmessage: bool = False,
-) -> str:
+def get_entity_url(entity: User, openmessage: bool = False) -> str:
     """
     Get link to object, if available
     :param entity: Entity to get url of
@@ -1290,33 +1239,27 @@ def get_entity_url(
     )
 
 
-async def get_message_link(
-    message: Message,
-    chat: typing.Optional[typing.Union[Chat, Channel]] = None,
-) -> str:
+async def get_message_link(message: Message, chat: Chat | None = None) -> str:
     """
     Get link to message
     :param message: Message to get link of
     :param chat: Chat, where message was sent
     :return: Link to message
     """
-    if message.is_private:
+    if message.chat and (not message.chat.is_public):
         return (
             f"tg://openmessage?user_id={get_chat_id(message)}&message_id={message.id}"
         )
 
     if not chat and not (chat := message.chat):
-        chat = await message.get_chat()
+        raise
 
-    topic_affix = (
-        f"?topic={message.reply_to.reply_to_msg_id}"
-        if getattr(message.reply_to, "forum_topic", False)
-        else ""
-    )
+    topic: int | None = get_topic(message)
+    topic_affix = f"/{topic}" if topic else ""
 
     return (
         f"https://t.me/{chat.username}/{message.id}{topic_affix}"
-        if getattr(chat, "username", False)
+        if chat.username
         else f"https://t.me/c/{chat.id}/{message.id}{topic_affix}"
     )
 
@@ -1342,7 +1285,7 @@ def remove_html(text: str, escape: bool = False, keep_emojis: bool = False) -> s
     )
 
 
-def get_kwargs() -> typing.Dict[str, typing.Any]:
+def get_kwargs() -> dict[str, typing.Any]:
     """
     Get kwargs of function, in which is called
     :return: kwargs
@@ -1366,7 +1309,7 @@ def mime_type(message: Message) -> str:
 
 
 def find_caller(
-    stack: typing.Optional[typing.List[inspect.FrameInfo]] = None,
+    stack: list[inspect.FrameInfo] | None = None,
 ) -> typing.Any:
     """
     Attempts to find command in stack
@@ -1413,17 +1356,32 @@ def find_caller(
     )
 
 
+def message_entities_from_raw(
+    client: "HikkaClient",
+    entities: list[pyrogram.raw.base.MessageEntity],
+) -> list[pyrogram.types.MessageEntity]:
+    # TODO: users shouldn't be empty
+    return list(
+        map(lambda x: pyrogram.types.MessageEntity._parse(client, x, {}), entities)
+    )
+
+
 def validate_html(html: str) -> str:
     """
     Removes broken tags from HTML
     :param html: HTML to validate
     :return: Valid HTML
     """
-    text, entities = telethon.extensions.html.parse(html)
-    return telethon.extensions.html.unparse(escape_html(text), entities)
+
+    text, entities = run_async(
+        asyncio.get_running_loop(), parser.parse(html, pyrogram.enums.ParseMode.HTML)
+    ).values()
+    return parser.unparse(escape_html(text), entities, True)
 
 
-def iter_attrs(obj: typing.Any, /) -> typing.List[typing.Tuple[str, typing.Any]]:
+def iter_attrs(
+    obj: typing.Any, /
+) -> typing.Generator[tuple[str, typing.Any], typing.Any, None]:
     """
     Returns list of attributes of object
     :param obj: Object to iterate over
@@ -1434,7 +1392,7 @@ def iter_attrs(obj: typing.Any, /) -> typing.List[typing.Tuple[str, typing.Any]]
 
 def atexit(
     func: typing.Callable,
-    use_signal: typing.Optional[int] = None,
+    use_signal: int | None = None,
     *args,
     **kwargs,
 ) -> None:
@@ -1453,25 +1411,14 @@ def atexit(
     _atexit.register(functools.partial(func, *args, **kwargs))
 
 
-def get_topic(message: Message) -> typing.Optional[int]:
+def get_topic(message: Message) -> int | None:
     """
     Get topic id of message
     :param message: Message to get topic of
     :return: int or None if not present
     """
-    return (
-        (message.reply_to.reply_to_top_id or message.reply_to.reply_to_msg_id)
-        if (
-            isinstance(message, Message)
-            and message.reply_to
-            and message.reply_to.forum_topic
-        )
-        else (
-            message.form["top_msg_id"]
-            if isinstance(message, (InlineCall, InlineMessage))
-            else None
-        )
-    )
+
+    return message.topic.id if message.topic else None
 
 
 def get_ram_usage() -> float:
@@ -1508,7 +1455,7 @@ init_ts = time.perf_counter()
 
 
 # GeekTG Compatibility
-def get_git_info() -> typing.Tuple[str, str]:
+def get_git_info() -> tuple[str, str]:
     """
     Get git info
     :return: Git info
@@ -1531,3 +1478,19 @@ def get_version_raw() -> str:
 
 
 get_platform_name = get_named_platform
+
+
+def get_display_name(entity: hints.Entity) -> str:
+    """
+    Gets the display name for the given `User` or `Chat`.
+    Returns an empty string otherwise.
+    """
+    if isinstance(entity, pyrogram.types.Chat) and entity.title:
+        return entity.title
+    elif entity.last_name and entity.first_name:
+        return f"{entity.first_name} {entity.last_name}"
+    elif entity.first_name:
+        return entity.first_name
+    elif entity.last_name:
+        return entity.last_name
+    return ""

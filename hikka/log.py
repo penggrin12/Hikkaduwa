@@ -11,20 +11,22 @@ import inspect
 import io
 import logging
 import re
-import sys
 import traceback
 import typing
 from logging.handlers import RotatingFileHandler
 
-import telethon
+import pyrogram
 from aiogram.exceptions import TelegramNetworkError
+from pyrogram.utils import parse_text_entities
 
 from . import utils
-from .tl_cache import CustomTelegramClient
 from .types import BotInlineCall, Module
 
+if typing.TYPE_CHECKING:
+    from .client import HikkaClient
 
-def override_text(exception: Exception) -> typing.Optional[str]:
+
+def override_text(exception: Exception) -> str | None:
     """Returns error-specific description if available, else `None`"""
     if isinstance(exception, TelegramNetworkError):
         return "✈️ <b>You have problems with internet connection on your server.</b>"
@@ -37,9 +39,7 @@ class HikkaException:
         self,
         message: str,
         full_stack: str,
-        sysinfo: typing.Optional[
-            typing.Tuple[object, Exception, traceback.TracebackException]
-        ] = None,
+        sysinfo: tuple[object, Exception, traceback.TracebackException] | None = None,
     ):
         self.message = message
         self.full_stack = full_stack
@@ -51,8 +51,8 @@ class HikkaException:
         exc_type: object,
         exc_value: Exception,
         tb: traceback.TracebackException,
-        stack: typing.Optional[typing.List[inspect.FrameInfo]] = None,
-        comment: typing.Optional[typing.Any] = None,
+        stack: list[inspect.FrameInfo] | None = None,
+        comment: typing.Any | None = None,
     ) -> "HikkaException":
         def to_hashable(dictionary: dict) -> dict:
             dictionary = dictionary.copy()
@@ -66,10 +66,7 @@ class HikkaException:
                             == "Database"
                         ):
                             dictionary[key] = "<Database>"
-                        elif isinstance(
-                            value,
-                            (telethon.TelegramClient, CustomTelegramClient),
-                        ):
+                        elif issubclass(value, pyrogram.Client):
                             dictionary[key] = f"<{value.__class__.__name__}>"
                         elif len(str(value)) > 512:
                             dictionary[key] = f"{str(value)[:512]}..."
@@ -206,8 +203,8 @@ class TelegramLogsHandler(logging.Handler):
     def dumps(
         self,
         lvl: int = 0,
-        client_id: typing.Optional[int] = None,
-    ) -> typing.List[str]:
+        client_id: int | None = None,
+    ) -> list[str]:
         """Return all entries of minimum level as list of strings"""
         return [
             self.targets[0].format(record)
@@ -220,11 +217,18 @@ class TelegramLogsHandler(logging.Handler):
         self,
         call: BotInlineCall,
         bot: "aiogram.Bot",  # type: ignore  # noqa: F821
+        client: "HikkaClient",
         item: HikkaException,
     ):
         chunks = item.message + "\n\n<b>🪐 Full traceback:</b>\n" + item.full_stack
 
-        chunks = list(utils.smart_split(*telethon.extensions.html.parse(chunks), 4096))
+        text: str
+        entities: list[pyrogram.raw.base.MessageEntity]
+
+        text, entities = (
+            await parse_text_entities(client, chunks, client.parse_mode, None)
+        ).values()
+        chunks = list(utils.smart_split(text, entities, 4096))
 
         await call.edit(chunks[0])
 
@@ -269,6 +273,7 @@ class TelegramLogsHandler(logging.Handler):
                                     "callback": self._show_full_trace,
                                     "args": (
                                         self._mods[client_id].inline.bot,
+                                        self._mods[client_id],
                                         item[0],
                                     ),
                                     "disable_security": True,
@@ -425,7 +430,7 @@ def init():
         TelegramLogsHandler((handler, rotating_handler), 7000)
     )
     logging.getLogger().setLevel(logging.NOTSET)
-    logging.getLogger("telethon").setLevel(logging.DEBUG)
+    logging.getLogger("pyrogram").setLevel(logging.DEBUG)
     logging.getLogger("matplotlib").setLevel(logging.WARNING)  # ???
     logging.getLogger("aiohttp").setLevel(logging.WARNING)  # remains from web
     logging.getLogger("aiogram").setLevel(logging.WARNING)

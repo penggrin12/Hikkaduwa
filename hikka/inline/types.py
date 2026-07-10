@@ -6,9 +6,12 @@
 
 import logging
 
-from aiogram.types import CallbackQuery
+from aiogram.types import (
+    CallbackQuery,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+)
 from aiogram.types import InlineQuery as AiogramInlineQuery
-from aiogram.types import InlineQueryResultArticle, InputTextMessageContent
 from aiogram.types import Message as AiogramMessage
 
 from .. import utils
@@ -174,7 +177,7 @@ class BotInlineCall(CallbackQuery, BotInlineMessage):
             inline_manager,
             unit_id,
             call.message.chat.id,
-            call.message.message_id,
+            call.message.text_id,
         )
 
 

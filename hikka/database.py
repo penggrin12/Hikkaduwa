@@ -8,19 +8,17 @@ import asyncio
 import collections
 import json
 import logging
-import os
 import time
 
 # try:
 #     import redis
 # except ImportError:
 #     pass
-
-
 import typing
 
-from telethon.errors.rpcerrorlist import ChannelsTooMuchError
-from telethon.tl.types import Message, User
+import pyrogram
+from pyrogram.errors import ChannelsTooMuch
+from pyrogram.types import Message
 
 from . import main, utils
 from .pointers import (
@@ -31,8 +29,10 @@ from .pointers import (
     PointerDict,
     PointerList,
 )
-from .tl_cache import CustomTelegramClient
-from .types import JSONSerializable
+
+if typing.TYPE_CHECKING:
+    from .client import HikkaClient
+    from .types import JSONSerializable
 
 __all__ = [
     "Database",
@@ -51,16 +51,19 @@ class NoAssetsChannel(Exception):
     """Raised when trying to read/store asset with no asset channel present"""
 
 
+_T = typing.TypeVar("_T", bound="JSONSerializable")
+
+
 class Database(dict):
-    def __init__(self, client: CustomTelegramClient):
+    def __init__(self, /, client: "HikkaClient"):
         super().__init__()
-        self._client: CustomTelegramClient = client
+        self._client: "HikkaClient" = client
         self._next_revision_call: int = 0
-        self._revisions: typing.List[dict] = []
-        self._assets: int = None
-        self._me: User = None
+        self._revisions: list[dict] = []
+        self._assets: int | None = None
+        self._me: pyrogram.types.User = client.hikka_me
         self._redis = None
-        self._saving_task: asyncio.Future = None
+        self._saving_task: asyncio.Future | None = None
 
     def __repr__(self):
         return object.__repr__(self)
@@ -93,7 +96,7 @@ class Database(dict):
                 archive=True,
                 avatar="https://raw.githubusercontent.com/hikariatama/assets/master/hikka-assets.png",
             )
-        except ChannelsTooMuchError:
+        except ChannelsTooMuch:
             self._assets = None
             logger.error(
                 "Can't find and/or create assets folder\n"
@@ -186,7 +189,7 @@ class Database(dict):
 
         return True
 
-    async def store_asset(self, message: Message) -> int:
+    async def store_asset(self, message: pyrogram.types.Message) -> int:
         """
         Save assets
         returns asset_id as integer
@@ -206,7 +209,7 @@ class Database(dict):
             ).id
         )
 
-    async def fetch_asset(self, asset_id: int) -> typing.Optional[Message]:
+    async def fetch_asset(self, asset_id: int) -> pyrogram.types.Message | None:
         """Fetch previously saved asset by its asset_id"""
         if not self._assets:
             raise NoAssetsChannel(
@@ -217,15 +220,12 @@ class Database(dict):
 
         return asset[0] if asset else None
 
-    def get(
-        self,
-        owner: str,
-        key: str,
-        default: typing.Optional[JSONSerializable] = None,
-    ) -> JSONSerializable:
+    # noinspection PyMethodOverriding
+    def get(self, owner: str, key: str, default: _T | None = None) -> _T:
         """Get database key"""
         try:
-            return self[owner][key]
+            value = self[owner][key]
+            return value
         except KeyError:
             return default
 
@@ -259,9 +259,9 @@ class Database(dict):
         self,
         owner: str,
         key: str,
-        default: typing.Optional[JSONSerializable] = None,
-        item_type: typing.Optional[typing.Any] = None,
-    ) -> typing.Union[JSONSerializable, PointerList, PointerDict]:
+        default: JSONSerializable | None = None,
+        item_type: typing.Any | None = None,
+    ) -> JSONSerializable | PointerList | PointerDict:
         """Get a pointer to database key"""
         value = self.get(owner, key, default)
         mapping = {

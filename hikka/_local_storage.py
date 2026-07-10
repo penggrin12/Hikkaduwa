@@ -15,7 +15,9 @@ import typing
 import requests
 
 from . import utils
-from .tl_cache import CustomTelegramClient
+
+if typing.TYPE_CHECKING:
+    from .client import HikkaClient
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +77,7 @@ class LocalStorage:
 
         logger.debug("Saved module %s from %s to local cache.", module_name, repo)
 
-    def fetch(self, repo: str, module_name: str) -> typing.Optional[str]:
+    def fetch(self, repo: str, module_name: str) -> str | None:
         """
         Fetches module from disk.
         :param repo: Repository name.
@@ -91,11 +93,11 @@ class LocalStorage:
 
 
 class RemoteStorage:
-    def __init__(self, client: CustomTelegramClient):
+    def __init__(self, client: "HikkaClient"):
         self._local_storage = LocalStorage()
-        self._client = client
+        self._client: "HikkaClient" = client
 
-    async def preload(self, urls: typing.List[str]):
+    async def preload(self, urls: list[str]):
         """Preloads modules from remote storage."""
         logger.debug("Preloading modules from remote storage.")
         for url in urls:
@@ -107,7 +109,7 @@ class RemoteStorage:
             await asyncio.sleep(5)
 
     @staticmethod
-    def _parse_url(url: str) -> typing.Tuple[str, str, str]:
+    def _parse_url(url: str) -> tuple[str, str, str]:
         """
         Parses a URL into a repository and module name.
         :param url: URL to parse.
@@ -129,7 +131,7 @@ class RemoteStorage:
 
         return url, repo, module_name
 
-    async def fetch(self, url: str, auth: typing.Optional[str] = None) -> str:
+    async def fetch(self, url: str, auth: str | None = None) -> str:
         """
         Fetches the module from the remote storage.
         :param url: URL to the module.

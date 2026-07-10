@@ -11,11 +11,10 @@ import sys
 import typing
 from types import ModuleType
 
-import telethon
+import pyrogram
+import pyrogram.errors
 from meval import meval
-from telethon.errors.rpcerrorlist import MessageIdInvalidError
-from telethon.sessions import StringSession
-from telethon.tl.types import Message
+from pyrogram.types import Message
 
 from .. import loader, main, utils
 from ..log import HikkaException
@@ -59,7 +58,7 @@ class Evaluator(loader.Module):
             with contextlib.suppress(Exception):
                 result = str(result.stringify())
 
-        with contextlib.suppress(MessageIdInvalidError):
+        with contextlib.suppress(pyrogram.errors.MessageIdInvalid):
             await utils.answer(
                 message,
                 self.strings("eval").format(  # type: ignore[reportCallIssue]
@@ -69,7 +68,7 @@ class Evaluator(loader.Module):
             )
 
     def censor(self, ret: str) -> str:
-        ret = ret.replace(str(self._client.hikka_me.phone), "&lt;phone&gt;")
+        ret = ret.replace(str(self.client.hikka_me.phone_number), "&lt;phone&gt;")
 
         if redis := os.environ.get("REDIS_URL") or main.get_config_key("redis_uri"):
             ret = ret.replace(redis, f"redis://{'*' * 26}")
@@ -86,31 +85,28 @@ class Evaluator(loader.Module):
         if htoken := self.lookup("loader").get("token", False):
             ret = ret.replace(htoken, f"eugeo_{'*' * 26}")
 
-        ret = ret.replace(
-            StringSession.save(self._client.session),
-            "StringSession(**************************)",
-        )
+        # TODO: session hiding
 
         return ret
 
     async def getattrs(self, message: Message) -> dict:
-        reply = await message.get_reply_message()
+        reply = message.reply_to_message
         return {
             "message": message,
-            "client": self._client,
+            "client": self.client,
             "reply": reply,
             "r": reply,
-            **self.get_sub(telethon.tl.types),
-            **self.get_sub(telethon.tl.functions),
+            **self.get_sub(pyrogram.raw.types),
+            **self.get_sub(pyrogram.raw.functions),
             "event": message,
-            "chat": message.to_id,
-            "telethon": telethon,
-            "telethon": telethon,
+            "chat": message.chat,
+            "pyrogram": pyrogram,
+            "kurigram": pyrogram,
             "utils": utils,
             "main": main,
             "loader": loader,
-            "f": telethon.tl.functions,
-            "c": self._client,
+            "f": pyrogram.raw.functions,
+            "c": self.client,
             "m": message,
             "lookup": self.lookup,
             "self": self,
@@ -118,7 +114,7 @@ class Evaluator(loader.Module):
         }
 
     def get_sub(self, obj: typing.Any, _depth: int = 1) -> dict:
-        """Get all callable capitalised objects in an object recursively, ignoring _*"""
+        """Get all callable capitalized objects in an object recursively, ignoring _*"""
         return {
             **dict(
                 filter(

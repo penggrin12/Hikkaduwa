@@ -23,7 +23,7 @@ from pathlib import Path
 from types import FunctionType, ModuleType
 from uuid import uuid4
 
-from telethon.tl.tlobject import TLObject
+import pyrogram.raw.core
 
 from . import utils, validators
 from .database import Database
@@ -49,6 +49,9 @@ from .types import (
     get_commands,
     get_inline_handlers,
 )
+
+if typing.TYPE_CHECKING:
+    from .client import HikkaClient
 
 __all__ = [
     "Modules",
@@ -150,7 +153,7 @@ class InfiniteLoop:
         interval: int,
         autostart: bool,
         wait_before: bool,
-        stop_clause: typing.Union[str, None],
+        stop_clause: str | None,
     ):
         self.func = func
         self.interval = interval
@@ -231,9 +234,9 @@ class InfiniteLoop:
 
 def loop(
     interval: int = 5,
-    autostart: typing.Optional[bool] = False,
-    wait_before: typing.Optional[bool] = False,
-    stop_clause: typing.Optional[str] = None,
+    autostart: bool | None = False,
+    wait_before: bool | None = False,
+    stop_clause: str | None = None,
 ) -> FunctionType:
     """
     Create new infinite loop from class method
@@ -268,7 +271,7 @@ def translatable_docstring(cls):
 
     @wraps(cls.config_complete)
     def config_complete(self, *args, **kwargs):
-        def proccess_decorators(mark: str, obj: str):
+        def process_decorators(mark: str, obj: str):
             nonlocal self
             for attr in dir(func_):
                 if (
@@ -283,14 +286,14 @@ def translatable_docstring(cls):
                     getattr(self, var).setdefault(f"{mark}{obj}", getattr(func_, attr))
 
         for command_, func_ in get_commands(cls).items():
-            proccess_decorators("_cmd_doc_", command_)
+            process_decorators("_cmd_doc_", command_)
             try:
                 func_.__doc__ = self.strings[f"_cmd_doc_{command_}"]
             except AttributeError:
                 func_.__func__.__doc__ = self.strings[f"_cmd_doc_{command_}"]
 
         for inline_handler_, func_ in get_inline_handlers(cls).items():
-            proccess_decorators("_ihandle_doc_", inline_handler_)
+            process_decorators("_ihandle_doc_", inline_handler_)
             try:
                 func_.__doc__ = self.strings[f"_ihandle_doc_{inline_handler_}"]
             except AttributeError:
@@ -451,7 +454,7 @@ def callback_handler(*args, **kwargs):
     return _mark_method("is_callback_handler", *args, **kwargs)
 
 
-def raw_handler(*updates: TLObject):
+def raw_handler(*updates: pyrogram.raw.core.TLObject):
     """
     Decorator that marks function as raw telethon events handler
     Use it to prevent zombie-event-handlers, left by unloaded modules
@@ -474,9 +477,9 @@ class Modules:
 
     def __init__(
         self,
-        client: "CustomTelegramClient",  # type: ignore  # noqa: F821
+        /,
+        client: "HikkaClient",
         db: Database,
-        allclients: list,
         translator: Translator,
     ):
         self._initial_registration = True
@@ -490,7 +493,6 @@ class Modules:
         self._log_handlers = []
         self._core_commands = []
         self.__approve = []
-        self.allclients = allclients
         self.client = client
         self._db = db
         self.db = db
@@ -498,7 +500,6 @@ class Modules:
         self.secure_boot = False
         asyncio.ensure_future(self._junk_collector())
         self.inline = InlineManager(self.client, self._db, self)
-        self.client.hikka_inline = self.inline
 
     async def _junk_collector(self):
         """
@@ -537,9 +538,9 @@ class Modules:
 
     async def register_all(
         self,
-        mods: typing.Optional[typing.List[str]] = None,
+        mods: list[str] | None = None,
         no_external: bool = False,
-    ) -> typing.List[Module]:
+    ) -> list[Module]:
         """Load all modules in the module directory"""
         external_mods = []
 
@@ -581,7 +582,7 @@ class Modules:
         self,
         modules: list,
         origin: str = "<core>",
-    ) -> typing.List[Module]:
+    ) -> list[Module]:
         with contextlib.suppress(AttributeError):
             _hikka_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841
 
@@ -618,7 +619,7 @@ class Modules:
         origin: str = "<core>",
         save_fs: bool = False,
         is_dragon: bool = False,  # probably not needed anymore..?
-    ) -> typing.Union[Module, typing.Tuple[ModuleType]]:
+    ) -> Module | tuple[ModuleType]:
         """Register single module from importlib spec"""
         with contextlib.suppress(AttributeError):
             _hikka_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841
@@ -674,7 +675,7 @@ class Modules:
         """Register event handlers for a module"""
         for name, handler in utils.iter_attrs(instance):
             if getattr(handler, "is_raw_handler", False):
-                self.client.dispatcher.raw_handlers.append(handler)
+                self.client.hikka_dispatcher.raw_handlers.append(handler)
                 logger.debug(
                     "Registered raw handler %s for %s. ID: %s",
                     name,
@@ -806,7 +807,7 @@ class Modules:
         self,
         modname: str,
         include_dragon: bool = False,  # not needed?
-    ) -> typing.Union[bool, Module, Library]:
+    ) -> bool | Module | Library:
         return (
             next(
                 (lib for lib in self.libraries if lib.name.lower() == modname.lower()),
@@ -828,7 +829,7 @@ class Modules:
     def get_approved_channel(self):
         return self.__approve.pop(0) if self.__approve else None
 
-    def get_prefix(self, userbot: typing.Optional[str] = None) -> str:
+    def get_prefix(self, userbot: str | None = None) -> str:
         """Get prefix. `userbot` is ignored"""
         from . import main
 
@@ -877,7 +878,7 @@ class Modules:
         self,
         alias: str,
         include_legacy: bool = False,
-    ) -> typing.Optional[str]:
+    ) -> str | None:
         if not alias:
             return None
 
@@ -903,7 +904,7 @@ class Modules:
 
         return None
 
-    def dispatch(self, _command: str) -> typing.Tuple[str, typing.Optional[str]]:
+    def dispatch(self, _command: str) -> tuple[str, str | None]:
         """Dispatch command to appropriate module"""
 
         return next(
@@ -1059,7 +1060,7 @@ class Modules:
             name,
         )
 
-    async def unload_module(self, classname: str) -> typing.List[str]:
+    async def unload_module(self, classname: str) -> list[str]:
         """Remove module and all stuff from it"""
         worked = []
 
@@ -1140,9 +1141,9 @@ class Modules:
 
     def unregister_raw_handlers(self, instance: Module, purpose: str):
         """Unregister event handlers for a module"""
-        for handler in self.client.dispatcher.raw_handlers:
+        for handler in self.client.hikka_dispatcher.raw_handlers:
             if handler.__self__.__class__.__name__ == instance.__class__.__name__:
-                self.client.dispatcher.raw_handlers.remove(handler)
+                self.client.hikka_dispatcher.raw_handlers.remove(handler)
                 logger.debug(
                     "Unregistered raw handler of module %s for %s. ID: %s",
                     instance.__class__.__name__,

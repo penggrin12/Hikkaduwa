@@ -7,20 +7,29 @@
 import asyncio
 import logging
 import re
+import typing
 
-from telethon.errors.rpcerrorlist import YouBlockedUserError
-from telethon.tl.functions.contacts import UnblockRequest
+import pyrogram.errors
 
 from .. import utils
 from .._internal import fw_protect
 from .types import InlineUnit
 
+if typing.TYPE_CHECKING:
+    from ..client import HikkaClient
+    from ..database import Database
+
 logger = logging.getLogger(__name__)
 
 
 class TokenObtainment(InlineUnit):
-    async def _create_bot(self):
+    _client: "HikkaClient"
+    _db: "Database"
+
+    async def _create_bot(self) -> None:
         logger.info("User doesn't have bot, attempting creating new one")
+        # TODO: no conversation in pyrogram
+        return
         async with self._client.conversation("@BotFather", exclusive=False) as conv:
             await fw_protect()
             m = await conv.send_message("/newbot")
@@ -94,6 +103,9 @@ class TokenObtainment(InlineUnit):
 
         logger.info("Bot token not found in db, attempting search in BotFather")
 
+        # TODO: no conversation in pyrogram
+        return False
+
         if not self._db.get(__name__, "no_mute", False):
             await utils.dnd(
                 self._client,
@@ -106,8 +118,8 @@ class TokenObtainment(InlineUnit):
             try:
                 await fw_protect()
                 m = await conv.send_message("/token")
-            except YouBlockedUserError:
-                await self._client(UnblockRequest(id="@BotFather"))
+            except pyrogram.errors.YouBlockedUser:
+                await self._client.unblock_user("@BotFather")
                 await fw_protect()
                 m = await conv.send_message("/token")
 
@@ -211,14 +223,14 @@ class TokenObtainment(InlineUnit):
 
         return await self._create_bot() if create_new_if_needed else False
 
-    async def _reassert_token(self):
+    async def _reassert_token(self) -> None:
         is_token_asserted = await self._assert_token(revoke_token=True)
         if not is_token_asserted:
             self.init_complete = False
         else:
             await self.register_manager(ignore_token_checks=True)
 
-    async def _dp_revoke_token(self, already_initialised: bool = True):
+    async def _dp_revoke_token(self, already_initialised: bool = True) -> None:
         if already_initialised:
             await self._stop()
             logger.error("Got polling conflict. Attempting token revocation...")
@@ -228,4 +240,4 @@ class TokenObtainment(InlineUnit):
         if already_initialised:
             asyncio.ensure_future(self._reassert_token())
         else:
-            return await self._reassert_token()
+            await self._reassert_token()

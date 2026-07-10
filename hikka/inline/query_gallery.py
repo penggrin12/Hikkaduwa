@@ -5,6 +5,7 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
+import inspect
 import logging
 import time
 import typing
@@ -21,11 +22,11 @@ class QueryGallery(InlineUnit):
     async def query_gallery(
         self,
         query: InlineQuery,
-        items: typing.List[typing.Dict[str, typing.Any]],
+        items: list[dict[str, typing.Any]],
         *,
         force_me: bool = False,
         disable_security: bool = False,
-        always_allow: typing.Optional[typing.List[int]] = None,
+        always_allow: list[int] | None = None,
     ) -> bool:
         """
         Answer inline query with a bunch of inline galleries
@@ -78,7 +79,7 @@ class QueryGallery(InlineUnit):
                 and "next_handler" in i
                 and (
                     callable(i["next_handler"])
-                    or asyncio.iscoroutinefunction(i)
+                    or inspect.iscoroutinefunction(i)
                     or isinstance(i, list)
                 )
                 and isinstance(i["title"], str)

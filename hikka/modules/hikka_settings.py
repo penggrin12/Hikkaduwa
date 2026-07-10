@@ -8,15 +8,10 @@ import logging
 import random
 import string
 
-import telethon
-from telethon.tl.functions.channels import JoinChannelRequest
-from telethon.tl.functions.messages import (
-    GetDialogFiltersRequest,
-    UpdateDialogFilterRequest,
-)
-from telethon.tl.types import Message
+import pyrogram
+from pyrogram.types import Message
 
-from .. import loader, version, main, utils, features
+from .. import features, loader, main, utils, version
 from .._internal import fw_protect, restart
 from ..inline.types import InlineCall
 
@@ -51,7 +46,7 @@ class HikkaSettingsMod(loader.Module):
     async def _uninstall(self, call: InlineCall):
         await call.edit(self.strings("uninstall"))  # type: ignore[reportCallIssue]
 
-        async with self._client.conversation("@BotFather") as conv:
+        async with self.client.conversation("@BotFather") as conv:
             for msg in [
                 "/deletebot",
                 f"@{self.inline.bot_username}",
@@ -66,7 +61,7 @@ class HikkaSettingsMod(loader.Module):
 
                 await fw_protect()
 
-        async for dialog in self._client.iter_dialogs(
+        async for dialog in self.client.iter_dialogs(
             None,
             ignore_migrated=True,
         ):
@@ -87,16 +82,16 @@ class HikkaSettingsMod(loader.Module):
                     and dialog.name in {"hikka-logs", "silent-tags"}
                 )
                 or (
-                    self._client.loader.inline.init_complete
-                    and dialog.entity.id == self._client.loader.inline.bot_id
+                    self.client.loader.inline.init_complete
+                    and dialog.entity.id == self.client.loader.inline.bot_id
                 )
             ):
                 await fw_protect()
-                await self._client.delete_dialog(dialog.entity)
+                await self.client.delete_dialog(dialog.entity)
 
         await fw_protect()
 
-        folders = await self._client(GetDialogFiltersRequest())
+        folders = await self.client(GetDialogFiltersRequest())
 
         if any(folder.title == "hikka" for folder in folders):
             folder_id = max(
@@ -104,14 +99,14 @@ class HikkaSettingsMod(loader.Module):
                 key=lambda x: x.id,
             ).id
             await fw_protect()
-            await self._client(UpdateDialogFilterRequest(id=folder_id))
+            await self.client(UpdateDialogFilterRequest(id=folder_id))
 
         for handler in logging.getLogger().handlers:
             handler.setLevel(logging.CRITICAL)
 
         await fw_protect()
 
-        await self._client.log_out()
+        await self.client.log_out()
 
         restart()
 
@@ -546,7 +541,7 @@ class HikkaSettingsMod(loader.Module):
         channel, event = obj
 
         try:
-            await self._client(JoinChannelRequest(channel))
+            await self.client(JoinChannelRequest(channel))
         except Exception:
             logger.exception("Failed to join channel")
             event.status = False
@@ -593,21 +588,21 @@ class HikkaSettingsMod(loader.Module):
 
         if module == "core":
             if method == "flush_entity_cache":
-                result = (
-                    f"Dropped {len(self._client._hikka_entity_cache)} cache records"
-                )
-                self._client._hikka_entity_cache = {}
+                result = f"Dropped {len(self.client._hikka_entity_cache)} cache records"
+                self.client._hikka_entity_cache = {}
             elif method == "flush_fulluser_cache":
                 result = (
-                    f"Dropped {len(self._client._hikka_fulluser_cache)} cache records"
+                    f"Dropped {len(self.client._hikka_fulluser_cache)} cache records"
                 )
-                self._client._hikka_fulluser_cache = {}
+                self.client._hikka_fulluser_cache = {}
             elif method == "flush_fullchannel_cache":
-                result = f"Dropped {len(self._client._hikka_fullchannel_cache)} cache records"
-                self._client._hikka_fullchannel_cache = {}
+                result = (
+                    f"Dropped {len(self.client._hikka_fullchannel_cache)} cache records"
+                )
+                self.client._hikka_fullchannel_cache = {}
             elif method == "flush_perms_cache":
-                result = f"Dropped {len(self._client._hikka_perms_cache)} cache records"
-                self._client._hikka_perms_cache = {}
+                result = f"Dropped {len(self.client._hikka_perms_cache)} cache records"
+                self.client._hikka_perms_cache = {}
             elif method == "flush_loader_cache":
                 result = (
                     f"Dropped {await self.lookup('loader').flush_cache()} cache records"
@@ -615,9 +610,9 @@ class HikkaSettingsMod(loader.Module):
             elif method == "flush_cache":
                 count = self.lookup("loader").flush_cache()
                 result = (
-                    f"Dropped {len(self._client._hikka_entity_cache)} entity cache"
+                    f"Dropped {len(self.client._hikka_entity_cache)} entity cache"
                     " records\nDropped"
-                    f" {len(self._client._hikka_fulluser_cache)} fulluser cache"
+                    f" {len(self.client._hikka_fulluser_cache)} fulluser cache"
                     " records\nDropped"
                     f" {len(self._client._hikka_fullchannel_cache)} fullchannel cache"
                     " records\nDropped"
@@ -695,7 +690,7 @@ class HikkaSettingsMod(loader.Module):
                 *version.__version__,
                 utils.get_commit_url(),
                 utils.get_git_branch() or "Unknown",
-                f"{telethon.__version__} #{telethon.tl.alltlobjects.LAYER}",
+                f"{pyrogram.__version__} #{pyrogram.raw.all.layer}",
             ),
         )
 

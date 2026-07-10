@@ -29,7 +29,8 @@ import os
 import re
 import typing
 
-import telethon
+import pyrogram.errors
+from pyrogram.types import Message
 
 from .. import loader, utils
 
@@ -52,7 +53,7 @@ async def read_stream(func: typing.Callable, stream, delay: float):
                 # Send all pending data
                 last_task.cancel()
                 await func(data.decode())
-                # If there is no last task there is inherently no data, so theres no point sending a blank string
+                # If there is no last task there is inherently no data, so there's no point sending a blank string
             break
 
         data += dat
@@ -71,7 +72,7 @@ async def sleep_for_task(func: typing.Callable, data: bytes, delay: float):
 class MessageEditor:
     def __init__(
         self,
-        message: telethon.tl.types.Message,
+        message: Message,
         command: str,
         config,
         strings: typing.Callable[[str], str],
@@ -107,10 +108,10 @@ class MessageEditor:
         text += (self.strings("stderr") + stderr) if stderr else ""
         text += self.strings("end")
 
-        with contextlib.suppress(telethon.errors.rpcerrorlist.MessageNotModifiedError):
+        with contextlib.suppress(pyrogram.errors.MessageNotModified):
             try:
                 self.message = await utils.answer(self.message, text)
-            except telethon.errors.rpcerrorlist.MessageTooLongError as e:
+            except pyrogram.errors.MessageTooLong as e:
                 logger.error(e)
                 logger.error(text)
         # The message is never empty due to the template header
@@ -167,7 +168,7 @@ class SudoMessageEditor(MessageEditor):
 
             try:
                 await utils.answer(self.message, text)
-            except telethon.errors.rpcerrorlist.MessageNotModifiedError as e:
+            except pyrogram.errors.MessageNotModified as e:
                 logger.debug(e)
 
             logger.debug("edited message with link to self")
@@ -180,11 +181,12 @@ class SudoMessageEditor(MessageEditor):
             )
             logger.debug("sent message to self")
 
-            self.message[0].client.remove_event_handler(self.on_message_edited)
-            self.message[0].client.add_event_handler(
-                self.on_message_edited,
-                telethon.events.messageedited.MessageEdited(chats=["me"]),
-            )
+            # TODO
+            # self.message[0].client.remove_event_handler(self.on_message_edited)
+            # self.message[0].client.add_event_handler(
+            #     self.on_message_edited,
+            #     telethon.events.messageedited.MessageEdited(chats=["me"]),
+            # )
 
             logger.debug("registered handler")
             handled = True
@@ -231,13 +233,13 @@ class SudoMessageEditor(MessageEditor):
             # The user has provided interactive authentication. Send password to stdin for sudo.
             try:
                 self.authmsg = await utils.answer(message, self.strings("auth_ongoing"))
-            except telethon.errors.rpcerrorlist.MessageNotModifiedError:
+            except pyrogram.errors.MessageNotModified:
                 # Try to clear personal info if the edit fails
                 await message.delete()
 
             self.state = 1
             self.process.stdin.write(
-                message.message.message.split("\n", 1)[0].encode() + b"\n"
+                message.text.message.split("\n", 1)[0].encode() + b"\n"
             )
 
 
@@ -282,13 +284,11 @@ class RawMessageEditor(SudoMessageEditor):
         logger.debug(text)
 
         with contextlib.suppress(
-            telethon.errors.rpcerrorlist.MessageNotModifiedError,
-            telethon.errors.rpcerrorlist.MessageEmptyError,
-            ValueError,
+            pyrogram.errors.MessageNotModified, pyrogram.errors.MessageEmpty, ValueError
         ):
             try:
                 await utils.answer(self.message, text)
-            except telethon.errors.rpcerrorlist.MessageTooLongError as e:
+            except pyrogram.errors.MessageTooLong as e:
                 logger.error(e)
                 logger.error(text)
 
@@ -332,10 +332,7 @@ class TerminalMod(loader.Module):
         )
 
     async def run_command(
-        self,
-        message: telethon.tl.types.Message,
-        cmd: str,
-        editor: typing.Optional[MessageEditor] = None,
+        self, message: Message, cmd: str, editor: MessageEditor | None = None
     ):
         if len(cmd.split(" ")) > 1 and cmd.split(" ")[0] == "sudo":
             needsswitch = True

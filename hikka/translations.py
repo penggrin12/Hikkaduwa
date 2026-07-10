@@ -13,9 +13,11 @@ import requests
 from ruamel.yaml import YAML
 
 from . import utils
-from .database import Database
-from .tl_cache import CustomTelegramClient
-from .types import Module
+
+if typing.TYPE_CHECKING:
+    from .client import HikkaClient
+    from .database import Database
+    from .types import Module
 
 logger = logging.getLogger(__name__)
 yaml = YAML(typ="safe")
@@ -37,7 +39,7 @@ class BaseTranslator:
         self,
         pack: Path,
         prefix: str = "hikka.modules.",
-    ) -> typing.Optional[dict]:
+    ) -> dict | None:
         return self._get_pack_raw(pack.read_text(encoding="utf-8"), pack.suffix, prefix)
 
     def _get_pack_raw(
@@ -45,7 +47,7 @@ class BaseTranslator:
         content: str,
         suffix: str,
         prefix: str = "hikka.modules.",
-    ) -> typing.Optional[dict]:
+    ) -> dict | None:
         if suffix == ".json":
             return json.loads(content)
 
@@ -84,7 +86,7 @@ class BaseTranslator:
     def gettext(self, text: str) -> typing.Any:
         return self.getkey(text) or text
 
-    async def load_module_translations(self, pack_url: str) -> typing.Union[bool, dict]:
+    async def load_module_translations(self, pack_url: str) -> bool | dict:
         try:
             data = yaml.load((await utils.run_sync(requests.get, pack_url)).text)
         except Exception:
@@ -104,7 +106,7 @@ class BaseTranslator:
 
 
 class Translator(BaseTranslator):
-    def __init__(self, client: CustomTelegramClient, db: Database):
+    def __init__(self, /, client: "HikkaClient", db: "Database"):
         self._client = client
         self.db = db
         self._data = {}
@@ -167,7 +169,7 @@ class ExternalTranslator(BaseTranslator):
 
 
 class Strings:
-    def __init__(self, mod: Module, translator: Translator):  # skipcq: PYL-W0621
+    def __init__(self, mod: "Module", translator: Translator):  # skipcq: PYL-W0621
         self._mod = mod
         self._translator = translator
 
@@ -177,7 +179,7 @@ class Strings:
         self._base_strings = mod.strings  # Back 'em up, bc they will get replaced
         self.external_strings = {}
 
-    def get(self, key: str, lang: typing.Optional[str] = None) -> str:
+    def get(self, key: str, lang: str | None = None) -> str:
         try:
             return self._translator.raw_data[lang][f"{self._mod.__module__}.{key}"]
         except KeyError:
@@ -221,7 +223,7 @@ class Strings:
     def __call__(
         self,
         key: str,
-        _: typing.Optional[typing.Any] = None,  # Compatibility tweak for FTG\GeekTG
+        _: typing.Any | None = None,  # Compatibility tweak for FTG\GeekTG
     ) -> str:
         return self.__getitem__(key)
 

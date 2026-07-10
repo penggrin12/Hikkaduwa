@@ -13,13 +13,7 @@ import sys
 import time
 import typing
 
-from telethon.tl.functions.messages import (
-    GetDialogFiltersRequest,
-    UpdateDialogFilterRequest,
-)
-from telethon.tl.types import DialogFilter, Message
-from telethon.tl.types.messages import DialogFilters
-from telethon.types import TextWithEntities
+from pyrogram.types import Message
 
 from .. import loader, utils
 from .._internal import restart
@@ -74,7 +68,7 @@ class UpdaterMod(loader.Module):
     async def inline_restart(self, call: InlineCall, secure_boot: bool = False):
         await self.restart_common(call, secure_boot=secure_boot)
 
-    async def process_restart_message(self, msg_obj: typing.Union[InlineCall, Message]):
+    async def process_restart_message(self, msg_obj: InlineCall | Message):
         self.set(
             "selfupdatemsg",
             (
@@ -86,7 +80,7 @@ class UpdaterMod(loader.Module):
 
     async def restart_common(
         self,
-        msg_obj: typing.Union[InlineCall, Message],
+        msg_obj: InlineCall | Message,
         secure_boot: bool = False,
     ):
         if (
@@ -116,12 +110,6 @@ class UpdaterMod(loader.Module):
 
         handler = logging.getLogger().handlers[0]
         handler.setLevel(logging.CRITICAL)
-
-        for client in self.allclients:
-            # Terminate main loop of all running clients
-            # Won't work if not all clients are ready
-            if client is not message.client:
-                await client.disconnect()
 
         await message.client.disconnect()
         restart()
@@ -158,7 +146,7 @@ class UpdaterMod(loader.Module):
 
     async def inline_update(
         self,
-        msg_obj: typing.Union[InlineCall, Message],
+        msg_obj: InlineCall | Message,
         hard: bool = False,
     ):
         # We don't really care about asyncio at this point, as we are shutting down
@@ -203,7 +191,8 @@ class UpdaterMod(loader.Module):
         self.set("do_not_create", True)
 
     async def _add_folder(self) -> None:
-        folders: DialogFilters = await self._client(GetDialogFiltersRequest())
+        raise NotImplementedError
+        folders: DialogFilters = await self.client(GetDialogFiltersRequest())
 
         if any(getattr(folder, "title", None) == "hikka" for folder in folders.filters):
             return
@@ -217,7 +206,7 @@ class UpdaterMod(loader.Module):
         )
 
         try:
-            await self._client(
+            await self.client(
                 UpdateDialogFilterRequest(
                     folder_id,
                     DialogFilter(
@@ -225,16 +214,16 @@ class UpdaterMod(loader.Module):
                         title=TextWithEntities(text="hikka", entities=[]),
                         pinned_peers=(
                             [
-                                await self._client.get_input_entity(
-                                    self._client.loader.inline.bot_id
+                                await self.client.get_input_entity(
+                                    self.client.loader.inline.bot_id
                                 )
                             ]
-                            if self._client.loader.inline.init_complete
+                            if self.client.loader.inline.init_complete
                             else []
                         ),
                         include_peers=[
-                            await self._client.get_input_entity(dialog.entity)
-                            async for dialog in self._client.iter_dialogs(
+                            await self.client.get_input_entity(dialog.entity)
+                            async for dialog in self.client.iter_dialogs(
                                 None,
                                 ignore_migrated=True,
                             )
@@ -254,9 +243,8 @@ class UpdaterMod(loader.Module):
                                 and dialog.name in {"hikka-logs", "silent-tags"}
                             )
                             or (
-                                self._client.loader.inline.init_complete
-                                and dialog.entity.id
-                                == self._client.loader.inline.bot_id
+                                self.client.loader.inline.init_complete
+                                and dialog.entity.id == self.client.loader.inline.bot_id
                             )
                             or dialog.entity.id
                             in [
@@ -314,9 +302,9 @@ class UpdaterMod(loader.Module):
         if ":" in str(ms):
             chat_id, message_id = ms.split(":")
             chat_id, message_id = int(chat_id), int(message_id)
-            await self._client.edit_message(chat_id, message_id, msg)
+            await self.client.edit_message(chat_id, message_id, msg)
             await asyncio.sleep(60)
-            await self._client.delete_messages(chat_id, message_id)
+            await self.client.delete_messages(chat_id, message_id)
             return
 
         await self.inline.bot.edit_message_text(

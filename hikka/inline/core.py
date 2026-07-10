@@ -12,18 +12,15 @@ import logging
 import time
 import typing
 
+import pyrogram.errors
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramConflictError, TelegramUnauthorizedError
-from telethon.errors.rpcerrorlist import InputUserDeactivatedError, YouBlockedUserError
-from telethon.tl.functions.contacts import UnblockRequest
-from telethon.tl.types import Message
-from telethon.utils import get_display_name
+from pyrogram.raw.types.messages import BotResults
+from pyrogram.types import Message
 
 from .. import utils
-from ..database import Database
-from ..tl_cache import CustomTelegramClient
 from ..translations import Translator
 from .bot_pm import BotPM
 from .events import Events
@@ -33,6 +30,11 @@ from .list import List
 from .query_gallery import QueryGallery
 from .token_obtainment import TokenObtainment
 from .utils import Utils
+
+if typing.TYPE_CHECKING:
+    from ..client import HikkaClient
+    from ..database import Database
+    from ..loader import Modules
 
 logger = logging.getLogger(__name__)
 
@@ -52,32 +54,30 @@ class InlineManager(
     :param client: Telegram client
     :param db: Database instance
     :param allmodules: All modules
-    :type client: hikka.tl_cache.CustomTelegramClient
-    :type db: hikka.database.Database
-    :type allmodules: hikka.loader.Modules
     """
 
     def __init__(
         self,
-        client: CustomTelegramClient,
-        db: Database,
+        client: "HikkaClient",
+        db: "Database",
         allmodules: "Modules",  # type: ignore  # noqa: F821
     ):
         """Initialize InlineManager to create forms"""
         self._client = client
         self._db = db
         self._allmodules = allmodules
+        self.allmodules: "Modules" = allmodules
         self.translator: Translator = allmodules.translator
 
-        self._units: typing.Dict[str, dict] = {}
-        self._custom_map: typing.Dict[str, typing.Callable] = {}
-        self.fsm: typing.Dict[str, str] = {}
-        self._error_events: typing.Dict[str, asyncio.Event] = {}
+        self._units: dict[str, dict] = {}
+        self._custom_map: dict[str, typing.Callable] = {}
+        self.fsm: dict[str, str] = {}
+        self._error_events: dict[str, asyncio.Event] = {}
 
         self._markup_ttl = 60 * 60 * 24
         self.init_complete = False
 
-        self._token: str = typing.cast(str, db.get("hikka.inline", "bot_token", False))
+        self._token: str | None = str(db.get("hikka.inline", "bot_token", False))
 
         self._me: int = None
         self._name: str = None
@@ -88,7 +88,7 @@ class InlineManager(
         self.bot_id: int = None
         self.bot_username: str = None
 
-    async def _cleaner(self):
+    async def _cleaner(self) -> typing.NoReturn:
         """Cleans outdated inline units"""
         while True:
             for unit_id, unit in self._units.copy().items():
@@ -101,7 +101,7 @@ class InlineManager(
         self,
         after_break: bool = False,
         ignore_token_checks: bool = False,
-    ):
+    ) -> None:
         """
         Register manager
         :param after_break: Loop marker
@@ -111,8 +111,8 @@ class InlineManager(
         :return: None
         :rtype: None
         """
-        self._me = self._client.tg_id
-        self._name = get_display_name(self._client.hikka_me)
+        self._me = self._client._tg_id
+        self._name = utils.get_display_name(self._client.hikka_me)
 
         if not ignore_token_checks:
             is_token_asserted = await self._assert_token()
@@ -130,38 +130,41 @@ class InlineManager(
 
         try:
             bot_me = await self.bot.get_me()
-            self.bot_username = bot_me.username
+            self.bot_username = typing.cast(str, bot_me.username)
             self.bot_id = bot_me.id
         except TelegramUnauthorizedError:
             logger.critical("Token expired, revoking...")
-            return await self._dp_revoke_token(False)
+            await self._dp_revoke_token(False)
+            return
 
         try:
             m = await self._client.send_message(self.bot_username, "/start hikka init")
-        except (InputUserDeactivatedError, ValueError):
+        except (pyrogram.errors.InputUserDeactivated, ValueError) as e:
+            logger.error("resetting inline bot token", exc_info=e)
             self._db.set("hikka.inline", "bot_token", None)
-            self._token = False
+            self._token = None
 
             if not after_break:
-                return await self.register_manager(True)
+                await self.register_manager(True)
+                return
 
             self.init_complete = False
-            return False
-        except YouBlockedUserError:
-            await self._client(UnblockRequest(id=self.bot_username))
+            return
+        except pyrogram.errors.YouBlockedUser:
+            await self._client.unblock_user(self.bot_username)
             try:
                 m = await self._client.send_message(
                     self.bot_username, "/start hikka init"
                 )
             except Exception:
                 logger.critical("Can't unblock users bot", exc_info=True)
-                return False
+                return
         except Exception:
             self.init_complete = False
             logger.critical("Initialization of inline manager failed!", exc_info=True)
-            return False
+            return
 
-        await self._client.delete_messages(self.bot_username, m)
+        await m.delete()
 
         self._dp.inline_query.register(
             self._inline_handler,
@@ -191,6 +194,7 @@ class InlineManager(
             try:
                 return await old(*args, **kwargs)
             except TelegramConflictError:
+                logger.error("received TelegramConflictError, revoking inline token")
                 await revoke()
             except TelegramUnauthorizedError:
                 logger.critical("Got Unauthorized")
@@ -200,7 +204,7 @@ class InlineManager(
 
         self._task = asyncio.ensure_future(self._dp.start_polling(self.bot))
         self._cleaner_task = asyncio.ensure_future(self._cleaner())
-        return None
+        return
 
     async def _stop(self):
         """Stop the bot"""
@@ -212,13 +216,15 @@ class InlineManager(
         event = asyncio.Event()
         self._error_events[unit_id] = event
 
-        q: "InlineResults" = None  # type: ignore  # noqa: F821
+        q: "BotResults" = None  # type: ignore  # noqa: F821
         exception: Exception | None = None
 
         async def result_getter():
             nonlocal unit_id, q
             with contextlib.suppress(Exception):
-                q = await self._client.inline_query(self.bot_username, unit_id)
+                q = await self._client.get_inline_bot_results(
+                    self.bot_username, unit_id
+                )
 
         async def event_poller():
             nonlocal exception
@@ -242,12 +248,12 @@ class InlineManager(
         if exception:
             raise exception  # skipcq: PYL-E0702
 
-        if not q:
+        if len(q.results) <= 0:
             raise Exception("No query results")
 
-        return await q[0].click(
-            utils.get_chat_id(message) if isinstance(message, Message) else message,
-            reply_to=(
-                message.reply_to_msg_id if isinstance(message, Message) else None
-            ),
+        return await self._client.send_inline_bot_result(
+            utils.get_chat_id(message),
+            q.query_id,
+            q.results[0].id,
+            reply_to_message_id=message.reply_to_message_id,
         )

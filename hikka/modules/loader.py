@@ -21,19 +21,17 @@ import sys
 import time
 import typing
 import uuid
-from subprocess import PIPE
 from collections import ChainMap
 from importlib.machinery import ModuleSpec
+from subprocess import PIPE
 from urllib.parse import urlparse
 
+import pyrogram.errors
 import requests
-from telethon.errors.rpcerrorlist import MediaCaptionTooLongError
-from telethon.tl.functions.channels import JoinChannelRequest
-from telethon.tl.types import Channel, Message
+from pyrogram.types import Chat, Message
 
 from .. import loader, main, utils
 from .._local_storage import RemoteStorage
-from ..compat import geek
 from ..inline.types import InlineCall
 from ..types import CoreOverwriteError, CoreUnloadError
 
@@ -76,7 +74,7 @@ class LoaderMod(loader.Module):
             ),
             loader.ConfigValue(
                 "ADDITIONAL_REPOS",
-                # Currenly the trusted developers are specified
+                # Currently the trusted developers are specified
                 [
                     "https://github.com/hikariatama/host/raw/master",
                     "https://github.com/MoriSummerz/ftg-mods/raw/main",
@@ -120,7 +118,7 @@ class LoaderMod(loader.Module):
         # while not (settings := self.lookup("settings")):
         #     await asyncio.sleep(0.5)
 
-        self._storage = RemoteStorage(self._client)
+        self._storage = RemoteStorage(self.client)
 
         # self.allmodules.add_aliases(settings.get("aliases", {}))
 
@@ -242,7 +240,7 @@ class LoaderMod(loader.Module):
                 repo,
                 res.status_code,
             )
-            return []
+            return ""
 
         self._links_cache[repo] = {
             "exp": time.time() + 5 * 60,
@@ -267,12 +265,12 @@ class LoaderMod(loader.Module):
             if repo.startswith("http")
         }
 
-    async def get_links_list(self) -> typing.List[str]:
+    async def get_links_list(self) -> list[str]:
         links = await self.get_repo_list()
         main_repo = list(links.pop(self.config["MODULES_REPO"]).values())
         return main_repo + list(dict(ChainMap(*list(links.values()))).values())
 
-    async def _find_link(self, module_name: str) -> typing.Union[str, bool]:
+    async def _find_link(self, module_name: str) -> str | typing.Literal[False]:
         return next(
             filter(
                 lambda link: link.lower().endswith(f"/{module_name.lower()}.py"),
@@ -284,7 +282,7 @@ class LoaderMod(loader.Module):
     async def download_and_install(
         self,
         module_name: str,
-        message: typing.Optional[Message] = None,
+        message: Message | None = None,
     ):
         try:
             blob_link = False
@@ -451,7 +449,7 @@ class LoaderMod(loader.Module):
         self,
         doc: str,
         message: Message,
-        name: typing.Optional[str] = None,
+        name: str | None = None,
         origin: str = "<string>",
         did_requirements: bool = False,
         save_fs: bool = False,
@@ -539,7 +537,6 @@ class LoaderMod(loader.Module):
             uid = name.replace("%", "%%").replace(".", "%d")
 
         module_name = f"hikka.modules.{uid}"
-        doc = geek.compat(doc)
 
         async def core_overwrite(e: CoreOverwriteError):
             nonlocal message
@@ -578,7 +575,7 @@ class LoaderMod(loader.Module):
 
             except ImportError as e:
                 logger.info(
-                    ("Module loading failed, attemping dependency installation (%s)"),
+                    "Module loading failed, attempting dependency installation (%s)",
                     e.name,
                 )
                 # Let's try to reinstall dependencies
@@ -594,7 +591,7 @@ class LoaderMod(loader.Module):
                     )
                 except TypeError:
                     logger.warning(
-                        "No valid pip packages specified in code, attemping installation from error"
+                        "No valid pip packages specified in code, attempting installation from error"
                     )
                     requirements = [
                         {
@@ -796,11 +793,11 @@ class LoaderMod(loader.Module):
         )
 
         if pack_url and (
-            transations := await self.allmodules.translator.load_module_translations(
+            translations := await self.allmodules.translator.load_module_translations(
                 pack_url
             )
         ):
-            instance.strings.external_strings = transations
+            instance.strings.external_strings = translations
 
         for alias, cmd in self.lookup("HikkaSettings").get("aliases", {}).items():
             if cmd in instance.commands:
@@ -813,21 +810,21 @@ class LoaderMod(loader.Module):
 
         try:
             developer_entity = await (
-                self._client.force_get_entity
+                self.client.force_get_entity
                 if (
-                    developer in self._client.hikka_entity_cache
+                    developer in self.client.hikka_entity_cache
                     and getattr(
-                        await self._client.get_entity(developer),
+                        await self.client.get_entity(developer),
                         "left",
                         True,
                     )
                 )
-                else self._client.get_entity
+                else self.client.get_entity
             )(developer)
         except Exception:
             developer_entity = None
 
-        if not isinstance(developer_entity, Channel):
+        if not isinstance(developer_entity, Chat):
             developer_entity = None
 
         if message is None:
@@ -899,7 +896,7 @@ class LoaderMod(loader.Module):
                     and self._db.get(main.__name__, "suggest_subscribe", True)
                 ):
                     subscribe = self.strings("suggest_subscribe").format(  # type: ignore[reportCallIssue]
-                        f"@{utils.escape_html(developer_entity.username)}"
+                        f"@{utils.escape_html(str(developer_entity.username))}"
                     )
                     subscribe_markup = [
                         {
@@ -923,9 +920,9 @@ class LoaderMod(loader.Module):
                     ]
 
             developer = self.strings("developer").format(  # type: ignore[reportCallIssue]
-                utils.escape_html(developer)
-                if isinstance(developer_entity, Channel)
-                else f"<code>{utils.escape_html(developer)}</code>"
+                utils.escape_html(str(developer))
+                if isinstance(developer_entity, Chat)
+                else f"<code>{utils.escape_html(str(developer))}</code>"
             )
         else:
             developer = ""
@@ -945,11 +942,7 @@ class LoaderMod(loader.Module):
                 "▫️",
                 utils.escape_html(self.get_prefix()),
                 _name,
-                (
-                    utils.escape_html(inspect.getdoc(fun))
-                    if fun.__doc__
-                    else self.strings("undoc")
-                ),  # type: ignore[reportCallIssue]
+                (utils.escape_html(inspect.getdoc(fun) or "") or self.strings("undoc")),  # type: ignore[reportCallIssue]
             )
 
         if self.inline.init_complete:
@@ -968,7 +961,7 @@ class LoaderMod(loader.Module):
 
         try:
             await utils.answer(message, loaded_msg(), reply_markup=subscribe_markup)
-        except MediaCaptionTooLongError:
+        except pyrogram.errors.MediaCaptionTooLong:
             await message.reply(loaded_msg(False))
 
     async def _inline__subscribe(
@@ -984,7 +977,7 @@ class LoaderMod(loader.Module):
             await call.answer(self.strings("not_subscribed"))  # type: ignore[reportCallIssue]
             return
 
-        await self._client(JoinChannelRequest(entity))
+        await self.client.join_chat(chat_id=entity)
         await utils.answer(call, msg())
         await call.answer(self.strings("subscribed"))  # type: ignore[reportCallIssue]
 

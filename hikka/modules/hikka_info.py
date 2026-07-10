@@ -4,9 +4,8 @@
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 import aiogram
-import telethon
-from telethon.tl.types import Message
-from telethon.utils import get_display_name
+import pyrogram
+from pyrogram.types import Message
 
 from .. import loader, utils, version
 
@@ -43,8 +42,8 @@ class HikkaInfoMod(loader.Module):
 
     def _render_info(self, inline: bool) -> str:
         me = '<b><a href="tg://user?id={}">{}</a></b>'.format(
-            self._client.hikka_me.id,
-            utils.escape_html(get_display_name(self._client.hikka_me)),
+            self.client.hikka_me.id,
+            utils.escape_html(utils.get_display_name(self.client.hikka_me)),
         )
         commit = utils.get_commit_url()
         branch: str = utils.get_git_branch() or "Unknown"
@@ -54,7 +53,7 @@ class HikkaInfoMod(loader.Module):
         platform = utils.get_named_platform()
 
         aiogram_version = aiogram.__version__
-        telethon_version = telethon.__version__
+        pyrogram_version = pyrogram.__version__
 
         return (
             ("" if self.config["custom_message"] else "<b>🌘 Hikkaduwa</b>\n")
@@ -75,7 +74,7 @@ class HikkaInfoMod(loader.Module):
                 f"🌘 <b>Hikkaduwa</b>\n\n"
                 f"☀️ <b>{self.strings('commit')}:</b> {commit} on <code>{branch}</code>\n"  # type: ignore[reportCallIssue]
                 f"🌙 <b>{self.strings('version')}:</b> {_version}\n"  # type: ignore[reportCallIssue]
-                f"🍄 <b>aiogram:</b> <i>{aiogram_version}</i>, <b>telethon:</b> <i>{telethon_version}</i>\n\n"  # type: ignore[reportCallIssue]
+                f"🍄 <b>aiogram:</b> <i>{aiogram_version}</i>, <b>kurigram:</b> <i>{pyrogram_version}</i>\n\n"  # type: ignore[reportCallIssue]
                 f"⚙️ <b>{self.strings('modules')}:</b> {modules_count}\n"  # type: ignore[reportCallIssue]
                 f"⌨️ <b>{self.strings('prefix')}:</b> {prefix}\n"  # type: ignore[reportCallIssue]
                 f"⌛️ <b>{self.strings('uptime')}:</b> {utils.formatted_uptime()}\n\n"  # type: ignore[reportCallIssue]

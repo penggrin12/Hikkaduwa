@@ -16,6 +16,7 @@ from asyncio import Event
 from urllib.parse import urlparse
 
 import grapheme
+import pyrogram.errors
 from aiogram.types import (
     InlineQuery,
     InlineQueryResultArticle,
@@ -27,8 +28,7 @@ from aiogram.types import (
     InlineQueryResultVideo,
     InputTextMessageContent,
 )
-from telethon.errors.rpcerrorlist import ChatSendInlineForbiddenError
-from telethon.tl.types import Message
+from pyrogram.types import Message
 
 from .. import main, utils
 from ..types import HikkaReplyMarkup
@@ -36,7 +36,7 @@ from .types import InlineMessage, InlineUnit
 
 logger = logging.getLogger(__name__)
 
-VERIFICATION_EMOJIES = list(
+VERIFICATION_EMOJIS = list(
     grapheme.graphemes(
         "👨‍🏫👩‍🏫👨‍🎤🧑‍🎤👩‍🎤👨‍🎓👩‍🎓👩‍🍳👩‍🌾👩‍⚕️🕵️‍♀️💂‍♀️👷‍♂️👮‍♂️👴🧑‍🦳👩‍🦳👱‍♀️👩‍🦰👨‍🦱👩‍⚖️🧙‍♂️🧝‍♀️🧛‍♀️"
         "🎅🧚‍♂️🙆‍♀️🙍‍♂️👩‍👦🧶🪢🪡🧵🩲👖👕👚🦺👗👙🩱👘🥻🩴🥿🧦🥾👟👞"
@@ -60,27 +60,27 @@ class Form(InlineUnit):
     async def form(
         self,
         text: str,
-        message: typing.Union[Message, int],
-        reply_markup: typing.Optional[HikkaReplyMarkup] = None,
+        message: Message | int,
+        reply_markup: HikkaReplyMarkup | None = None,
         *,
         force_me: bool = False,
-        always_allow: typing.Optional[typing.List[int]] = None,
+        always_allow: list[int] | None = None,
         manual_security: bool = False,
         disable_security: bool = False,
-        ttl: typing.Optional[int] = None,
-        on_unload: typing.Optional[typing.Callable] = None,
-        photo: typing.Optional[str] = None,
-        gif: typing.Optional[str] = None,
-        file: typing.Optional[str] = None,
-        mime_type: typing.Optional[str] = None,
-        video: typing.Optional[str] = None,
-        location: typing.Optional[str] = None,
-        audio: typing.Optional[typing.Union[dict, str]] = None,
+        ttl: int | None = None,
+        on_unload: typing.Callable | None = None,
+        photo: str | None = None,
+        gif: str | None = None,
+        file: str | None = None,
+        mime_type: str | None = None,
+        video: str | None = None,
+        location: str | None = None,
+        audio: dict | str | None = None,
         silent: bool = False,
-    ) -> typing.Union[InlineMessage, bool]:
+    ) -> InlineMessage | typing.Literal[False]:
         """
         Send inline form to chat
-        :param text: Content of inline form. HTML markdown supported
+        :param text: Content of inline form. HTML and Markdown supported
         :param message: Where to send inline. Can be either `Message` or `int`
         :param reply_markup: List of buttons to insert in markup. List of dicts with keys: text, callback
         :param force_me: Either this form buttons must be pressed only by owner scope or no
@@ -96,14 +96,14 @@ class Form(InlineUnit):
         :param disable_security: By default, Hikkaduwa will try to inherit inline buttons security from the caller (command)
                                  If you want to disable all security checks on this form in particular, pass `disable_security=True`
         :param photo: Attach a photo to the form. URL must be supplied
-        :param gif: Attach a gif to the form. URL must be supplied
+        :param gif: Attach a GIF to the form. URL must be supplied
         :param file: Attach a file to the form. URL must be supplied
         :param mime_type: Only needed, if `file` field is not empty. Must be either 'application/pdf' or 'application/zip'
         :param video: Attach a video to the form. URL must be supplied
         :param location: Attach a map point to the form. List/tuple must be supplied (latitude, longitude)
                          Example: (55.749931, 48.742371)
                          ⚠️ If you pass this parameter, you'll need to pass empty string to `text` ⚠️
-        :param audio: Attach a audio to the form. Dict or URL must be supplied
+        :param audio: Attach an audio to the form. Dict or URL must be supplied
         :param silent: Whether the form must be sent silently (w/o "Opening form..." message)
         :return: If form is sent, returns :obj:`InlineMessage`, otherwise returns `False`
         """
@@ -267,10 +267,14 @@ class Form(InlineUnit):
         if isinstance(message, Message) and not silent:
             try:
                 status_message = await (
-                    message.edit if message.out else message.respond
+                    message.edit if message.outgoing else message.answer
                 )(
                     "🌘" + self.translator.getkey("inline.opening_form"),
-                    **({"reply_to": utils.get_topic(message)} if message.out else {}),
+                    **(
+                        {"reply_to": utils.get_topic(message)}
+                        if message.outgoing
+                        else {}
+                    ),
                 )
             except Exception:
                 status_message = None
@@ -329,16 +333,13 @@ class Form(InlineUnit):
         async def answer(msg: str):
             nonlocal message
             if isinstance(message, Message):
-                await (message.edit if message.out else message.respond)(
-                    msg,
-                    **({} if message.out else {"reply_to": utils.get_topic(message)}),
-                )
+                await (message.edit if message.outgoing else message.answer)(text=msg)
             else:
                 await self._client.send_message(message, msg)
 
         try:
             m = await self._invoke_unit(unit_id, message)
-        except ChatSendInlineForbiddenError:
+        except pyrogram.errors.ChatSendInlineForbidden:
             await answer(self.translator.getkey("inline.inline403"))
         except Exception:
             logger.exception("Can't send form")
@@ -362,10 +363,10 @@ class Form(InlineUnit):
         self._units[unit_id]["chat"] = utils.get_chat_id(m)
         self._units[unit_id]["message_id"] = m.id
 
-        if isinstance(message, Message) and message.out:
+        if isinstance(message, Message) and message.outgoing:
             await message.delete()
 
-        if status_message and not message.out:
+        if status_message and not message.outgoing:
             await status_message.delete()
 
         inline_message_id = self._units[unit_id]["inline_message_id"]
@@ -391,7 +392,7 @@ class Form(InlineUnit):
                     and button["_switch_query"] == query
                     and inline_query.from_user.id
                     in [self._me]
-                    + self._client.dispatcher.security._owner
+                    + self._client.hikka_dispatcher.security._owner
                     + unit.get("always_allow", [])
                 ):
                     await inline_query.answer(
@@ -401,7 +402,7 @@ class Form(InlineUnit):
                                 title=button["input"],
                                 description=(
                                     self.translator.getkey("inline.keep_id").format(
-                                        random.choice(VERIFICATION_EMOJIES)
+                                        random.choice(VERIFICATION_EMOJIS)
                                     )
                                 ),
                                 input_message_content=InputTextMessageContent(

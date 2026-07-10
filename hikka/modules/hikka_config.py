@@ -10,7 +10,7 @@ import functools
 import typing
 from math import ceil
 
-from telethon.tl.types import Message
+from pyrogram.types import Message
 
 from .. import loader, translations, utils
 from ..inline.types import InlineCall
@@ -71,7 +71,7 @@ class HikkaConfigMod(loader.Module):
         mod: str,
         option: str,
         inline_message_id: str,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ):
         try:
             self.lookup(mod).config[option] = query
@@ -114,7 +114,7 @@ class HikkaConfigMod(loader.Module):
         call: InlineCall,
         mod: str,
         option: str,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ):
         mod_instance = self.lookup(mod)
         mod_instance.config[option] = mod_instance.config.getdef(option)
@@ -146,7 +146,7 @@ class HikkaConfigMod(loader.Module):
         mod: str,
         option: str,
         value: bool,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ):
         try:
             self.lookup(mod).config[option] = value
@@ -209,7 +209,7 @@ class HikkaConfigMod(loader.Module):
         self,
         mod: str,
         option: str,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ) -> list:
         return [
             [
@@ -266,7 +266,7 @@ class HikkaConfigMod(loader.Module):
         mod: str,
         option: str,
         inline_message_id: str,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ):
         try:
             with contextlib.suppress(Exception):
@@ -320,7 +320,7 @@ class HikkaConfigMod(loader.Module):
         mod: str,
         option: str,
         inline_message_id: str,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ):
         try:
             with contextlib.suppress(Exception):
@@ -383,7 +383,7 @@ class HikkaConfigMod(loader.Module):
         call: InlineCall,
         mod: str,
         option: str,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ) -> list:
         return [
             [
@@ -449,7 +449,7 @@ class HikkaConfigMod(loader.Module):
         mod: str,
         option: str,
         value: bool,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ):
         try:
             self.lookup(mod).config[option] = value
@@ -494,7 +494,7 @@ class HikkaConfigMod(loader.Module):
         mod: str,
         option: str,
         value: bool,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ):
         try:
             if value in self.lookup(mod).config._config[option].value:
@@ -523,7 +523,7 @@ class HikkaConfigMod(loader.Module):
         call: InlineCall,
         mod: str,
         option: str,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ) -> list:
         possible_values = list(
             self.lookup(mod)
@@ -592,7 +592,7 @@ class HikkaConfigMod(loader.Module):
         call: InlineCall,
         mod: str,
         option: str,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ) -> list:
         possible_values = list(
             self.lookup(mod)
@@ -662,7 +662,7 @@ class HikkaConfigMod(loader.Module):
         mod: str,
         config_opt: str,
         force_hidden: bool = False,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ):
         module = self.lookup(mod)
         args = [
@@ -683,7 +683,7 @@ class HikkaConfigMod(loader.Module):
             module.config._config[config_opt].validator
             and module.config._config[config_opt].validator.internal_id == "Hidden"
         ):
-            additonal_button_row = (
+            additional_button_row = (
                 [
                     [
                         {
@@ -707,7 +707,7 @@ class HikkaConfigMod(loader.Module):
                 ]
             )
         else:
-            additonal_button_row = []
+            additional_button_row = []
 
         try:
             validator = module.config._config[config_opt].validator
@@ -741,7 +741,7 @@ class HikkaConfigMod(loader.Module):
                         if isinstance(obj_type, bool)
                         else "configuring_option_lib"
                     ).format(*args),
-                    reply_markup=additonal_button_row
+                    reply_markup=additional_button_row
                     + self._generate_bool_markup(mod, config_opt, obj_type),
                 )
                 return
@@ -753,7 +753,7 @@ class HikkaConfigMod(loader.Module):
                         if isinstance(obj_type, bool)
                         else "configuring_option_lib"
                     ).format(*args),
-                    reply_markup=additonal_button_row
+                    reply_markup=additional_button_row
                     + self._generate_series_markup(call, mod, config_opt, obj_type),
                 )
                 return
@@ -765,7 +765,7 @@ class HikkaConfigMod(loader.Module):
                         if isinstance(obj_type, bool)
                         else "configuring_option_lib"
                     ).format(*args),
-                    reply_markup=additonal_button_row
+                    reply_markup=additional_button_row
                     + self._generate_choice_markup(call, mod, config_opt, obj_type),
                 )
                 return
@@ -777,7 +777,7 @@ class HikkaConfigMod(loader.Module):
                         if isinstance(obj_type, bool)
                         else "configuring_option_lib"
                     ).format(*args),
-                    reply_markup=additonal_button_row
+                    reply_markup=additional_button_row
                     + self._generate_multi_choice_markup(
                         call, mod, config_opt, obj_type
                     ),
@@ -790,7 +790,7 @@ class HikkaConfigMod(loader.Module):
                 if isinstance(obj_type, bool)
                 else "configuring_option_lib"
             ).format(*args),
-            reply_markup=additonal_button_row
+            reply_markup=additional_button_row
             + [
                 [
                     {
@@ -825,7 +825,7 @@ class HikkaConfigMod(loader.Module):
         self,
         call: InlineCall,
         mod: str,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ):
         btns = [
             {
@@ -865,7 +865,7 @@ class HikkaConfigMod(loader.Module):
             ],
         )
 
-    async def inline__choose_category(self, call: typing.Union[Message, InlineCall]):
+    async def inline__choose_category(self, call: Message | InlineCall):
         await utils.answer(
             call,
             self.strings("choose_core"),  # type: ignore[reportCallIssue]
@@ -907,7 +907,7 @@ class HikkaConfigMod(loader.Module):
         self,
         call: InlineCall,
         page: int = 0,
-        obj_type: typing.Union[bool, str] = False,
+        obj_type: bool | str = False,
     ):
         if isinstance(obj_type, bool):
             to_config = [

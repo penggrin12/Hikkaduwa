@@ -12,10 +12,13 @@ import itertools
 import logging
 import os
 import re
+import struct
 import typing
 from copy import deepcopy
 from urllib.parse import urlparse
 
+import pyrogram
+import pyrogram.utils
 from aiogram.exceptions import (
     TelegramBadRequest,
     TelegramNotFound,
@@ -33,7 +36,7 @@ from aiogram.types import (
     InputMediaVideo,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from telethon.utils import resolve_inline_message_id
+from pyrogram.raw.base import reply_markup
 
 from .. import utils
 from ..types import HikkaReplyMarkup
@@ -45,8 +48,8 @@ logger = logging.getLogger(__name__)
 class Utils(InlineUnit):
     def _generate_markup(
         self,
-        markup_obj: typing.Optional[typing.Union[HikkaReplyMarkup, str]],
-    ) -> typing.Optional[InlineKeyboardMarkup]:
+        markup_obj: HikkaReplyMarkup | str | None,
+    ) -> InlineKeyboardMarkup | None:
         """Generate markup for form or list of `dict`s"""
         if not markup_obj:
             return None
@@ -218,9 +221,7 @@ class Utils(InlineUnit):
     async def _answer_unit_handler(self, call: InlineCall, text: str, show_alert: bool):
         await call.answer(text, show_alert=show_alert)
 
-    def _reverse_method_lookup(
-        self, needle: typing.Callable, /
-    ) -> typing.Optional[str]:
+    def _reverse_method_lookup(self, needle: typing.Callable, /) -> str | None:
         return next(
             (
                 name
@@ -237,9 +238,9 @@ class Utils(InlineUnit):
         """Checks if user with id `user` is allowed to run function `func`"""
         return user == self._client._tg_id
 
-    def _normalize_markup(
+    def normalize_markup(
         self, reply_markup: HikkaReplyMarkup
-    ) -> typing.List[typing.List[typing.Dict[str, typing.Any]]]:
+    ) -> list[list[dict[str, typing.Any]]]:
         if isinstance(reply_markup, dict):
             return [[reply_markup]]
 
@@ -250,36 +251,38 @@ class Utils(InlineUnit):
 
         return reply_markup
 
+    _normalize_markup = normalize_markup
+
     def sanitise_text(self, text: str) -> str:
         """
         Replaces all animated emojis in text with normal ones,
         bc aiogram doesn't support them
 
-        :param text: text to sanitise
-        :return: sanitised text
+        :param text: text to sanitize
+        :return: sanitized text
         """
         return re.sub(r"</?(?:emoji|blockquote).*?>", "", text)
 
     async def _edit_unit(
         self,
-        text: typing.Optional[str] = None,
-        reply_markup: typing.Optional[HikkaReplyMarkup] = None,
+        text: str | None = None,
+        reply_markup: HikkaReplyMarkup | None = None,
         *,
-        photo: typing.Optional[str] = None,
-        file: typing.Optional[str] = None,
-        video: typing.Optional[str] = None,
-        audio: typing.Optional[typing.Union[dict, str]] = None,
-        gif: typing.Optional[str] = None,
-        mime_type: typing.Optional[str] = None,
-        force_me: typing.Optional[bool] = None,
-        disable_security: typing.Optional[bool] = None,
-        always_allow: typing.Optional[typing.List[int]] = None,
+        photo: str | None = None,
+        file: str | None = None,
+        video: str | None = None,
+        audio: dict | str | None = None,
+        gif: str | None = None,
+        mime_type: str | None = None,
+        force_me: bool | None = None,
+        disable_security: bool | None = None,
+        always_allow: list[int] | None = None,
         disable_web_page_preview: bool = True,
-        query: typing.Optional[CallbackQuery] = None,
-        unit_id: typing.Optional[str] = None,
-        inline_message_id: typing.Optional[str] = None,
-        chat_id: typing.Optional[int] = None,
-        message_id: typing.Optional[int] = None,
+        query: CallbackQuery | None = None,
+        unit_id: str | None = None,
+        inline_message_id: str | None = None,
+        chat_id: int | None = None,
+        message_id: int | None = None,
     ) -> bool:
         """
         Edits unit message
@@ -289,7 +292,7 @@ class Utils(InlineUnit):
         :param file: Url to a valid file to attach to message
         :param video: Url to a valid video to attach to message
         :param audio: Url to a valid audio to attach to message
-        :param gif: Url to a valid gif to attach to message
+        :param gif: Url to a valid GIF to attach to message
         :param mime_type: Mime type of file
         :param force_me: Allow only userbot owner to interact with buttons
         :param disable_security: Disable security check for buttons
@@ -517,17 +520,17 @@ class Utils(InlineUnit):
 
     async def _delete_unit_message(
         self,
-        call: typing.Optional[CallbackQuery] = None,
-        unit_id: typing.Optional[str] = None,
-        chat_id: typing.Optional[int] = None,
-        message_id: typing.Optional[int] = None,
+        call: CallbackQuery | None = None,
+        unit_id: str | None = None,
+        chat_id: int | None = None,
+        message_id: int | None = None,
     ) -> bool:
         """Params `self`, `unit_id` are for internal use only, do not try to pass them"""
         if getattr(getattr(call, "message", None), "chat", None):
             try:
                 await self.bot.delete_message(
                     chat_id=call.message.chat.id,
-                    message_id=call.message.message_id,
+                    message_id=call.message.text_id,
                 )
             except Exception:
                 return False
@@ -546,11 +549,14 @@ class Utils(InlineUnit):
             unit_id = call.unit_id
 
         try:
-            message_id, peer, _, _ = resolve_inline_message_id(
+            # TODO
+            x = pyrogram.utils.unpack_inline_message_id(
                 self._units[unit_id]["inline_message_id"]
             )
 
-            await self._client.delete_messages(peer, [message_id])
+            message_id = x.id
+
+            await self._client.delete_messages(x.owner_id, [message_id])
             await self._unload_unit(unit_id)
         except Exception:
             return False
@@ -578,9 +584,9 @@ class Utils(InlineUnit):
         self,
         callback: typing.Callable[[int], typing.Awaitable[typing.Any]],
         total_pages: int,
-        unit_id: typing.Optional[str] = None,
-        current_page: typing.Optional[int] = None,
-    ) -> typing.List[typing.List[typing.Dict[str, typing.Any]]]:
+        unit_id: str | None = None,
+        current_page: int | None = None,
+    ) -> list[list[dict[str, typing.Any]]]:
         # Based on https://github.com/pystorage/pykeyboard/blob/master/pykeyboard/inline_pagination_keyboard.py#L4
         if current_page is None:
             current_page = self._units[unit_id]["current_index"] + 1
@@ -693,8 +699,8 @@ class Utils(InlineUnit):
 
     def _validate_markup(
         self,
-        buttons: typing.Optional[HikkaReplyMarkup],
-    ) -> typing.List[typing.List[typing.Dict[str, typing.Any]]]:
+        buttons: HikkaReplyMarkup | None,
+    ) -> list[list[dict[str, typing.Any]]]:
         if buttons is None:
             buttons = []
 

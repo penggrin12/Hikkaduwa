@@ -8,7 +8,7 @@ import difflib
 import inspect
 import logging
 
-from telethon.tl.types import Message
+from pyrogram.types import Message
 
 from .. import loader, utils
 
@@ -305,8 +305,8 @@ class Help(loader.Module):
         )
 
     @loader.command()
-    async def support(self, message):
-        if message.out:
+    async def support(self, message: Message):
+        if message.outgoing:
             await self.request_join("@hikka_talks", self.strings("request_join"))  # type: ignore[reportCallIssue]
 
         await utils.answer(

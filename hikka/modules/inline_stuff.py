@@ -6,10 +6,6 @@
 
 import re
 
-from telethon.errors.rpcerrorlist import YouBlockedUserError
-from telethon.tl.functions.contacts import UnblockRequest
-from telethon.tl.types import Message
-
 from .. import loader, utils
 from ..inline.types import BotInlineMessage
 
@@ -52,11 +48,11 @@ class InlineStuff(loader.Module):
         )
 
     async def _check_bot(self, username: str) -> bool:
-        async with self._client.conversation("@BotFather", exclusive=False) as conv:
+        async with self.client.conversation("@BotFather", exclusive=False) as conv:
             try:
                 await conv.send_message("/token")
             except YouBlockedUserError:
-                await self._client(UnblockRequest(id="@BotFather"))
+                await self.client(UnblockRequest(id="@BotFather"))
                 await conv.send_message("/token")
 
             r = await conv.get_response()

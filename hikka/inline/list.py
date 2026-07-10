@@ -13,6 +13,7 @@ import time
 import traceback
 import typing
 
+import pyrogram.errors
 from aiogram.exceptions import TelegramRetryAfter
 from aiogram.types import (
     CallbackQuery,
@@ -21,8 +22,7 @@ from aiogram.types import (
     InlineQueryResultArticle,
     InputTextMessageContent,
 )
-from telethon.errors.rpcerrorlist import ChatSendInlineForbiddenError
-from telethon.tl.types import Message
+from pyrogram.types import Message
 
 from .. import main, utils
 from ..types import HikkaReplyMarkup
@@ -34,18 +34,18 @@ logger = logging.getLogger(__name__)
 class List(InlineUnit):
     async def list(
         self,
-        message: typing.Union[Message, int],
-        strings: typing.List[str],
+        message: Message | int,
+        strings: list[str],
         *,
         force_me: bool = False,
-        always_allow: typing.Optional[typing.List[int]] = None,
+        always_allow: list[int] | None = None,
         manual_security: bool = False,
         disable_security: bool = False,
-        ttl: typing.Union[int, bool] = False,
-        on_unload: typing.Optional[typing.Callable[[], typing.Any]] = None,
+        ttl: int | bool = False,
+        on_unload: typing.Callable[[], typing.Any] | None = None,
         silent: bool = False,
-        custom_buttons: typing.Optional[HikkaReplyMarkup] = None,
-    ) -> typing.Union[bool, InlineMessage]:
+        custom_buttons: HikkaReplyMarkup | None = None,
+    ) -> InlineMessage | typing.Literal[False]:
         """
         Send inline list to chat
         :param message: Where to send list. Can be either `Message` or `int`
@@ -182,10 +182,14 @@ class List(InlineUnit):
         if isinstance(message, Message) and not silent:
             try:
                 status_message = await (
-                    message.edit if message.out else message.respond
+                    message.edit if message.outgoing else message.respond
                 )(
                     "🌘" + self.translator.getkey("inline.opening_list"),
-                    **({"reply_to": utils.get_topic(message)} if message.out else {}),
+                    **(
+                        {"reply_to": utils.get_topic(message)}
+                        if message.outgoing
+                        else {}
+                    ),
                 )
             except Exception:
                 status_message = None
@@ -195,16 +199,20 @@ class List(InlineUnit):
         async def answer(msg: str):
             nonlocal message
             if isinstance(message, Message):
-                await (message.edit if message.out else message.respond)(
+                await (message.edit if message.outgoing else message.respond)(
                     msg,
-                    **({} if message.out else {"reply_to": utils.get_topic(message)}),
+                    **(
+                        {}
+                        if message.outgoing
+                        else {"reply_to": utils.get_topic(message)}
+                    ),
                 )
             else:
                 await self._client.send_message(message, msg)
 
         try:
             m = await self._invoke_unit(unit_id, message)
-        except ChatSendInlineForbiddenError:
+        except pyrogram.errors.ChatSendInlineForbidden:
             await answer(self.translator.getkey("inline.inline403"))
         except Exception:
             logger.exception("Can't send list")
@@ -228,10 +236,10 @@ class List(InlineUnit):
         self._units[unit_id]["chat"] = utils.get_chat_id(m)
         self._units[unit_id]["message_id"] = m.id
 
-        if isinstance(message, Message) and message.out:
+        if isinstance(message, Message) and message.outgoing:
             await message.delete()
 
-        if status_message and not message.out:
+        if status_message and not message.outgoing:
             await status_message.delete()
 
         return InlineMessage(self, unit_id, self._units[unit_id]["inline_message_id"])
@@ -239,7 +247,7 @@ class List(InlineUnit):
     async def _list_page(
         self,
         call: CallbackQuery,
-        page: typing.Union[int, str],
+        page: int | str,
         unit_id: str = None,
     ):
         if page == "close":

@@ -15,6 +15,7 @@ import traceback
 import typing
 from urllib.parse import urlparse
 
+import pyrogram.errors
 from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 from aiogram.types import (
     CallbackQuery,
@@ -25,8 +26,7 @@ from aiogram.types import (
     InputMediaAnimation,
     InputMediaPhoto,
 )
-from telethon.errors.rpcerrorlist import ChatSendInlineForbiddenError
-from telethon.tl.types import Message
+from pyrogram.types import Message
 
 from .. import main, utils
 from ..types import HikkaReplyMarkup
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 class ListGalleryHelper:
-    def __init__(self, lst: typing.List[str]):
+    def __init__(self, lst: list[str]):
         self.lst = lst
         self._current_index = -1
 
@@ -51,22 +51,22 @@ class ListGalleryHelper:
 class Gallery(InlineUnit):
     async def gallery(
         self,
-        message: typing.Union[Message, int],
-        next_handler: typing.Union[typing.Callable, typing.List[str]],
-        caption: typing.Union[typing.List[str], str, typing.Callable] = "",
+        message: Message | int,
+        next_handler: typing.Callable | list[str],
+        caption: list[str] | str | typing.Callable = "",
         *,
-        custom_buttons: typing.Optional[HikkaReplyMarkup] = None,
+        custom_buttons: HikkaReplyMarkup | None = None,
         force_me: bool = False,
-        always_allow: typing.Optional[typing.List[int]] = None,
+        always_allow: list[int] | None = None,
         manual_security: bool = False,
         disable_security: bool = False,
-        ttl: typing.Union[int, bool] = False,
-        on_unload: typing.Optional[typing.Callable] = None,
-        preload: typing.Union[bool, int] = False,
+        ttl: int | bool = False,
+        on_unload: typing.Callable | None = None,
+        preload: bool | int = False,
         gif: bool = False,
         silent: bool = False,
         _reattempt: bool = False,
-    ) -> typing.Union[bool, InlineMessage]:
+    ) -> InlineMessage | typing.Literal[False]:
         """
         Send inline gallery to chat
         :param caption: Caption for photo, or callable, returning caption
@@ -83,8 +83,8 @@ class Gallery(InlineUnit):
         :param preload: Either to preload gallery photos beforehand or no. If yes - specify threshold to
                         be loaded. Toggle this attribute, if your callback is too slow to load photos
                         in real time
-        :param gif: Whether the gallery will be filled with gifs. If you omit this argument and specify
-                    gifs in `next_handler`, Hikkaduwa will try to determine the filetype of these images
+        :param gif: Whether the gallery will be filled with GIFs. If you omit this argument and specify
+                    GIFs in `next_handler`, Hikkaduwa will try to determine the filetype of these images
         :param manual_security: By default, Hikkaduwa will try to inherit inline buttons security from the caller (command)
                                 If you want to avoid this, pass `manual_security=True`
         :param disable_security: By default, Hikkaduwa will try to inherit inline buttons security from the caller (command)
@@ -255,10 +255,14 @@ class Gallery(InlineUnit):
         if isinstance(message, Message) and not silent:
             try:
                 status_message = await (
-                    message.edit if message.out else message.respond
+                    message.edit if message.outgoing else message.respond
                 )(
                     "🌘" + self.translator.getkey("inline.opening_gallery"),
-                    **({"reply_to": utils.get_topic(message)} if message.out else {}),
+                    **(
+                        {"reply_to": utils.get_topic(message)}
+                        if message.outgoing
+                        else {}
+                    ),
                 )
             except Exception:
                 status_message = None
@@ -268,16 +272,20 @@ class Gallery(InlineUnit):
         async def answer(msg: str):
             nonlocal message
             if isinstance(message, Message):
-                await (message.edit if message.out else message.respond)(
+                await (message.edit if message.outgoing else message.respond)(
                     msg,
-                    **({} if message.out else {"reply_to": utils.get_topic(message)}),
+                    **(
+                        {}
+                        if message.outgoing
+                        else {"reply_to": utils.get_topic(message)}
+                    ),
                 )
             else:
                 await self._client.send_message(message, msg)
 
         try:
             m = await self._invoke_unit(unit_id, message)
-        except ChatSendInlineForbiddenError:
+        except pyrogram.errors.ChatSendInlineForbidden:
             await answer(self.translator.getkey("inline.inline403"))
         except Exception:
             logger.exception("Error sending inline gallery")
@@ -311,10 +319,10 @@ class Gallery(InlineUnit):
         self._units[unit_id]["chat"] = utils.get_chat_id(m)
         self._units[unit_id]["message_id"] = m.id
 
-        if isinstance(message, Message) and message.out:
+        if isinstance(message, Message) and message.outgoing:
             await message.delete()
 
-        if status_message and not message.out:
+        if status_message and not message.outgoing:
             await status_message.delete()
 
         if not isinstance(next_handler, ListGalleryHelper):
@@ -324,12 +332,10 @@ class Gallery(InlineUnit):
 
     async def _call_photo(
         self,
-        callback: typing.Union[
-            typing.Callable[[], typing.Awaitable[str]],
-            typing.Callable[[], str],
-            typing.List[str],
-        ],
-    ) -> typing.Union[str, bool]:
+        callback: typing.Callable[[], typing.Awaitable[str]]
+        | typing.Callable[[], str]
+        | list[str],
+    ) -> str | typing.Literal[False]:
         """Parses photo url from `callback`. Returns url on success, otherwise `False`"""
         if isinstance(callback, str):
             photo_url = callback
@@ -381,7 +387,7 @@ class Gallery(InlineUnit):
     async def _gallery_slideshow_loop(
         self,
         call: CallbackQuery,
-        unit_id: typing.Optional[str] = None,
+        unit_id: str | None = None,
     ):
         while True:
             await asyncio.sleep(7)
@@ -407,7 +413,7 @@ class Gallery(InlineUnit):
     async def _gallery_slideshow(
         self,
         call: CallbackQuery,
-        unit_id: typing.Optional[str] = None,
+        unit_id: str | None = None,
     ):
         if not self._units[unit_id].get("slideshow", False):
             self._units[unit_id]["slideshow"] = True
@@ -435,7 +441,7 @@ class Gallery(InlineUnit):
     async def _gallery_back(
         self,
         call: CallbackQuery,
-        unit_id: typing.Optional[str] = None,
+        unit_id: str | None = None,
     ):
         queue = self._units[unit_id]["photos"]
 
@@ -469,7 +475,7 @@ class Gallery(InlineUnit):
     def _get_current_media(
         self,
         unit_id: str,
-    ) -> typing.Union[InputMediaPhoto, InputMediaAnimation]:
+    ) -> InputMediaPhoto | InputMediaAnimation:
         """Return current media, which should be updated in gallery"""
         media = self._get_next_photo(unit_id)
         try:
@@ -500,8 +506,8 @@ class Gallery(InlineUnit):
     async def _gallery_page(
         self,
         call: CallbackQuery,
-        page: typing.Union[int, str],
-        unit_id: typing.Optional[str] = None,
+        page: int | str,
+        unit_id: str | None = None,
     ):
         if page == "slideshow":
             await self._gallery_slideshow(call, unit_id)
@@ -577,7 +583,7 @@ class Gallery(InlineUnit):
             return self._units[unit_id]["photos"][0]
 
     def _get_caption(self, unit_id: str, index: int = 0) -> str:
-        """Calls and returnes caption for gallery"""
+        """Calls and returns caption for gallery"""
         caption = self._units[unit_id].get("caption", "")
         if isinstance(caption, ListGalleryHelper):
             return caption.by_index(index)

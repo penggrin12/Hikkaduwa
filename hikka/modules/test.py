@@ -11,7 +11,7 @@ import time
 import typing
 from io import BytesIO
 
-from telethon.tl.types import Message
+from pyrogram.types import Message
 
 from .. import loader, main, utils
 from ..inline.types import InlineCall
@@ -98,9 +98,9 @@ class TestMod(loader.Module):
     @loader.command()
     async def logs(
         self,
-        message: typing.Union[Message, InlineCall],
+        message: Message | InlineCall,
         force: bool = False,
-        lvl: typing.Union[int, None] = None,
+        lvl: int | None = None,
     ):
         if not isinstance(lvl, int):
             args = utils.get_args_raw(message)
@@ -144,7 +144,7 @@ class TestMod(loader.Module):
         logs = "\n\n".join(
             [
                 "\n".join(
-                    handler.dumps(lvl, client_id=self._client.tg_id)
+                    handler.dumps(lvl, client_id=self.client.tg_id)
                     if "client_id" in inspect.signature(handler.dumps).parameters
                     else handler.dumps(lvl)
                 )
@@ -230,7 +230,7 @@ class TestMod(loader.Module):
                 caption=self.strings("logs_caption").format(named_lvl, *other),  # type: ignore[reportCallIssue]
             )
         else:
-            await self._client.send_file(
+            await self.client.send_file(
                 message.form["chat"],
                 logs,
                 caption=self.strings("logs_caption").format(named_lvl, *other),  # type: ignore[reportCallIssue]
@@ -269,7 +269,7 @@ class TestMod(loader.Module):
 
     async def client_ready(self):
         chat, _ = await utils.asset_channel(
-            self._client,
+            self.client,
             "hikka-logs",
             "🌘 Your Hikkaduwa logs will appear in this chat",
             silent=True,

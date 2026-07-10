@@ -1,6 +1,11 @@
 # https://raw.githubusercontent.com/lincolnloop/python-qrcode/b80fea6ee7e75f3024b9ed7adf891a143e0b14e3/qrcode/main.py
 # The code was copied in such weird way since the original project requires Pillow
 
+# Copyright (c) 2011, Lincoln Loop
+# All rights reserved.
+#
+# See full license text in qr.LICENSE
+
 import math
 import re
 import sys

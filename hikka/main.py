@@ -714,7 +714,7 @@ class Hikka:
     async def amain(self, first: bool, client: CustomTelegramClient):
         """Entrypoint for async init, run once for each user"""
         client.parse_mode = "HTML"
-        await typing.cast(typing.Coroutine, client.start())
+        await client.start()  # type: ignore
 
         db = database.Database(client)
         client.hikka_db = db

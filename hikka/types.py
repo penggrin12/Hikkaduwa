@@ -24,6 +24,7 @@ from importlib.abc import SourceLoader
 
 import requests
 from telethon.hints import EntityLike
+from telethon.tl.custom import Message as SmartMessage
 from telethon.tl.functions.account import UpdateNotifySettingsRequest
 from telethon.tl.types import (
     Channel,
@@ -74,6 +75,7 @@ JSONSerializable = typing.Union[str, int, float, bool, list, dict, None]
 HikkaReplyMarkup = typing.Union[typing.List[typing.List[dict]], typing.List[dict], dict]
 ListLike = typing.Union[list, set, tuple]
 Command = typing.Callable[..., typing.Awaitable[typing.Any]]
+MessageLike = typing.Union[SmartMessage, InlineCall, InlineMessage]
 
 
 class StringLoader(SourceLoader):

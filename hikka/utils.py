@@ -93,11 +93,12 @@ from telethon.tl.types import (
     UpdateNewChannelMessage,
     User,
 )
+from telethon.tl.types import Message as TLMessage
 
 from ._internal import fw_protect
 from .inline.types import InlineCall, InlineMessage
 from .tl_cache import CustomTelegramClient
-from .types import HikkaReplyMarkup, ListLike, Module
+from .types import HikkaReplyMarkup, ListLike, MessageLike, Module
 
 FormattingEntity = typing.Union[
     MessageEntityUnknown,
@@ -134,78 +135,69 @@ emoji_pattern = re.compile(
 parser = telethon.utils.sanitize_parse_mode("html")
 logger = logging.getLogger(__name__)
 
-
-def get_args(message: typing.Union[Message, str]) -> typing.List[str]:
-    """
-    Get arguments from message
-    :param message: Message or string to get arguments from
-    :return: List of arguments
-    """
-    if not (message := getattr(message, "message", message)):
-        return False
-
-    if len(message := message.split(maxsplit=1)) <= 1:
-        return []
-
-    message = message[1]
-
-    try:
-        split = shlex.split(message)
-    except ValueError:
-        return message  # Cannot split, let's assume that it's just one long message
-
-    return list(filter(lambda x: len(x) > 0, split))
+_T = typing.TypeVar("_T")
 
 
-def get_args_raw(message: typing.Union[Message, str]) -> str:
+def get_args_raw(message: TLMessage | str) -> str:
     """
     Get the parameters to the command as a raw string (not split)
     :param message: Message or string to get arguments from
     :return: Raw string of arguments
     """
-    if not (message := getattr(message, "message", message)):
-        return False
+    if (text := getattr(message, "message", None)) is None:
+        if isinstance(message, str):
+            text = message
+        else:
+            return ""
 
-    return args[1] if len(args := message.split(maxsplit=1)) > 1 else ""
+    return args[1] if len(args := text.split(maxsplit=1)) > 1 else ""
 
 
-def get_args_html(message: Message) -> str:
+def get_args(message: TLMessage | str) -> list[str]:
+    """
+    Get arguments from message
+    :param message: Message or string to get arguments from
+    :return: List of arguments
+    """
+    raw_args: str = get_args_raw(message)
+
+    try:
+        split = shlex.split(raw_args)
+    except ValueError:
+        return [raw_args]  # Cannot split, let's assume that it's just one long message
+
+    return list(filter(lambda x: len(x) > 0, split))
+
+
+def get_args_html(message: TLMessage) -> str:
     """
     Get the parameters to the command as string with HTML (not split)
     :param message: Message to get arguments from
     :return: String with HTML arguments
     """
-    prefix = message.client.loader.get_prefix()
 
-    if not (message := message.text):
-        return False
-
-    if prefix not in message:
-        return message
+    raw_args: str = get_args_raw(message)
+    if not raw_args:
+        return raw_args
 
     raw_text, entities = parser.parse(message)
-
-    raw_text = parser._add_surrogate(raw_text)
+    raw_text = parser.add_surrogate(raw_text)
 
     try:
-        command = raw_text[
-            raw_text.index(prefix) : raw_text.index(" ", raw_text.index(prefix) + 1)
-        ]
+        command_len = raw_text.index(" ") + 1
     except ValueError:
         return ""
 
-    command_len = len(command) + 1
-
     return parser.unparse(
-        parser._del_surrogate(raw_text[command_len:]),
+        parser.del_surrogate(raw_text[command_len:]),
         relocate_entities(entities, -command_len, raw_text[command_len:]),
     )
 
 
 def get_args_split_by(
-    message: typing.Union[Message, str],
+    message: TLMessage | str,
     separator: str,
-) -> typing.List[str]:
+) -> list[str]:
     """
     Split args with a specific separator
     :param message: Message or string to get arguments from
@@ -217,7 +209,7 @@ def get_args_split_by(
     ]
 
 
-def get_chat_id(message: typing.Union[Message, AiogramMessage]) -> int:
+def get_chat_id(message: Message | AiogramMessage) -> int:
     """
     Get the chat ID, but without -100 if its a channel
     :param message: Message to get chat ID from
@@ -303,19 +295,20 @@ async def get_user(message: Message) -> typing.Optional[User]:
     return None
 
 
-def run_sync(func, *args, **kwargs):
+def run_sync(func: typing.Callable[..., _T], *args, **kwargs) -> asyncio.Future[_T]:
     """
     Run a non-async function in a new thread and return an awaitable
     :param func: Sync-only function to execute
-    :return: Awaitable coroutine
+    :return: Awaitable Future
     """
     return asyncio.get_event_loop().run_in_executor(
-        None,
-        functools.partial(func, *args, **kwargs),
+        executor=None, func=functools.partial(func, *args, **kwargs)
     )
 
 
-def run_async(loop: asyncio.AbstractEventLoop, coro: typing.Awaitable) -> typing.Any:
+def run_async(
+    loop: asyncio.AbstractEventLoop, coro: typing.Coroutine[typing.Any, typing.Any, _T]
+) -> _T:
     """
     Run an async function as a non-async function, blocking till it's done
     :param loop: Event loop to run the coroutine in
@@ -332,7 +325,7 @@ def censor(
 ):
     """
     May modify the original object, but don't rely on it
-    :param obj: Object to censor, preferrably telethon
+    :param obj: Object to censor, preferably telethon
     :param to_censor: Iterable of strings to censor
     :param replace_with: String to replace with, {count} will be replaced with the number of characters
     :return: Censored object
@@ -377,11 +370,11 @@ def relocate_entities(
 
 
 async def answer_file(
-    message: typing.Union[Message, InlineCall, InlineMessage],
-    file: typing.Union[str, bytes, io.IOBase, InputDocument],
-    caption: typing.Optional[str] = None,
+    message: MessageLike,
+    file: str | bytes | io.IOBase | InputDocument,
+    caption: str | None = None,
     **kwargs,
-):
+) -> MessageLike:
     """
     Use this to answer a message with a document
     :param message: Message to answer
@@ -399,7 +392,9 @@ async def answer_file(
         )
     """
     if isinstance(message, (InlineCall, InlineMessage)):
-        message = message.form["caller"]
+        message: Message | int = message.form["caller"]
+        if isinstance(message, int):
+            raise ValueError('form["caller"] must not be an int')
 
     if topic := get_topic(message):
         kwargs.setdefault("reply_to", topic)
@@ -427,12 +422,12 @@ async def answer_file(
 
 
 async def answer(
-    message: typing.Union[Message, InlineCall, InlineMessage],
+    message: MessageLike | list[MessageLike],
     response: str,
     *,
-    reply_markup: typing.Optional[HikkaReplyMarkup] = None,
+    reply_markup: HikkaReplyMarkup | None = None,
     **kwargs,
-) -> typing.Union[InlineCall, InlineMessage, Message]:
+) -> MessageLike:
     """
     Use this to give the response to a command
     :param message: Message to answer to. Can be a tl message or hikka inline object
@@ -458,7 +453,11 @@ async def answer(
     """
     # Compatibility with FTG\GeekTG
 
-    if isinstance(message, list) and message:
+    edit = False
+
+    if isinstance(message, list):
+        if not message:
+            raise ValueError("Message (as a list) must not be empty")
         message = message[0]
 
     if reply_markup is not None:
@@ -469,7 +468,7 @@ async def answer(
             kwargs.pop("message", None)
             if isinstance(message, (InlineMessage, InlineCall)):
                 await message.edit(response, reply_markup, **kwargs)
-                return
+                return message
 
             reply_markup = message.client.loader.inline._normalize_markup(reply_markup)
             result = await message.client.loader.inline.form(
@@ -487,19 +486,11 @@ async def answer(
     kwargs.setdefault("link_preview", False)
 
     if not (edit := (message.out and not message.via_bot_id and not message.fwd_from)):
-        kwargs.setdefault(
-            "reply_to",
-            getattr(message, "reply_to_msg_id", None),
-        )
+        kwargs.setdefault("reply_to", getattr(message, "reply_to_msg_id", None))
     elif "reply_to" in kwargs:
         kwargs.pop("reply_to")
 
-    parse_mode = telethon.utils.sanitize_parse_mode(
-        kwargs.pop(
-            "parse_mode",
-            message.client.parse_mode,
-        )
-    )
+    parse_mode = telethon.utils.sanitize_parse_mode(kwargs.pop("parse_mode", "HTML"))
 
     if isinstance(response, str) and not kwargs.pop("asfile", False):
         text, entities = parse_mode.parse(response)
@@ -542,7 +533,7 @@ async def answer(
 
                 return result
 
-        result = await (message.edit if edit else message.respond)(
+        return await (message.edit if edit else message.respond)(
             text,
             parse_mode=lambda t: (t, entities),
             **kwargs,
@@ -551,13 +542,13 @@ async def answer(
         if message.media is None and (
             response.media is None or isinstance(response.media, MessageMediaWebPage)
         ):
-            result = await message.edit(
+            return await message.edit(
                 response.message,
                 parse_mode=lambda t: (t, response.entities or []),
                 link_preview=isinstance(response.media, MessageMediaWebPage),
             )
         else:
-            result = await message.respond(response, **kwargs)
+            return await message.respond(response, **kwargs)
     else:
         if isinstance(response, bytes):
             response = io.BytesIO(response)
@@ -569,6 +560,7 @@ async def answer(
 
         if message.media is not None and edit:
             await message.edit(file=response, **kwargs)
+            return message
         else:
             kwargs.setdefault(
                 "reply_to",
@@ -577,8 +569,9 @@ async def answer(
             result = await message.client.send_file(message.peer_id, response, **kwargs)
             if message.out:
                 await message.delete()
+            return result
 
-    return result
+    typing.assert_never(message)
 
 
 async def get_target(message: Message, arg_no: int = 0) -> typing.Optional[int]:
@@ -619,23 +612,15 @@ async def get_target(message: Message, arg_no: int = 0) -> typing.Optional[int]:
 
 def merge(a: dict, b: dict, /) -> dict:
     """
-    Merge with replace dictionary a to dictionary b
-    :param a: Dictionary to merge
+    Merge with replace dictionary `a` to dictionary `b`
+    :param a: Dictionary to merge from
     :param b: Dictionary to merge to
     :return: Merged dictionary
     """
-    for key in a:
-        if key in b:
-            if isinstance(a[key], dict) and isinstance(b[key], dict):
-                b[key] = merge(a[key], b[key])
-            elif isinstance(a[key], list) and isinstance(b[key], list):
-                b[key] = list(set(b[key] + a[key]))
-            else:
-                b[key] = a[key]
-
-        b[key] = a[key]
-
-    return b
+    # original implementation actually mutates b
+    copy = b.copy()
+    copy.update(a)
+    return copy
 
 
 async def set_avatar(
@@ -647,8 +632,8 @@ async def set_avatar(
     Sets an entity avatar
     :param client: Client to use
     :param peer: Peer to set avatar to
-    :param avatar: Avatar to set
-    :return: True if avatar was set, False otherwise
+    :param avatar: Desired avatar's URL
+    :return: Avatar is set successfully
     """
     if isinstance(avatar, str) and check_url(avatar):
         f = (
@@ -878,7 +863,7 @@ def get_link(user: typing.Union[User, Channel], /) -> str:
     )
 
 
-def chunks(_list: ListLike, n: int, /) -> typing.List[typing.List[typing.Any]]:
+def chunks(_list: ListLike, n: int, /) -> typing.List[ListLike]:
     """
     Split provided `_list` into chunks of `n`
     :param _list: List to split
@@ -925,7 +910,7 @@ def uptime() -> int:
 
 def formatted_uptime() -> str:
     """
-    Returnes formmated uptime
+    Returns formated uptime
     :return: Formatted uptime
     """
     return str(timedelta(seconds=uptime()))
@@ -933,7 +918,7 @@ def formatted_uptime() -> str:
 
 def ascii_face() -> str:
     """
-    Returnes cute ASCII-art face
+    Returns a cute ASCII-art face
     :return: ASCII-art face
     """
     return escape_html(
@@ -1430,7 +1415,7 @@ def find_caller(
 
 def validate_html(html: str) -> str:
     """
-    Removes broken tags from html
+    Removes broken tags from HTML
     :param html: HTML to validate
     :return: Valid HTML
     """

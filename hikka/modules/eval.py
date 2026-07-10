@@ -12,10 +12,10 @@ import typing
 from types import ModuleType
 
 import telethon
+from meval import meval
 from telethon.errors.rpcerrorlist import MessageIdInvalidError
 from telethon.sessions import StringSession
 from telethon.tl.types import Message
-from meval import meval
 
 from .. import loader, main, utils
 from ..log import HikkaException
@@ -41,7 +41,6 @@ class Evaluator(loader.Module):
             await utils.answer(
                 message,
                 self.strings("err").format(  # type: ignore[reportCallIssue]
-                    "4985626654563894116",
                     utils.escape_html(utils.get_args_raw(message)),
                     self.censor(
                         (
@@ -64,7 +63,6 @@ class Evaluator(loader.Module):
             await utils.answer(
                 message,
                 self.strings("eval").format(  # type: ignore[reportCallIssue]
-                    "4985626654563894116",
                     utils.escape_html(utils.get_args_raw(message)),
                     utils.escape_html(self.censor(str(result))),
                 ),

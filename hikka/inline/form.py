@@ -68,7 +68,7 @@ class Form(InlineUnit):
         manual_security: bool = False,
         disable_security: bool = False,
         ttl: typing.Optional[int] = None,
-        on_unload: typing.Optional[callable] = None,
+        on_unload: typing.Optional[typing.Callable] = None,
         photo: typing.Optional[str] = None,
         gif: typing.Optional[str] = None,
         file: typing.Optional[str] = None,
@@ -279,7 +279,7 @@ class Form(InlineUnit):
 
         unit_id = utils.rand(16)
 
-        perms_map = None if manual_security else self._find_caller_sec_map()
+        perms_map = None  # if manual_security else self._find_caller_sec_map()
 
         if not reply_markup and not ttl:
             logger.debug("Patching form reply markup with empty data")
@@ -405,14 +405,14 @@ class Form(InlineUnit):
                                     )
                                 ),
                                 input_message_content=InputTextMessageContent(
-                                    (
+                                    message_text=(
                                         "🔄 <b>Transferring value to"
                                         " userbot...</b>\n<i>This message will be"
                                         " deleted automatically</i>"
                                         if inline_query.from_user.id == self._me
                                         else "🔄 <b>Transferring value to userbot...</b>"
                                     ),
-                                    "HTML",
+                                    parse_mode="HTML",
                                     disable_web_page_preview=True,
                                 ),
                             )
@@ -547,8 +547,8 @@ class Form(InlineUnit):
                             id=utils.rand(20),
                             title="Hikkaduwa",
                             input_message_content=InputTextMessageContent(
-                                form["text"],
-                                "HTML",
+                                message_text=form["text"],
+                                parse_mode="HTML",
                                 disable_web_page_preview=True,
                             ),
                             reply_markup=self.generate_markup(inline_query.query),

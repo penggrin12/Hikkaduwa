@@ -40,7 +40,7 @@ def hash_msg(message):
     return f"{str(utils.get_chat_id(message))}/{str(message.id)}"
 
 
-async def read_stream(func: callable, stream, delay: float):
+async def read_stream(func: typing.Callable, stream, delay: float):
     last_task = None
     data = b""
     while True:
@@ -63,7 +63,7 @@ async def read_stream(func: callable, stream, delay: float):
         last_task = asyncio.ensure_future(sleep_for_task(func, data, delay))
 
 
-async def sleep_for_task(func: callable, data: bytes, delay: float):
+async def sleep_for_task(func: typing.Callable, data: bytes, delay: float):
     await asyncio.sleep(delay)
     await func(data.decode())
 

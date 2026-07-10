@@ -13,6 +13,7 @@ import time
 import traceback
 import typing
 
+from aiogram.exceptions import TelegramRetryAfter
 from aiogram.types import (
     CallbackQuery,
     InlineKeyboardMarkup,
@@ -20,7 +21,6 @@ from aiogram.types import (
     InlineQueryResultArticle,
     InputTextMessageContent,
 )
-from aiogram.utils.exceptions import RetryAfter
 from telethon.errors.rpcerrorlist import ChatSendInlineForbiddenError
 from telethon.tl.types import Message
 
@@ -265,9 +265,9 @@ class List(InlineUnit):
                 reply_markup=self._list_markup(unit_id),
             )
             await call.answer()
-        except RetryAfter as e:
+        except TelegramRetryAfter as e:
             await call.answer(
-                f"Got FloodWait. Wait for {e.timeout} seconds",
+                f"Got FloodWait. Wait for {e.retry_after} seconds",
                 show_alert=True,
             )
         except Exception:

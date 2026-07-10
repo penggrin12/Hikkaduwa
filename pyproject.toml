@@ -3,7 +3,7 @@ name = "hikkaduwa"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
-    "aiogram<3",
+    "aiogram==3.29.1",
     "aiohttp==3.14.1",
     "emoji==2.15.0",
     "grapheme==0.6.0",

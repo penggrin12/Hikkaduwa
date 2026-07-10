@@ -38,14 +38,14 @@ import signal
 import string
 import time
 import typing
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 from urllib.parse import urlparse
 
 # import git
 import grapheme
-import telethon
 import requests
+import telethon
 from aiogram.types import Message as AiogramMessage
 from telethon import hints
 from telethon.tl.custom.message import Message
@@ -893,16 +893,16 @@ def get_named_platform() -> str:
     Returns formatted platform name
     :return: Platform name
     """
-    from . import main
-
-    if main.IS_WSL:
-        return "🍀 WSL"
-
-    if main.IS_TERMUX:
-        return "🕶 Termux"
-
-    if main.IS_WINDOWS:
-        return "💻 Windows"
+    # from . import main
+    #
+    # if main.IS_WSL:
+    #     return "🍀 WSL"
+    #
+    # if main.IS_TERMUX:
+    #     return "🕶 Termux"
+    #
+    # if main.IS_WINDOWS:
+    #     return "💻 Windows"
 
     return "📻 VDS"
 

@@ -16,6 +16,11 @@ import typing
 from copy import deepcopy
 from urllib.parse import urlparse
 
+from aiogram.exceptions import (
+    TelegramBadRequest,
+    TelegramNotFound,
+    TelegramRetryAfter,
+)
 from aiogram.types import (
     CallbackQuery,
     InlineKeyboardButton,
@@ -27,12 +32,7 @@ from aiogram.types import (
     InputMediaPhoto,
     InputMediaVideo,
 )
-from aiogram.utils.exceptions import (
-    BadRequest,
-    MessageIdInvalid,
-    MessageNotModified,
-    RetryAfter,
-)
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from telethon.utils import resolve_inline_message_id
 
 from .. import utils
@@ -54,7 +54,7 @@ class Utils(InlineUnit):
         if isinstance(markup_obj, InlineKeyboardMarkup):
             return markup_obj
 
-        markup = InlineKeyboardMarkup()
+        kb = InlineKeyboardBuilder()
 
         map_ = (
             self._units[markup_obj]["buttons"]
@@ -118,14 +118,14 @@ class Utils(InlineUnit):
 
                         line += [
                             InlineKeyboardButton(
-                                button["text"],
+                                text=button["text"],
                                 url=button["url"],
                             )
                         ]
                     elif "callback" in button:
                         line += [
                             InlineKeyboardButton(
-                                button["text"],
+                                text=button["text"],
                                 callback_data=button["_callback_data"],
                             )
                         ]
@@ -156,7 +156,7 @@ class Utils(InlineUnit):
                     elif "input" in button:
                         line += [
                             InlineKeyboardButton(
-                                button["text"],
+                                text=button["text"],
                                 switch_inline_query_current_chat=button["_switch_query"]
                                 + " ",
                             )
@@ -164,14 +164,14 @@ class Utils(InlineUnit):
                     elif "data" in button:
                         line += [
                             InlineKeyboardButton(
-                                button["text"],
+                                text=button["text"],
                                 callback_data=button["data"],
                             )
                         ]
                     elif "switch_inline_query_current_chat" in button:
                         line += [
                             InlineKeyboardButton(
-                                button["text"],
+                                text=button["text"],
                                 switch_inline_query_current_chat=button[
                                     "switch_inline_query_current_chat"
                                 ],
@@ -180,7 +180,7 @@ class Utils(InlineUnit):
                     elif "switch_inline_query" in button:
                         line += [
                             InlineKeyboardButton(
-                                button["text"],
+                                text=button["text"],
                                 switch_inline_query_current_chat=button[
                                     "switch_inline_query"
                                 ],
@@ -203,9 +203,9 @@ class Utils(InlineUnit):
                     )
                     return False
 
-            markup.row(*line)
+            kb.row(*line)
 
-        return markup
+        return kb.as_markup()
 
     generate_markup = _generate_markup
 
@@ -218,7 +218,9 @@ class Utils(InlineUnit):
     async def _answer_unit_handler(self, call: InlineCall, text: str, show_alert: bool):
         await call.answer(text, show_alert=show_alert)
 
-    def _reverse_method_lookup(self, needle: callable, /) -> typing.Optional[str]:
+    def _reverse_method_lookup(
+        self, needle: typing.Callable, /
+    ) -> typing.Optional[str]:
         return next(
             (
                 name
@@ -443,24 +445,25 @@ class Utils(InlineUnit):
                         else unit.get("buttons", [])
                     ),
                 )
-            except MessageNotModified:
-                if query:
-                    with contextlib.suppress(Exception):
-                        await query.answer()
-
-                return False
-            except RetryAfter as e:
-                logger.info("Sleeping %ss on aiogram FloodWait...", e.timeout)
-                await asyncio.sleep(e.timeout)
+            except TelegramRetryAfter as e:
+                logger.info("Sleeping %ss on aiogram FloodWait...", e.retry_after)
+                await asyncio.sleep(e.retry_after)
                 return await self._edit_unit(**utils.get_kwargs())
-            except MessageIdInvalid:
+            except TelegramNotFound:
                 with contextlib.suppress(Exception):
                     await query.answer(
                         "I should have edited some message, but it is deleted :("
                     )
 
                 return False
-            except BadRequest as e:
+            except TelegramBadRequest as e:
+                if "messagenotmodified" in e.message.casefold():
+                    if query:
+                        with contextlib.suppress(Exception):
+                            await query.answer()
+
+                    return False
+
                 if "There is no text in the message to edit" not in str(e):
                     raise
 
@@ -499,11 +502,11 @@ class Utils(InlineUnit):
                     else unit.get("buttons", [])
                 ),
             )
-        except RetryAfter as e:
-            logger.info("Sleeping %ss on aiogram FloodWait...", e.timeout)
-            await asyncio.sleep(e.timeout)
+        except TelegramRetryAfter as e:
+            logger.info("Sleeping %ss on aiogram FloodWait...", e.retry_after)
+            await asyncio.sleep(e.retry_after)
             return await self._edit_unit(**utils.get_kwargs())
-        except MessageIdInvalid:
+        except TelegramNotFound:
             with contextlib.suppress(Exception):
                 await query.answer(
                     "I should have edited some message, but it is deleted :("

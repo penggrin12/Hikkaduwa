@@ -52,7 +52,7 @@ class Validator:
 
     def __init__(
         self,
-        validator: callable,
+        validator: typing.Callable,
         doc: typing.Optional[typing.Union[str, dict]] = None,
         _internal_id: typing.Optional[int] = None,
     ):

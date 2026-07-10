@@ -132,7 +132,7 @@ class CommandDispatcher:
 
         self.raw_handlers = []
 
-    async def _handle_ratelimit(self, message: Message, func: callable) -> bool:
+    async def _handle_ratelimit(self, message: Message, func: typing.Callable) -> bool:
         func = getattr(func, "__func__", func)
         ret = True
         chat = self._ratelimit_storage_chat[message.chat_id]
@@ -178,7 +178,7 @@ class CommandDispatcher:
         self,
         event: typing.Union[events.NewMessage, events.MessageDeleted],
         watcher: bool = False,
-    ) -> typing.Union[bool, typing.Tuple[Message, str, str, callable]]:
+    ) -> typing.Union[bool, typing.Tuple[Message, str, str, typing.Callable]]:
         if not hasattr(event, "message") or not hasattr(event.message, "message"):
             return False
 
@@ -330,14 +330,14 @@ class CommandDispatcher:
     async def _handle_tags(
         self,
         event: typing.Union[events.NewMessage, events.MessageDeleted],
-        func: callable,
+        func: typing.Callable,
     ) -> bool:
         return bool(await self._handle_tags_ext(event, func))
 
     async def _handle_tags_ext(
         self,
         event: typing.Union[events.NewMessage, events.MessageDeleted],
-        func: callable,
+        func: typing.Callable,
     ) -> str:
         """
         Handle tags.
@@ -515,9 +515,9 @@ class CommandDispatcher:
 
     async def future_dispatcher(
         self,
-        func: callable,
+        func: typing.Callable,
         message: Message,
-        exception_handler: callable,
+        exception_handler: typing.Callable,
         *args,
     ):
         # Will be used to determine, which client caused logging messages

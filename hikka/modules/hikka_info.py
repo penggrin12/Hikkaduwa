@@ -3,7 +3,8 @@
 # 🌐 https://github.com/hikariatama/Hikka
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
-
+import aiogram
+import telethon
 from telethon.tl.types import Message
 from telethon.utils import get_display_name
 
@@ -52,6 +53,9 @@ class HikkaInfoMod(loader.Module):
         modules_count = len(self.allmodules.modules)
         platform = utils.get_named_platform()
 
+        aiogram_version = aiogram.__version__
+        telethon_version = telethon.__version__
+
         return (
             ("" if self.config["custom_message"] else "<b>🌘 Hikkaduwa</b>\n")
             + self.config["custom_message"].format(
@@ -70,7 +74,8 @@ class HikkaInfoMod(loader.Module):
             else (
                 f"🌘 <b>Hikkaduwa</b>\n\n"
                 f"☀️ <b>{self.strings('commit')}:</b> {commit} on <code>{branch}</code>\n"  # type: ignore[reportCallIssue]
-                f"🌙 <b>{self.strings('version')}:</b> {_version}\n\n"  # type: ignore[reportCallIssue]
+                f"🌙 <b>{self.strings('version')}:</b> {_version}\n"  # type: ignore[reportCallIssue]
+                f"🍄 <b>aiogram:</b> <i>{aiogram_version}</i>, <b>telethon:</b> <i>{telethon_version}</i>\n\n"  # type: ignore[reportCallIssue]
                 f"⚙️ <b>{self.strings('modules')}:</b> {modules_count}\n"  # type: ignore[reportCallIssue]
                 f"⌨️ <b>{self.strings('prefix')}:</b> {prefix}\n"  # type: ignore[reportCallIssue]
                 f"⌛️ <b>{self.strings('uptime')}:</b> {utils.formatted_uptime()}\n\n"  # type: ignore[reportCallIssue]

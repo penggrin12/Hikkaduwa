@@ -10,8 +10,10 @@ import logging
 import os
 import random
 import signal
-import sys
 import subprocess
+import sys
+import typing
+
 from .platform import IS_WINDOWS
 
 
@@ -19,7 +21,7 @@ async def fw_protect():
     await asyncio.sleep(random.randint(1000, 3000) / 1000)
 
 
-def get_startup_callback() -> callable:
+def get_startup_callback() -> typing.Callable:
     return lambda *_: os.execl(
         sys.executable,
         sys.executable,

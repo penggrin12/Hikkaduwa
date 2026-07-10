@@ -37,10 +37,10 @@ from .types import (
 )
 
 if typing.TYPE_CHECKING:
-    from .loader import Modules
     from .database import Database
     from .dispatcher import CommandDispatcher
     from .inline.core import InlineManager
+    from .loader import Modules
 
 logger = logging.getLogger(__name__)
 
@@ -103,11 +103,11 @@ class CustomTelegramClient(TelegramClient):
         ] = None
 
     @property
-    def raw_updates_processor(self) -> typing.Optional[callable]:
+    def raw_updates_processor(self) -> typing.Optional[typing.Callable]:
         return self._raw_updates_processor
 
     @raw_updates_processor.setter
-    def raw_updates_processor(self, value: callable):
+    def raw_updates_processor(self, value: typing.Callable):
         if self._raw_updates_processor is not None:
             raise ValueError("raw_updates_processor is already set")
 

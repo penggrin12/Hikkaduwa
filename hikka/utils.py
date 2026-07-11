@@ -333,6 +333,25 @@ def relocate_entities(
     return entities
 
 
+def can_edit(message: Message) -> bool:
+    return (
+        (
+            message.outgoing
+            or (  # handles saved messages
+                message.chat is not None
+                and message.from_user is not None
+                and (
+                    message.chat.id
+                    == message._client.hikka_me.id
+                    == message.from_user.id
+                )
+            )
+        )
+        and (not message.via_bot)
+        and (not message.forwards)
+    )
+
+
 async def answer_file(
     message: MessageLike,
     file: str | bytes | io.IOBase | pyrogram.types.InputMediaDocument,
@@ -469,9 +488,7 @@ async def answer(
         "link_preview_options", pyrogram.types.LinkPreviewOptions(is_disabled=True)
     )
 
-    if not (
-        edit := (message.outgoing and not message.via_bot and not message.forwards)
-    ):
+    if not (edit := can_edit(message)):
         kwargs.setdefault(
             "reply_parameters",
             pyrogram.types.ReplyParameters(message_id=message.reply_to_message_id)
@@ -534,10 +551,11 @@ async def answer(
 
         return await (message.edit if edit else message.answer)(
             text=text,
-            entities=message_entities_from_raw(
-                client=message._client, entities=entities
-            )
-            or None,
+            entities=(
+                message_entities_from_raw(client=message._client, entities=entities)
+                if entities
+                else None or None
+            ),
             **kwargs,
         )
     elif isinstance(response, Message):

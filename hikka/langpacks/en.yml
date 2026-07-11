@@ -55,7 +55,6 @@ hikka_settings:
   alias_removed: "👍 <b>Alias</b> <code>{}</code> <b>removed</b>."
   no_alias: "🚫 <b>Alias</b> <code>{}</code> <b>does not exist</b>"
   db_cleared: "👍 <b>Database cleared</b>"
-  hikka: "{} <b>{}.{}.{}</b> ({} on <code>{}</code>)\n\n<b>💜 <b>Telethon:</b> <i>{}</i>\n\n☀️ <b>Fork's Developer: <a href=\"https://github.com/penggrin12\">Penggrin</a></b>\n🌙 <b>Upstream Developer: <a href=\"https://t.me/hikariatama\">Hikariatama</a></b>"
   confirm_cleardb: "⚠️ <b>Are you sure, that you want to clear database?</b>"
   cleardb_confirm: "🗑 Clear database"
   cancel: "🚫 Cancel"

@@ -111,7 +111,7 @@ class UpdaterMod(loader.Module):
         handler = logging.getLogger().handlers[0]
         handler.setLevel(logging.CRITICAL)
 
-        await message.client.disconnect()
+        await message._client.terminate()
         restart()
 
     async def download_common(self):
@@ -290,9 +290,9 @@ class UpdaterMod(loader.Module):
         self.set("restart_ts", None)
 
         ms = self.get("selfupdatemsg")
-        msg = self.get_string("secure_boot_complete" if secure_boot else "success").format(
-            took
-        )  # type: ignore[reportCallIssue]
+        msg = self.get_string(
+            "secure_boot_complete" if secure_boot else "success"
+        ).format(took)  # type: ignore[reportCallIssue]
 
         if ms is None:
             return

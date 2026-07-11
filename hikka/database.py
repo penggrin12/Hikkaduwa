@@ -9,11 +9,6 @@ import collections
 import json
 import logging
 import time
-
-# try:
-#     import redis
-# except ImportError:
-#     pass
 import typing
 
 import pyrogram
@@ -51,9 +46,6 @@ class NoAssetsChannel(Exception):
     """Raised when trying to read/store asset with no asset channel present"""
 
 
-_T = typing.TypeVar("_T", bound="JSONSerializable")
-
-
 class Database(dict):
     def __init__(self, /, client: "HikkaClient"):
         super().__init__()
@@ -62,28 +54,25 @@ class Database(dict):
         self._revisions: list[dict] = []
         self._assets: int | None = None
         self._me: pyrogram.types.User = client.hikka_me
-        self._redis = None
+        self._redis: None = None
         self._saving_task: asyncio.Future | None = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return object.__repr__(self)
 
-    def _redis_save_sync(self):
+    def _redis_save_sync(self) -> None:
         return
 
     async def remote_force_save(self) -> bool:
-        """Force save database to remote endpoint without waiting"""
         return False
 
     async def _redis_save(self) -> bool:
-        """Save database to redis"""
         return False
 
     async def redis_init(self) -> bool:
-        """Init redis database"""
         return False
 
-    async def init(self):
+    async def init(self) -> None:
         """Asynchronous initialization unit"""
         self._db_file = main.BASE_PATH / f"config-{self._client.tg_id}.json"
         self.read()
@@ -106,7 +95,7 @@ class Database(dict):
                 "You can solve this by leaving some channels/groups"
             )
 
-    def read(self):
+    def read(self) -> None:
         """Read database and stores it in self"""
         try:
             self.update(**json.loads(self._db_file.read_text(encoding="utf-8")))
@@ -174,9 +163,10 @@ class Database(dict):
                 "Rewriting database to the last revision because new one destructed it"
             )
 
-        if self._next_revision_call < time.time():
+        curr_time = int(time.time())
+        if self._next_revision_call < curr_time:
             self._revisions += [dict(self)]
-            self._next_revision_call = time.time() + 3
+            self._next_revision_call = curr_time + 3
 
         while len(self._revisions) > 15:
             self._revisions.pop()
@@ -189,7 +179,7 @@ class Database(dict):
 
         return True
 
-    async def store_asset(self, message: pyrogram.types.Message) -> int:
+    async def store_asset(self, message: Message | str | typing.BinaryIO) -> int:
         """
         Save assets
         returns asset_id as integer
@@ -209,7 +199,7 @@ class Database(dict):
             ).id
         )
 
-    async def fetch_asset(self, asset_id: int) -> pyrogram.types.Message | None:
+    async def fetch_asset(self, asset_id: int) -> Message | None:
         """Fetch previously saved asset by its asset_id"""
         if not self._assets:
             raise NoAssetsChannel(
@@ -221,7 +211,9 @@ class Database(dict):
         return asset[0] if asset else None
 
     # noinspection PyMethodOverriding
-    def get(self, owner: str, key: str, default: _T | None = None) -> _T:
+    def get(
+        self, owner: str, key: str, default: typing.Any | None = None
+    ) -> JSONSerializable:
         """Get database key"""
         try:
             value = self[owner][key]
@@ -282,7 +274,7 @@ class Database(dict):
 
         if item_type is not None:
             if isinstance(value, list):
-                for item in self.get(owner, key, default):
+                for item in value:
                     if not isinstance(item, dict):
                         raise ValueError(
                             "Item type can only be specified for dedicated keys and"

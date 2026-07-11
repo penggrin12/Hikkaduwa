@@ -15,8 +15,8 @@ def api_config() -> None:
     print("Welcome to Hikkaduwa Userbot!")
     print("1. Go to https://my.telegram.org and login")
     print("2. Click on API development tools")
-    print(("3. Create a new application, by entering the required details"))
-    print(("4. Copy your API ID and API hash"))
+    print("3. Create a new application, by entering the required details")
+    print("4. Copy your API ID and API hash")
 
     while api_id := input("Enter API ID: "):
         if api_id.isdigit():

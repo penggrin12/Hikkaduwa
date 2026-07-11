@@ -35,8 +35,7 @@ import typing
 
 import pyrogram
 import pyrogram.errors
-from pyrogram.errors import FloodWait
-from pyrogram.types import Message
+from pyrogram.types import ChatEventFilter, Message, Update
 
 from . import features, main, utils
 
@@ -108,7 +107,7 @@ class CommandDispatcher:
         modules: "Modules",
         client: "HikkaClient",
         db: "Database",
-    ):
+    ) -> None:
         self._modules: "Modules" = modules
         self._client: "HikkaClient" = client
         self.client: "HikkaClient" = client
@@ -178,11 +177,9 @@ class CommandDispatcher:
 
     async def _handle_command(
         self,
-        message: pyrogram.types.Message,
+        message: Message,
         watcher: bool = False,
-    ) -> (
-        tuple[pyrogram.types.Message, str, str, typing.Callable] | typing.Literal[False]
-    ):
+    ) -> tuple[Message, str, str, typing.Callable] | typing.Literal[False]:
         if not message.text:
             return False
 
@@ -218,7 +215,7 @@ class CommandDispatcher:
                 async for event in self._client.get_chat_event_log(
                     chat_id=utils.get_chat_id_keep_minus100(message),
                     limit=10,
-                    filters=pyrogram.types.ChatEventFilter(edited_messages=True),
+                    filters=ChatEventFilter(edited_messages=True),
                 ):
                     if event.old_message.id == message.id:
                         if event.user.id != self._client.tg_id:
@@ -244,7 +241,7 @@ class CommandDispatcher:
 
         return message, prefix, txt, func
 
-    async def handle_raw(self, _, update: pyrogram.raw.base.Update, __, ___):
+    async def handle_raw(self, _, update: Update, __, ___) -> None:
         """Handle raw events."""
         for handler in self.raw_handlers:
             if isinstance(update, tuple(handler.updates)):
@@ -253,7 +250,7 @@ class CommandDispatcher:
                 except Exception as e:
                     logger.exception("Error in raw handler %s: %s", handler.id, e)
 
-    async def handle_command(self, _, message: pyrogram.types.Message):
+    async def handle_command(self, _, message: Message) -> None:
         """Handle all commands"""
         message = await self._handle_command(message)
         if not message:
@@ -269,12 +266,12 @@ class CommandDispatcher:
             )
         )
 
-    async def command_exc(self, _, message: Message):
+    async def command_exc(self, _, message: Message) -> None:
         """Handle command exceptions."""
         exc = sys.exc_info()[1]
         logger.exception("Command failed", extra={"stack": inspect.stack()})
         if isinstance(exc, pyrogram.errors.RPCError):
-            if isinstance(exc, FloodWait):
+            if isinstance(exc, pyrogram.errors.FloodWait):
                 hours = exc.value // 3600
                 minutes = (exc.value % 3600) // 60
                 seconds = exc.value % 60
@@ -427,7 +424,7 @@ class CommandDispatcher:
             )
         )
 
-    async def handle_incoming(self, _, message: pyrogram.types.Message):
+    async def handle_incoming(self, _, message: Message) -> None:
         """Handle all incoming messages"""
         message = utils.censor(message)
 
@@ -497,10 +494,10 @@ class CommandDispatcher:
     async def future_dispatcher(
         self,
         func: typing.Callable,
-        message: pyrogram.types.Message,
+        message: Message,
         exception_handler: typing.Callable,
         *args,
-    ):
+    ) -> None:
         # Will be used to determine, which client caused logging messages
         # parsed via inspect.stack()
         _hikka_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841

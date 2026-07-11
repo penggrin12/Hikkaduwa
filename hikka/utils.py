@@ -1139,7 +1139,7 @@ def smart_split(
 
 
 def _copy_tl(o: pyrogram.types.Object, **kwargs):
-    d = o.__dict__
+    d: dict[str, typing.Any] = pyrogram.types.Object.default(o)
     del d["_"]
     d.update(kwargs)
     return o.__class__(**d)

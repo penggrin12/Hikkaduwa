@@ -5,10 +5,11 @@ import types as _types
 import typing
 
 logger = logging.getLogger(__name__)
+T = typing.TypeVar("T")
 
 
-def proxy0(data):
-    def proxy1():
+def proxy0(data: T) -> typing.Callable[[], T]:
+    def proxy1() -> T:
         return data
 
     return proxy1
@@ -88,8 +89,8 @@ def replace_all_refs(replace_from: typing.Any, replace_to: typing.Any) -> typing
 
         elif isinstance(referrer, _CELLTYPE):
 
-            def _proxy0(data):
-                def proxy1():
+            def _proxy0(data: T) -> typing.Callable[[], T]:
+                def proxy1() -> T:
                     return data
 
                 return proxy1

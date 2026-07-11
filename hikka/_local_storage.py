@@ -28,7 +28,7 @@ MAX_TOTALSIZE = 1024 * 1024 * 100  # 100 MB
 class LocalStorage:
     """Saves modules to disk and fetches them if remote storage is not available."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._path = os.path.join(os.path.expanduser("~"), ".hikka", "modules_cache")
         self._ensure_dirs()
 
@@ -36,7 +36,7 @@ class LocalStorage:
     def _total_size(self) -> int:
         return sum(os.path.getsize(f.path) for f in os.scandir(self._path))
 
-    def _ensure_dirs(self):
+    def _ensure_dirs(self) -> None:
         """Ensures that the local storage directory exists."""
         if not os.path.isdir(self._path):
             os.makedirs(self._path)
@@ -47,7 +47,7 @@ class LocalStorage:
             hashlib.sha256(f"{repo}_{module_name}".encode()).hexdigest() + ".py",
         )
 
-    def save(self, repo: str, module_name: str, module_code: str):
+    def save(self, repo: str, module_name: str, module_code: str) -> None:
         """
         Saves module to disk.
         :param repo: Repository name.
@@ -93,11 +93,11 @@ class LocalStorage:
 
 
 class RemoteStorage:
-    def __init__(self, client: "HikkaClient"):
+    def __init__(self, client: "HikkaClient") -> None:
         self._local_storage = LocalStorage()
         self._client: "HikkaClient" = client
 
-    async def preload(self, urls: list[str]):
+    async def preload(self, urls: list[str]) -> None:
         """Preloads modules from remote storage."""
         logger.debug("Preloading modules from remote storage.")
         for url in urls:

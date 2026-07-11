@@ -198,17 +198,27 @@ def get_args_split_by(
     ]
 
 
-def get_chat_id(message: Message | AiogramMessage) -> int:
+def get_chat_id_keep_minus100(message: Message | AiogramMessage) -> int:
     """
-    Get the chat ID, but without -100 if it's a channel
-    :param message: Message to get chat ID from
+    Get the chat ID, keep the -100 if present
+    :param message: Message to get the chat ID from
     :return: Chat ID
     """
     if (message.chat is None) or (message.chat.id is None):
         raise ValueError("There is no chat or chat id")
-    if message.chat.id < 0:
-        return pyrogram.utils.get_channel_id(message.chat.id)
     return message.chat.id
+
+
+def get_chat_id(message: Message | AiogramMessage) -> int:
+    """
+    Get the chat ID, but without -100 if it's a channel
+    :param message: Message to get the chat ID from
+    :return: Chat ID
+    """
+    chat_id = get_chat_id_keep_minus100(message)
+    if chat_id < 0:
+        return pyrogram.utils.get_channel_id(chat_id)
+    return chat_id
 
 
 def escape_html(text: str, /) -> str:  # sourcery skip
@@ -474,7 +484,9 @@ async def answer(
             reply_markup = client.loader.inline.normalize_markup(reply_markup)
             result = await client.loader.inline.form(
                 response,
-                message=message if can_edit(message) else get_chat_id(message),
+                message=message
+                if can_edit(message)
+                else get_chat_id_keep_minus100(message),
                 reply_markup=reply_markup,
                 **kwargs,
             )
@@ -491,9 +503,7 @@ async def answer(
     if not (edit := can_edit(message)):
         kwargs.setdefault(
             "reply_parameters",
-            pyrogram.types.ReplyParameters(message_id=message.reply_to_message_id)
-            if message.reply_to_message_id
-            else None,
+            get_reply_parameters(message.reply_to_message_id),
         )
     elif "reply_parameters" in kwargs:
         kwargs.pop("reply_parameters")
@@ -1265,9 +1275,7 @@ async def get_message_link(message: Message, chat: Chat | None = None) -> str:
     :return: Link to message
     """
     if message.chat and (not message.chat.is_public):
-        return (
-            f"tg://openmessage?user_id={get_chat_id(message)}&message_id={message.id}"
-        )
+        return f"tg://openmessage?user_id={get_chat_id_keep_minus100(message)}&message_id={message.id}"
 
     if not chat and not (chat := message.chat):
         raise
@@ -1512,3 +1520,13 @@ def get_display_name(entity: hints.Entity) -> str:
     elif entity.last_name:
         return entity.last_name
     return ""
+
+
+def get_reply_parameters(
+    reply_to_message_id: int | None,
+) -> pyrogram.types.ReplyParameters | None:
+    return (
+        pyrogram.types.ReplyParameters(message_id=reply_to_message_id)
+        if reply_to_message_id
+        else None
+    )

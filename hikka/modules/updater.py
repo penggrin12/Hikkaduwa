@@ -73,7 +73,7 @@ class UpdaterMod(loader.Module):
             (
                 msg_obj.inline_message_id
                 if hasattr(msg_obj, "inline_message_id")
-                else f"{utils.get_chat_id(msg_obj)}:{msg_obj.id}"
+                else f"{utils.get_chat_id_keep_minus100(msg_obj)}:{msg_obj.id}"
             ),
         )
 

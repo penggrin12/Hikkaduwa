@@ -458,6 +458,7 @@ class Hikka:
 
         self.client = HikkaClient(
             name="hikkaduwa",
+            workdir=Path(__file__).parent.parent,
             api_id=self.api_token.ID,
             api_hash=self.api_token.HASH,
             device_model=get_app_name(),

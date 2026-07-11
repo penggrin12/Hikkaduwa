@@ -217,7 +217,7 @@ class CommandDispatcher:
         if message.chat.type == pyrogram.enums.ChatType.CHANNEL and message.edit_date:
             if features.WORK_IN_CHANNELS:
                 async for event in self._client.iter_admin_log(
-                    utils.get_chat_id(message),
+                    utils.get_chat_id_keep_minus100(message),
                     limit=10,
                     edit=True,
                 ):
@@ -401,14 +401,7 @@ class CommandDispatcher:
             "contains": lambda: isinstance(m, Message) and func.contains in m.raw_text,
             "filter": lambda: callable(func.filter) and func.filter(m),
             "from_id": lambda: getattr(m, "sender_id", None) == func.from_id,
-            "chat_id": lambda: (
-                utils.get_chat_id(m)
-                == (
-                    func.chat_id
-                    if not str(func.chat_id).startswith("-100")
-                    else int(str(func.chat_id)[4:])
-                )
-            ),
+            "chat_id": lambda: utils.get_chat_id_keep_minus100(m) == func.chat_id,
             "regex": lambda: (
                 isinstance(m, Message) and re.search(func.regex, m.raw_text)
             ),
@@ -443,8 +436,9 @@ class CommandDispatcher:
         whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
         whitelist_modules = self._db.get(main.__name__, "whitelist_modules", [])
 
-        if utils.get_chat_id(message) in blacklist_chats or (
-            whitelist_chats and utils.get_chat_id(message) not in whitelist_chats
+        if utils.get_chat_id_keep_minus100(message) in blacklist_chats or (
+            whitelist_chats
+            and utils.get_chat_id_keep_minus100(message) not in whitelist_chats
         ):
             logger.debug("Message is blacklisted")
             return
@@ -458,20 +452,20 @@ class CommandDispatcher:
                 and isinstance(message, Message)
                 and (
                     "*" in bl[modname]
-                    or utils.get_chat_id(message) in bl[modname]
+                    or utils.get_chat_id_keep_minus100(message) in bl[modname]
                     or "only_chats" in bl[modname]
-                    and message.is_private
+                    and (not message.chat.is_public)
                     or "only_pm" in bl[modname]
-                    and not message.is_private
+                    and message.chat.is_public
                     or "out" in bl[modname]
-                    and not message.out
+                    and not message.outgoing
                     or "in" in bl[modname]
-                    and message.out
+                    and message.outgoing
                 )
-                or f"{str(utils.get_chat_id(message))}.{func.__self__.__module__}"
+                or f"{str(utils.get_chat_id_keep_minus100(message))}.{func.__self__.__module__}"
                 in blacklist_chats
                 or whitelist_modules
-                and f"{str(utils.get_chat_id(message))}.{func.__self__.__module__}"
+                and f"{str(utils.get_chat_id_keep_minus100(message))}.{func.__self__.__module__}"
                 not in whitelist_modules
                 or await self._handle_tags(message, func)
             ):

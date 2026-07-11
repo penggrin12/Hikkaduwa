@@ -252,8 +252,8 @@ class InlineManager(
             raise Exception("No query results")
 
         return await self._client.send_inline_bot_result(
-            utils.get_chat_id(message),
+            message.chat.id if message.chat and message.chat.id else self.bot_username,
             q.query_id,
             q.results[0].id,
-            reply_to_message_id=message.reply_to_message_id,
+            reply_parameters=utils.get_reply_parameters(message.reply_to_message_id),
         )

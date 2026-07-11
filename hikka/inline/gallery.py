@@ -312,7 +312,7 @@ class Gallery(InlineUnit):
         await self._units[unit_id]["future"].wait()
         del self._units[unit_id]["future"]
 
-        self._units[unit_id]["chat"] = utils.get_chat_id(m)
+        self._units[unit_id]["chat"] = utils.get_chat_id_keep_minus100(m)
         self._units[unit_id]["message_id"] = m.id
 
         if isinstance(message, Message) and message.outgoing:

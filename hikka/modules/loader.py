@@ -476,7 +476,7 @@ class LoaderMod(loader.Module):
             if main.__version__ < ver_:
                 if isinstance(message, Message):
                     if getattr(message, "file", None):
-                        m = utils.get_chat_id(message)
+                        m = utils.get_chat_id_keep_minus100(message)
                         await message.edit("")
                     else:
                         m = message

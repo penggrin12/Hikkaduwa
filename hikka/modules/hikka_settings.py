@@ -186,7 +186,7 @@ class HikkaSettingsMod(loader.Module):
         ]
         current_bl = current_bl[0] if current_bl else []
 
-        chat = utils.get_chat_id(message)
+        chat = utils.get_chat_id_keep_minus100(message)
         if chat not in current_bl:
             if args in disabled_watchers:
                 for k in disabled_watchers:
@@ -639,7 +639,7 @@ class HikkaSettingsMod(loader.Module):
             module = args[1]
 
         if chatid is None:
-            chatid = utils.get_chat_id(message)
+            chatid = utils.get_chat_id_keep_minus100(message)
 
         module = self.allmodules.get_classname(module)
         return f"{str(chatid)}.{module}" if module else chatid

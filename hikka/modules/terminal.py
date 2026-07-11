@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 def hash_msg(message):
-    return f"{str(utils.get_chat_id(message))}/{str(message.id)}"
+    return f"{str(utils.get_chat_id_keep_minus100(message))}/{str(message.id)}"
 
 
 async def read_stream(func: typing.Callable, stream, delay: float):
@@ -232,7 +232,9 @@ class SudoMessageEditor(MessageEditor):
         if hash_msg(message) == hash_msg(self.authmsg):
             # The user has provided interactive authentication. Send password to stdin for sudo.
             try:
-                self.authmsg = await utils.answer(message, self.get_string("auth_ongoing"))
+                self.authmsg = await utils.answer(
+                    message, self.get_string("auth_ongoing")
+                )
             except pyrogram.errors.MessageNotModified:
                 # Try to clear personal info if the edit fails
                 await message.delete()

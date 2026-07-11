@@ -56,7 +56,7 @@ class TestMod(loader.Module):
             loader.ConfigValue(
                 "ignore_common",
                 True,
-                "Ignore common errors (e.g. 'TypeError' in telethon)",
+                "Ignore common errors (e.g. 'TypeError' in telethon)",  # TODO: pyrogram
                 validator=loader.validators.Boolean(),
                 on_change=self._pass_config_to_logger,
             ),

@@ -134,7 +134,7 @@ class Evaluator(loader.Module):
                                 and isinstance(x[1], ModuleType)
                                 and x[1] != obj
                                 and x[1].__package__.rsplit(".", _depth)[0]
-                                == "telethon.tl"
+                                == "pyrogram.raw"
                             ),
                             obj.__dict__.items(),
                         )

@@ -58,11 +58,7 @@ def die():
 
 def restart():
     if "HIKKA_DO_NOT_RESTART" in os.environ:
-        print(
-            "Got in a loop, exiting\nYou probably need to manually remove existing"
-            " packages and then restart Hikkaduwa. Run `pip uninstall -y telethon"
-            " telethon-mod hikka-tl`, then restart Hikkaduwa."
-        )
+        print("Got in a loop, exiting.")
         sys.exit(0)
 
     logging.getLogger().setLevel(logging.CRITICAL)

@@ -456,7 +456,7 @@ def callback_handler(*args, **kwargs):
 
 def raw_handler(*updates: pyrogram.raw.core.TLObject):
     """
-    Decorator that marks function as raw telethon events handler
+    Decorator that marks function as raw pyrogram events handler
     Use it to prevent zombie-event-handlers, left by unloaded modules
     :param updates: Update(-s) to handle
     ⚠️ Do not try to simulate behavior of this decorator by yourself!

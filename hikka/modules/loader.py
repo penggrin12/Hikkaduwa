@@ -597,7 +597,7 @@ class LoaderMod(loader.Module):
                         {
                             "sklearn": "scikit-learn",
                             "pil": "Pillow",
-                            "telethon": "Hikka-TL",
+                            "pyrogram": "kurigram",
                         }.get(e.name.lower(), e.name)
                     ]
 

@@ -365,7 +365,7 @@ class TelegramLogsHandler(logging.Handler):
 
                 if not self.ignore_common or all(
                     field not in exc.message
-                    for field in [
+                    for field in [  # TODO: pyrogram
                         "InputPeerEmpty() does not have any entity type",
                         "https://docs.telethon.dev/en/stable/concepts/entities.html",
                     ]

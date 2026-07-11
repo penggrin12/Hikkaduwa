@@ -291,7 +291,7 @@ def censor(
 ) -> _T:
     """
     May modify the original object, but don't rely on it
-    :param obj: Object to censor, preferably telethon
+    :param obj: Object to censor, preferably from pyrogram
     :param to_censor: Iterable of strings to censor
     :param replace_with: String to replace with, {count} will be replaced with the number of characters
     :return: Censored object

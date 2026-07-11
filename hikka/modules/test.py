@@ -258,15 +258,10 @@ class TestMod(loader.Module):
 
         await utils.answer(
             message,
-            self.get_string("results_ping").format(  # type: ignore[reportCallIssue]
+            self.get_string("results_ping").format(
                 round((time.perf_counter_ns() - start) / 10**6, 3),
                 utils.formatted_uptime(),
-            )
-            + (
-                ("\n\n" + self.get_string("ping_hint"))
-                if random.choice([0, 0, 1]) == 1
-                else ""
-            ),  # type: ignore[reportCallIssue]
+            ),
         )
 
     @loader.command()

@@ -6,6 +6,7 @@
 
 import re
 
+import pyrogram.errors
 from pyrogram.types import Message
 
 from .. import loader, utils
@@ -53,8 +54,8 @@ class InlineStuff(loader.Module):
         async with self.client.conversation("@BotFather", exclusive=False) as conv:
             try:
                 await conv.send_message("/token")
-            except YouBlockedUserError:
-                await self.client(UnblockRequest(id="@BotFather"))
+            except pyrogram.errors.YouBlockedUser:
+                await self.client.unblock_user(user_id="@BotFather")
                 await conv.send_message("/token")
 
             r = await conv.get_response()

@@ -215,13 +215,13 @@ class CommandDispatcher:
 
         if message.chat.type == pyrogram.enums.ChatType.CHANNEL and message.edit_date:
             if features.WORK_IN_CHANNELS:
-                async for event in self._client.iter_admin_log(
-                    utils.get_chat_id_keep_minus100(message),
+                async for event in self._client.get_chat_event_log(
+                    chat_id=utils.get_chat_id_keep_minus100(message),
                     limit=10,
-                    edit=True,
+                    filters=pyrogram.types.ChatEventFilter(edited_messages=True),
                 ):
-                    if event.action.prev_message.id == message.id:
-                        if event.user_id != self._client.tg_id:
+                    if event.old_message.id == message.id:
+                        if event.user.id != self._client.tg_id:
                             logger.debug("Ignoring edit in channel")
                             return False
 

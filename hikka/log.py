@@ -20,10 +20,10 @@ from aiogram.exceptions import TelegramNetworkError
 from pyrogram.utils import parse_text_entities
 
 from . import utils
-from .types import BotInlineCall, Module
 
 if typing.TYPE_CHECKING:
     from .client import HikkaClient
+    from .types import BotInlineCall, Module
 
 
 def override_text(exception: Exception) -> str | None:
@@ -180,7 +180,7 @@ class TelegramLogsHandler(logging.Handler):
         self.lvl = logging.NOTSET
         self._send_lock = asyncio.Lock()
 
-    def install_tg_log(self, mod: Module):
+    def install_tg_log(self, mod: "Module"):
         if getattr(self, "_task", False):
             self._task.cancel()
 
@@ -215,9 +215,9 @@ class TelegramLogsHandler(logging.Handler):
 
     async def _show_full_trace(
         self,
-        call: BotInlineCall,
+        call: "BotInlineCall",
         bot: "aiogram.Bot",  # type: ignore  # noqa: F821
-        client: "HikkaClient",
+        module: "Module",
         item: HikkaException,
     ):
         chunks = item.message + "\n\n<b>🪐 Full traceback:</b>\n" + item.full_stack
@@ -226,9 +226,15 @@ class TelegramLogsHandler(logging.Handler):
         entities: list[pyrogram.raw.base.MessageEntity]
 
         text, entities = (
-            await parse_text_entities(client, chunks, client.parse_mode, None)
+            await parse_text_entities(
+                module.client, chunks, module.client.parse_mode, None
+            )
         ).values()
-        chunks = list(utils.smart_split(text, entities, 4096))
+        chunks = list(
+            utils.smart_split(
+                text, utils.message_entities_from_raw(module.client, entities), 4096
+            )
+        )
 
         await call.edit(chunks[0])
 

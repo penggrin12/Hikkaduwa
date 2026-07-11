@@ -287,9 +287,8 @@ class Events(InlineUnit):
                 and call.from_user.id == self._me
             ):
                 pass
-            elif (
-                call.from_user.id is not self._client._tg_id
-                and call.from_user.id
+            elif (call.from_user.id != self._client._tg_id) and (
+                call.from_user.id
                 not in self._custom_map[call.data].get("always_allow", [])
             ):
                 await call.answer(self.translator.getkey("inline.button403"))

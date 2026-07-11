@@ -28,12 +28,17 @@ class InlineMessage:
         unit_id: str,
         inline_message_id: str,
     ):
-        self.inline_message_id = inline_message_id
-        self.unit_id = unit_id
-        self.inline_manager = inline_manager
-        self._units = inline_manager._units
-        self.form = (
-            {"id": unit_id, **self._units[unit_id]} if unit_id in self._units else {}
+        # bypass frozen pydantic fields
+        self.__dict__.update(
+            {
+                "inline_message_id": inline_message_id,
+                "unit_id": unit_id,
+                "inline_manager": inline_manager,
+                "_units": inline_manager._units,
+                "form": {"id": unit_id, **inline_manager._units[unit_id]}
+                if unit_id in inline_manager._units
+                else {},
+            }
         )
 
     async def edit(self, *args, **kwargs) -> "InlineMessage":
@@ -70,13 +75,20 @@ class BotInlineMessage:
         chat_id: int,
         message_id: int,
     ):
-        self.chat_id = chat_id
-        self.unit_id = unit_id
-        self.inline_manager = inline_manager
-        self.message_id = message_id
-        self._units = inline_manager._units
-        self.form = (
-            {"id": unit_id, **self._units[unit_id]} if unit_id in self._units else {}
+        # bypass frozen pydantic fields
+        self.__dict__.update(
+            {
+                "chat_id": chat_id,
+                "unit_id": unit_id,
+                "inline_manager": inline_manager,
+                "message_id": message_id,
+                "_units": inline_manager._units,
+                "form": (
+                    {"id": unit_id, **inline_manager._units[unit_id]}
+                    if unit_id in inline_manager._units
+                    else {}
+                ),
+            }
         )
 
     async def edit(self, *args, **kwargs) -> "BotMessage":
@@ -125,20 +137,9 @@ class InlineCall(CallbackQuery, InlineMessage):
         inline_manager: "InlineManager",  # type: ignore  # noqa: F821
         unit_id: str,
     ):
-        CallbackQuery.__init__(self)
-
-        for attr in {
-            "id",
-            "from_user",
-            "message",
-            "inline_message_id",
-            "chat_instance",
-            "data",
-            "game_short_name",
-        }:
-            setattr(self, attr, getattr(call, attr, None))
-
-        self.original_call = call
+        # bypass frozen pydantic fields
+        self.__dict__["original_call"] = call
+        CallbackQuery.__init__(self, **call.model_dump())
 
         InlineMessage.__init__(
             self,
@@ -157,27 +158,16 @@ class BotInlineCall(CallbackQuery, BotInlineMessage):
         inline_manager: "InlineManager",  # type: ignore  # noqa: F821
         unit_id: str,
     ):
-        CallbackQuery.__init__(self)
-
-        for attr in {
-            "id",
-            "from_user",
-            "message",
-            "chat",
-            "chat_instance",
-            "data",
-            "game_short_name",
-        }:
-            setattr(self, attr, getattr(call, attr, None))
-
-        self.original_call = call
+        # bypass frozen pydantic fields
+        self.__dict__["original_call"] = call
+        CallbackQuery.__init__(self, **call.model_dump())
 
         BotInlineMessage.__init__(
             self,
             inline_manager,
             unit_id,
             call.message.chat.id,
-            call.message.text_id,
+            call.message.message_id,
         )
 
 

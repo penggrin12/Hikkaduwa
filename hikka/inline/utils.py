@@ -530,7 +530,7 @@ class Utils(InlineUnit):
             try:
                 await self.bot.delete_message(
                     chat_id=call.message.chat.id,
-                    message_id=call.message.text_id,
+                    message_id=call.message.message_id,
                 )
             except Exception:
                 return False

@@ -6,6 +6,8 @@
 
 import re
 
+from pyrogram.types import Message
+
 from .. import loader, utils
 from ..inline.types import BotInlineMessage
 

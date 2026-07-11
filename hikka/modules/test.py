@@ -196,7 +196,9 @@ class TestMod(loader.Module):
 
         if len(logs) <= 2:
             if isinstance(message, Message):
-                await utils.answer(message, self.get_string("no_logs").format(named_lvl))  # type: ignore[reportCallIssue]
+                await utils.answer(
+                    message, self.get_string("no_logs").format(named_lvl)
+                )  # type: ignore[reportCallIssue]
             else:
                 await message.edit(self.get_string("no_logs").format(named_lvl))  # type: ignore[reportCallIssue]
                 await message.unload()
@@ -266,6 +268,10 @@ class TestMod(loader.Module):
                 else ""
             ),  # type: ignore[reportCallIssue]
         )
+
+    @loader.command()
+    async def fail(self, message: Message):
+        raise Exception(utils.get_args_raw(message))
 
     async def client_ready(self):
         chat, _ = await utils.asset_channel(

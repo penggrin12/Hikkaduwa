@@ -436,7 +436,7 @@ def init():
         TelegramLogsHandler((handler, rotating_handler), 7000)
     )
     logging.getLogger().setLevel(logging.NOTSET)
-    logging.getLogger("pyrogram").setLevel(logging.DEBUG)
+    logging.getLogger("pyrogram").setLevel(logging.INFO)
     logging.getLogger("matplotlib").setLevel(logging.WARNING)  # ???
     logging.getLogger("aiohttp").setLevel(logging.WARNING)  # remains from web
     logging.getLogger("aiogram").setLevel(logging.WARNING)

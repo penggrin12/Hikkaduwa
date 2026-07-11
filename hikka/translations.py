@@ -55,16 +55,14 @@ class BaseTranslator:
         if all(len(key) == 2 for key in content):
             return {
                 language: {
-                    {
-                        (
-                            f"{module.strip('$')}.{key}"
-                            if module.startswith("$")
-                            else f"{prefix}{module}.{key}"
-                        ): value
-                        for module, strings in pack.items()
-                        for key, value in strings.items()
-                        if key != "name"
-                    }
+                    (
+                        f"{module.strip('$')}.{key}"
+                        if module.startswith("$")
+                        else f"{prefix}{module}.{key}"
+                    ): value
+                    for module, strings in pack.items()
+                    for key, value in strings.items()
+                    if key != "name"
                 }
                 for language, pack in content.items()
             }
@@ -186,39 +184,29 @@ class Strings:
             return self[key]
 
     def __getitem__(self, key: str) -> str:
-        return (
-            self.external_strings.get(key, None)
-            or (
-                self._translator.getkey(f"{self._mod.__module__}.{key}")
-                if self._translator is not None
-                else False
-            )
-            or (
-                getattr(
-                    self._mod,
-                    next(
-                        (
-                            f"strings_{lang}"
-                            for lang in self._translator.db.get(
-                                __name__,
-                                "lang",
-                                "en",
-                            ).split(" ")
-                            if hasattr(self._mod, f"strings_{lang}")
-                            and isinstance(getattr(self._mod, f"strings_{lang}"), dict)
-                            and key in getattr(self._mod, f"strings_{lang}")
-                        ),
-                        utils.rand(32),
-                    ),
-                    self._base_strings,
-                )
-                if self._translator is not None
-                else self._base_strings
-            ).get(
-                key,
-                self._base_strings.get(key, "Unknown strings"),
-            )
-        )
+        # external strings
+        if ext_val := self.external_strings.get(key):
+            return str(ext_val)
+
+        # translator
+        if self._translator is not None:
+            if trans_val := self._translator.getkey(f"{self._mod.__module__}.{key}"):
+                return trans_val
+
+        # module languages
+        target_dict = self._base_strings
+        if self._translator is not None:
+            langs = self._translator.db.get(__name__, "lang", "en").split(" ")
+
+            for lang in langs:
+                attr_name = f"strings_{lang}"
+                if hasattr(self._mod, attr_name):
+                    lang_dict = getattr(self._mod, attr_name)
+                    if isinstance(lang_dict, dict) and key in lang_dict:
+                        target_dict = lang_dict
+                        break
+
+        return target_dict.get(key, str(self._base_strings.get(key, "Unknown strings")))
 
     def __call__(
         self,

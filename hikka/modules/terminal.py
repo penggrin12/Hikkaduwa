@@ -97,16 +97,16 @@ class MessageEditor:
         await self.redraw()
 
     async def redraw(self):
-        text = self.strings("running").format(utils.escape_html(self.command))  # fmt: skip
+        text = self.get_string("running").format(utils.escape_html(self.command))  # fmt: skip
 
         if self.rc is not None:
-            text += self.strings("finished").format(utils.escape_html(str(self.rc)))
+            text += self.get_string("finished").format(utils.escape_html(str(self.rc)))
 
-        text += self.strings("stdout")
+        text += self.get_string("stdout")
         text += utils.escape_html(self.stdout[max(len(self.stdout) - 2048, 0) :])
         stderr = utils.escape_html(self.stderr[max(len(self.stderr) - 1024, 0) :])
-        text += (self.strings("stderr") + stderr) if stderr else ""
-        text += self.strings("end")
+        text += (self.get_string("stderr") + stderr) if stderr else ""
+        text += self.get_string("end")
 
         with contextlib.suppress(pyrogram.errors.MessageNotModified):
             try:
@@ -156,7 +156,7 @@ class SudoMessageEditor(MessageEditor):
             and self.state == 1
         ):
             logger.debug("switching state to 0")
-            await self.authmsg.edit(self.strings("auth_failed"))
+            await self.authmsg.edit(self.get_string("auth_failed"))
             self.state = 0
             handled = True
             await asyncio.sleep(2)
@@ -164,7 +164,7 @@ class SudoMessageEditor(MessageEditor):
 
         if lastlines[0] == self.PASS_REQ and self.state == 0:
             logger.debug("Success to find sudo log!")
-            text = self.strings("auth_needed").format(self._tg_id)
+            text = self.get_string("auth_needed").format(self._tg_id)
 
             try:
                 await utils.answer(self.message, text)
@@ -177,7 +177,7 @@ class SudoMessageEditor(MessageEditor):
 
             self.authmsg = await self.message[0].client.send_message(
                 "me",
-                self.strings("auth_msg").format(command, user),
+                self.get_string("auth_msg").format(command, user),
             )
             logger.debug("sent message to self")
 
@@ -195,7 +195,7 @@ class SudoMessageEditor(MessageEditor):
             re.fullmatch(self.TOO_MANY_TRIES, lastline) and self.state in {1, 3, 4}
         ):
             logger.debug("password wrong lots of times")
-            await utils.answer(self.message, self.strings("auth_locked"))
+            await utils.answer(self.message, self.get_string("auth_locked"))
             await self.authmsg.delete()
             self.state = 2
             handled = True
@@ -232,7 +232,7 @@ class SudoMessageEditor(MessageEditor):
         if hash_msg(message) == hash_msg(self.authmsg):
             # The user has provided interactive authentication. Send password to stdin for sudo.
             try:
-                self.authmsg = await utils.answer(message, self.strings("auth_ongoing"))
+                self.authmsg = await utils.answer(message, self.get_string("auth_ongoing"))
             except pyrogram.errors.MessageNotModified:
                 # Try to clear personal info if the edit fails
                 await message.delete()
@@ -279,7 +279,7 @@ class RawMessageEditor(SudoMessageEditor):
             )
 
         if self.rc is not None and self.show_done:
-            text += "\n" + self.strings("done")
+            text += "\n" + self.get_string("done")
 
         logger.debug(text)
 
@@ -304,7 +304,7 @@ class TerminalMod(loader.Module):
             loader.ConfigValue(
                 "FLOOD_WAIT_PROTECT",
                 2,
-                lambda: self.strings("fw_protect"),  # type: ignore[reportCallIssue]
+                lambda: self.get_string("fw_protect"),  # type: ignore[reportCallIssue]
                 validator=loader.validators.Integer(minimum=0),
             ),
         )
@@ -383,7 +383,7 @@ class TerminalMod(loader.Module):
     @loader.command()
     async def terminatecmd(self, message):
         if not message.is_reply:
-            await utils.answer(message, self.strings("what_to_kill"))  # type: ignore[reportCallIssue]
+            await utils.answer(message, self.get_string("what_to_kill"))  # type: ignore[reportCallIssue]
             return
 
         if hash_msg(await message.get_reply_message()) in self.activecmds:
@@ -396,8 +396,8 @@ class TerminalMod(loader.Module):
                     self.activecmds[hash_msg(await message.get_reply_message())].kill()
             except Exception:
                 logger.exception("Killing process failed")
-                await utils.answer(message, self.strings("kill_fail"))  # type: ignore[reportCallIssue]
+                await utils.answer(message, self.get_string("kill_fail"))  # type: ignore[reportCallIssue]
             else:
-                await utils.answer(message, self.strings("killed"))  # type: ignore[reportCallIssue]
+                await utils.answer(message, self.get_string("killed"))  # type: ignore[reportCallIssue]
         else:
-            await utils.answer(message, self.strings("no_cmd"))  # type: ignore[reportCallIssue]
+            await utils.answer(message, self.get_string("no_cmd"))  # type: ignore[reportCallIssue]

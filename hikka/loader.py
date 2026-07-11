@@ -965,6 +965,7 @@ class Modules:
             mod.strings = {}
 
         mod.strings = Strings(mod, self.translator)
+        mod.get_string = mod.strings  # an alias for better typing
         mod.translator = self.translator
 
         try:

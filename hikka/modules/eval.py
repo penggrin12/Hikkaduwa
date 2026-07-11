@@ -39,7 +39,7 @@ class Evaluator(loader.Module):
 
             await utils.answer(
                 message,
-                self.strings("err").format(  # type: ignore[reportCallIssue]
+                self.get_string("err").format(  # type: ignore[reportCallIssue]
                     utils.escape_html(utils.get_args_raw(message)),
                     self.censor(
                         (
@@ -61,7 +61,7 @@ class Evaluator(loader.Module):
         with contextlib.suppress(pyrogram.errors.MessageIdInvalid):
             await utils.answer(
                 message,
-                self.strings("eval").format(  # type: ignore[reportCallIssue]
+                self.get_string("eval").format(  # type: ignore[reportCallIssue]
                     utils.escape_html(utils.get_args_raw(message)),
                     utils.escape_html(self.censor(str(result))),
                 ),

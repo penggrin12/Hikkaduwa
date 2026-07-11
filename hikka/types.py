@@ -39,8 +39,11 @@ from .inline.types import (
 from .pointers import PointerDict, PointerList
 
 if typing.TYPE_CHECKING:
+    from hikka.translations import Strings
+
     from .client import HikkaClient
     from .hints import EntityLike
+    from .loader import Modules
 
 __all__ = [
     "JSONSerializable",
@@ -98,6 +101,9 @@ class StringLoader(SourceLoader):
 
 
 class Module:
+    allmodules: "Modules"
+    get_string: "Strings"
+
     strings = {"name": "Unknown"}
 
     """There is no help for this module"""

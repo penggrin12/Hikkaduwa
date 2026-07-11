@@ -5,14 +5,12 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import logging
-import random
 import string
 
 import pyrogram
 from pyrogram.types import Message
 
 from .. import features, loader, main, utils, version
-from .._internal import fw_protect, restart
 from ..inline.types import InlineCall
 
 logger = logging.getLogger(__name__)
@@ -541,15 +539,6 @@ class HikkaSettingsMod(loader.Module):
                 f"{pyrogram.__version__} #{pyrogram.raw.all.layer}",
             ),
         )
-
-    async def getuser(self, message: Message):
-        try:
-            return int(utils.get_args(message)[0])
-        except (ValueError, IndexError):
-            if reply := await message.get_reply_message():
-                return reply.sender_id
-
-            return message.to_id.user_id if message.is_private else False
 
     @loader.command()
     async def setprefix(self, message: Message):

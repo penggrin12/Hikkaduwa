@@ -187,17 +187,23 @@ class Database(dict):
         if not self._assets:
             raise NoAssetsChannel("Tried to save asset to non-existing asset channel")
 
-        return (
-            (await self._client.send_message(self._assets, message)).id
-            if isinstance(message, Message)
-            else (
-                await self._client.send_message(
-                    self._assets,
-                    file=message,
-                    force_document=True,
-                )
-            ).id
-        )
+        if isinstance(message, Message) and (not message.document):
+            raise Exception("Can't save asset with no document")
+
+        if not (
+            msg := await self._client.send_document(
+                chat_id=self._assets,
+                document=(
+                    message.document.file_id
+                    if isinstance(message, Message)
+                    else message
+                ),
+                force_document=True,
+            )
+        ):
+            raise Exception("Asset couldn't be saved")
+
+        return msg.id
 
     async def fetch_asset(self, asset_id: int) -> Message | None:
         """Fetch previously saved asset by its asset_id"""

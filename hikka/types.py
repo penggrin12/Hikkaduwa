@@ -410,15 +410,9 @@ class Module:
             self.tg_id,
             "https://i.gifer.com/SD5S.gif",
             caption=(
-                # FIXME: translations no more
-                self._client.loader.lookup("translations")
-                .strings("requested_join")
-                .format(
-                    self.__class__.__name__,
-                    channel.username,
-                    utils.escape_html(channel.title),
-                    utils.escape_html(reason),
-                )
+                f"💫 <b>Module</b> <code>{self.__class__.__name__}</code>"
+                f" <b>requested to join channel <a href='https://t.me/{channel.username}'>{utils.escape_html(channel.title or '?')}</a></b>"
+                f"\n\n<b>❓ Reason:</b> <i>{utils.escape_html(reason)}</i>"
             ),
             reply_markup=self.inline.generate_markup(
                 [

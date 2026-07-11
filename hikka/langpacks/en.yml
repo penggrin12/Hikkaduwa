@@ -308,24 +308,6 @@ loader:
   _cls_doc: "Loads modules"
   basic_auth_doc: "Basic auth for module repo"
 
-translations:
-  name: "Translations"
-  lang_saved: "{} <b>Language saved!</b>"
-  pack_saved: "👍 <b>Translate pack saved!</b>"
-  incorrect_language: "🚫 <b>Incorrect language specified</b>"
-  lang_removed: "👍 <b>Translations reset to default ones</b>"
-  check_pack: "🚫 <b>Invalid pack format in url</b>"
-  check_url: "🚫 <b>You need to specify valid url containing a langpack</b>"
-  too_long: "📁 <b>Command output seems to be too long, so it's sent in file.</b>"
-  choose_language: "🗽 <b>Choose language</b>"
-  not_official: "⚠️ <b>This language is not officially supported</b>"
-  requested_join: "💫 <b>Module</b> <code>{}</code> <b>requested to join channel <a href='https://t.me/{}'>{}</a></b>\n\n<b>❓ Reason:</b> <i>{}</i>"
-  fw_error: "🕒 <b>Call</b> <code>{}</code> <b>caused FloodWait of {} on method</b> <code>{}</code>"
-  rpc_error: "🚫 <b>Call</b> <code>{}</code> <b>failed due to RPC error:</b> <code>{}</code>"
-  _cmd_doc_dllangpack: "[link to a langpack | empty to remove] - Change Hikkaduwa translate pack (external)"
-  _cmd_doc_setlang: "[languages in the order of priority] - Change default language"
-  _cls_doc: "Processes internal translations"
-
 eval:
   name: "Evaluator"
   eval: "💻<b> Code:</b>\n<code>{}</code>\n\n✅<b> Result:</b>\n<code>{}</code>"

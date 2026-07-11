@@ -545,10 +545,7 @@ async def answer(
 
                 result = await message.answer_document(
                     file,
-                    # FIXME: translations no more
-                    caption=message._client.loader.lookup("translations").strings(
-                        "too_long"
-                    ),
+                    caption="📁 <b>Command output seems to be too long, so it's sent in file.</b>",
                     reply_parameters=reply_param if reply_param.message_id else None,
                 )
                 if not result:

@@ -283,10 +283,10 @@ class CommandDispatcher:
                 seconds = f"{seconds} seconds" if seconds else ""
                 fw_time = f"{hours}{minutes}{seconds}"
                 txt = (
-                    # FIXME: translations no more
-                    self._client.loader.lookup("translations")
-                    .strings("fw_error")
-                    .format(utils.escape_html(message.text or ""), fw_time, "?")
+                    "🕒 <b>Call</b>"
+                    f" <code>{utils.escape_html(message.text or '')}</code>"
+                    f" <b>caused FloodWait of {fw_time} on method</b>"
+                    " <code>?</code>"
                 )
             else:
                 txt = (

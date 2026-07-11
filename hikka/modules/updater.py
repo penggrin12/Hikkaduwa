@@ -11,7 +11,6 @@ import os
 import subprocess
 import sys
 import time
-import typing
 
 from pyrogram.types import Message
 

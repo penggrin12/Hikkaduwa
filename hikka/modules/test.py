@@ -6,9 +6,7 @@
 
 import inspect
 import logging
-import random
 import time
-import typing
 from io import BytesIO
 
 from pyrogram.types import Message

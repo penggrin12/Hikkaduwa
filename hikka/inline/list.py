@@ -138,8 +138,6 @@ class List(InlineUnit):
 
         unit_id = utils.rand(16)
 
-        perms_map = None
-
         self._units[unit_id] = {
             "type": "list",
             "caller": message,
@@ -155,7 +153,6 @@ class List(InlineUnit):
             **({"disable_security": disable_security} if disable_security else {}),
             **({"on_unload": on_unload} if callable(on_unload) else {}),
             **({"always_allow": always_allow} if always_allow else {}),
-            **({"perms_map": perms_map} if perms_map else {}),
             **({"message": message} if isinstance(message, Message) else {}),
             **({"custom_buttons": custom_buttons} if custom_buttons else {}),
         }
@@ -175,7 +172,6 @@ class List(InlineUnit):
             **({"always_allow": always_allow} if always_allow else {}),
             **({"force_me": force_me} if force_me else {}),
             **({"disable_security": disable_security} if disable_security else {}),
-            **({"perms_map": perms_map} if perms_map else {}),
             **({"message": message} if isinstance(message, Message) else {}),
         }
 

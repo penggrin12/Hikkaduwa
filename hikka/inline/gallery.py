@@ -205,8 +205,6 @@ class Gallery(InlineUnit):
             logger.exception("Error while parsing first photo in gallery")
             return False
 
-        perms_map = None
-
         self._units[unit_id] = {
             "type": "gallery",
             "caption": caption,
@@ -228,7 +226,6 @@ class Gallery(InlineUnit):
             **({"preload": preload} if preload else {}),
             **({"gif": gif} if gif else {}),
             **({"always_allow": always_allow} if always_allow else {}),
-            **({"perms_map": perms_map} if perms_map else {}),
             **({"message": message} if isinstance(message, Message) else {}),
             **({"custom_buttons": custom_buttons} if custom_buttons else {}),
         }
@@ -248,7 +245,6 @@ class Gallery(InlineUnit):
             **({"always_allow": always_allow} if always_allow else {}),
             **({"force_me": force_me} if force_me else {}),
             **({"disable_security": disable_security} if disable_security else {}),
-            **({"perms_map": perms_map} if perms_map else {}),
             **({"message": message} if isinstance(message, Message) else {}),
         }
 

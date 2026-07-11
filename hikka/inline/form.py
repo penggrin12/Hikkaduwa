@@ -283,8 +283,6 @@ class Form(InlineUnit):
 
         unit_id = utils.rand(16)
 
-        perms_map = None  # if manual_security else self._find_caller_sec_map()
-
         if not reply_markup and not ttl:
             logger.debug("Patching form reply markup with empty data")
             base_reply_markup = copy.deepcopy(reply_markup) or None
@@ -322,7 +320,6 @@ class Form(InlineUnit):
             **({"location": location} if location else {}),
             **({"audio": audio} if audio else {}),
             **({"location": location} if location else {}),
-            **({"perms_map": perms_map} if perms_map else {}),
             **({"message": message} if isinstance(message, Message) else {}),
             **({"force_me": force_me} if force_me else {}),
             **({"disable_security": disable_security} if disable_security else {}),

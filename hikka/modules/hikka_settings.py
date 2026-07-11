@@ -422,7 +422,7 @@ class HikkaSettingsMod(loader.Module):
         channel, event = obj
 
         try:
-            await self.client(JoinChannelRequest(channel))
+            await self.client.join_chat(channel)
         except Exception:
             logger.exception("Failed to join channel")
             event.status = False

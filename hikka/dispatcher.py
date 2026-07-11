@@ -93,8 +93,10 @@ ALL_TAGS = [
 ]
 
 
-def _decrement_ratelimit(delay, data, key, severity) -> None:
-    def inner():
+def _decrement_ratelimit(
+    delay: float, data: typing.MutableMapping[int, int], key: int, severity: int
+) -> None:
+    def inner() -> None:
         data[key] = max(0, data[key] - severity)
 
     asyncio.get_event_loop().call_later(delay, inner)
@@ -312,7 +314,7 @@ class CommandDispatcher:
         with contextlib.suppress(Exception):
             await (message.edit if message.outgoing else message.reply)(txt)
 
-    async def watcher_exc(self, *_):
+    async def watcher_exc(self, *_) -> None:
         logger.exception("Error running watcher", extra={"stack": inspect.stack()})
 
     async def _handle_tags(

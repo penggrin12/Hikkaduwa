@@ -474,7 +474,7 @@ async def answer(
             reply_markup = client.loader.inline.normalize_markup(reply_markup)
             result = await client.loader.inline.form(
                 response,
-                message=message if message.outgoing else get_chat_id(message),
+                message=message if can_edit(message) else get_chat_id(message),
                 reply_markup=reply_markup,
                 **kwargs,
             )

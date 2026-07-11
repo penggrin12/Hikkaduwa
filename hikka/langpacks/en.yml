@@ -32,8 +32,6 @@ hikka_settings:
   deauth_no_3: "I'm struggling to answer"
   deauth_cancel: "🚫 Cancel"
   deauth_confirm_btn: "😢 Delete"
-  uninstall: "😢 <b>Uninstalling Hikkaduwa...</b>"
-  uninstalled: "😢 <b>Hikkaduwa uninstalled.</b>"
   nothing: "🤷‍♀️ <b>Nothing to show...</b>"
   btn_yes: "🚸 Open anyway"
   btn_no: "🔻 Cancel"
@@ -64,7 +62,6 @@ hikka_settings:
 
   _cmd_doc_invoke: "<module or `core` for built-in methods> <method> - Only for debugging purposes. DO NOT USE IF YOU'RE NOT A DEVELOPER"
   _cmd_doc_settings: "Show settings menu"
-  _cmd_doc_uninstall_hikka: "Uninstall Hikkaduwa"
   _cmd_doc_watcherbl: "<module> - Toggle watcher in current chat"
   _cmd_doc_watcher: "<module> - Toggle global watcher rules\nArgs:\n[-c - only in chats]\n[-p - only in pm]\n[-o - only out]\n[-i - only incoming]"
   _cmd_doc_watchers: "List current watchers"

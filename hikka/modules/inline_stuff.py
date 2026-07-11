@@ -76,5 +76,5 @@ class InlineStuff(loader.Module):
 
         await message.answer_photo(
             "https://github.com/hikariatama/assets/raw/master/hikka_banner.png",
-            caption=self.get_string("this_is_hikka"),  # type: ignore[reportCallIssue]
+            caption=self.get_string("this_is_hikka"),
         )

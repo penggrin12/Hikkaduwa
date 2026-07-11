@@ -33,7 +33,7 @@ class UpdaterMod(loader.Module):
             loader.ConfigValue(
                 "GIT_ORIGIN_URL",
                 "https://github.com/penggrin12/Hikkaduwa",
-                lambda: self.get_string("origin_cfg_doc"),  # type: ignore[reportCallIssue]
+                lambda: self.get_string("origin_cfg_doc"),
                 validator=loader.validators.Link(),
             )
         )
@@ -50,14 +50,14 @@ class UpdaterMod(loader.Module):
                     message=message,
                     text=self.get_string(
                         "secure_boot_confirm" if secure_boot else "restart_confirm"
-                    ),  # type: ignore[reportCallIssue]
+                    ),
                     reply_markup=[
                         {
-                            "text": self.get_string("btn_restart"),  # type: ignore[reportCallIssue]
+                            "text": self.get_string("btn_restart"),
                             "callback": self.inline_restart,
                             "args": (secure_boot,),
                         },
-                        {"text": self.get_string("cancel"), "action": "close"},  # type: ignore[reportCallIssue]
+                        {"text": self.get_string("cancel"), "action": "close"},
                     ],
                 )
             ):
@@ -99,7 +99,7 @@ class UpdaterMod(loader.Module):
 
         msg_obj = await utils.answer(
             msg_obj,
-            self.get_string("restarting_caption"),  # type: ignore[reportCallIssue]
+            self.get_string("restarting_caption"),
         )
 
         await self.process_restart_message(msg_obj)
@@ -154,12 +154,12 @@ class UpdaterMod(loader.Module):
             os.system(f"cd {utils.get_base_dir()} && cd .. && git reset --hard HEAD")
 
         with contextlib.suppress(Exception):
-            msg_obj = await utils.answer(msg_obj, self.get_string("downloading"))  # type: ignore[reportCallIssue]
+            msg_obj = await utils.answer(msg_obj, self.get_string("downloading"))
 
         req_update = await self.download_common()
 
         with contextlib.suppress(Exception):
-            msg_obj = await utils.answer(msg_obj, self.get_string("installing"))  # type: ignore[reportCallIssue]
+            msg_obj = await utils.answer(msg_obj, self.get_string("installing"))
 
         if req_update:
             self.req_common()
@@ -170,7 +170,7 @@ class UpdaterMod(loader.Module):
     async def source(self, message: Message):
         await utils.answer(
             message,
-            self.get_string("source").format(self.config["GIT_ORIGIN_URL"]),  # type: ignore[reportCallIssue]
+            self.get_string("source").format(self.config["GIT_ORIGIN_URL"]),
         )
 
     async def client_ready(self):
@@ -292,7 +292,7 @@ class UpdaterMod(loader.Module):
         ms = self.get("selfupdatemsg")
         msg = self.get_string(
             "secure_boot_complete" if secure_boot else "success"
-        ).format(took)  # type: ignore[reportCallIssue]
+        ).format(took)
 
         if ms is None:
             return

@@ -304,7 +304,7 @@ class TerminalMod(loader.Module):
             loader.ConfigValue(
                 "FLOOD_WAIT_PROTECT",
                 2,
-                lambda: self.get_string("fw_protect"),  # type: ignore[reportCallIssue]
+                lambda: self.get_string("fw_protect"),
                 validator=loader.validators.Integer(minimum=0),
             ),
         )
@@ -383,7 +383,7 @@ class TerminalMod(loader.Module):
     @loader.command()
     async def terminatecmd(self, message):
         if not message.is_reply:
-            await utils.answer(message, self.get_string("what_to_kill"))  # type: ignore[reportCallIssue]
+            await utils.answer(message, self.get_string("what_to_kill"))
             return
 
         if hash_msg(await message.get_reply_message()) in self.activecmds:
@@ -396,8 +396,8 @@ class TerminalMod(loader.Module):
                     self.activecmds[hash_msg(await message.get_reply_message())].kill()
             except Exception:
                 logger.exception("Killing process failed")
-                await utils.answer(message, self.get_string("kill_fail"))  # type: ignore[reportCallIssue]
+                await utils.answer(message, self.get_string("kill_fail"))
             else:
-                await utils.answer(message, self.get_string("killed"))  # type: ignore[reportCallIssue]
+                await utils.answer(message, self.get_string("killed"))
         else:
-            await utils.answer(message, self.get_string("no_cmd"))  # type: ignore[reportCallIssue]
+            await utils.answer(message, self.get_string("no_cmd"))

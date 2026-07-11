@@ -52,7 +52,7 @@ class Help(loader.Module):
     @loader.command()
     async def helphide(self, message: Message):
         if not (modules := utils.get_args(message)):
-            await utils.answer(message, self.get_string("no_mod"))  # type: ignore[reportCallIssue]
+            await utils.answer(message, self.get_string("no_mod"))
             return
 
         currently_hidden = self.get("hide", [])
@@ -71,7 +71,7 @@ class Help(loader.Module):
 
         await utils.answer(
             message,
-            self.get_string("hidden_shown").format(  # type: ignore[reportCallIssue]
+            self.get_string("hidden_shown").format(
                 len(hidden),
                 len(shown),
                 "\n".join([f"👁‍🗨 <i>{m}</i>" for m in hidden]),
@@ -153,7 +153,7 @@ class Help(loader.Module):
                     (
                         utils.escape_html(inspect.getdoc(fun))
                         if fun.__doc__
-                        else self.get_string("undoc")  # type: ignore[reportCallIssue]
+                        else self.get_string("undoc")
                     ),
                 )
 
@@ -178,15 +178,15 @@ class Help(loader.Module):
                     utils.escape_html(inspect.getdoc(fun))
                     if fun.__doc__
                     else self.get_string("undoc")
-                ),  # type: ignore[reportCallIssue]
+                ),
             )
 
         await utils.answer(
             message,
             reply
-            + (f"\n\n{self.get_string('not_exact')}" if not exact else "")  # type: ignore[reportCallIssue]
+            + (f"\n\n{self.get_string('not_exact')}" if not exact else "")
             + (
-                f"\n\n{self.get_string('core_notice')}"  # type: ignore[reportCallIssue]
+                f"\n\n{self.get_string('core_notice')}"
                 if module.__origin__.startswith("<core")
                 else ""
             ),
@@ -274,7 +274,7 @@ class Help(loader.Module):
                 else:
                     plain_ += [tmp]
 
-        reply = self.get_string("all_header").format(  # type: ignore[reportCallIssue]
+        reply = self.get_string("all_header").format(
             len(self.allmodules.modules),
             (
                 0
@@ -299,7 +299,7 @@ class Help(loader.Module):
                 (
                     ""
                     if self.lookup("Loader").fully_loaded
-                    else f"\n\n{self.get_string('partial_load')}"  # type: ignore[reportCallIssue]
+                    else f"\n\n{self.get_string('partial_load')}"
                 ),
             ),
         )
@@ -307,9 +307,9 @@ class Help(loader.Module):
     @loader.command()
     async def support(self, message: Message):
         if message.outgoing:
-            await self.request_join("@hikka_talks", self.get_string("request_join"))  # type: ignore[reportCallIssue]
+            await self.request_join("@hikka_talks", self.get_string("request_join"))
 
         await utils.answer(
             message,
-            self.get_string("support").format("🌘"),  # type: ignore[reportCallIssue]
+            self.get_string("support").format("🌘"),
         )

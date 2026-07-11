@@ -47,9 +47,6 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Keys for layout switch
-ru_keys = 'ёйцукенгшщзхъфывапролджэячсмитьбю.Ё"№;%:?ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,'
-en_keys = "`qwertyuiop[]asdfghjkl;'zxcvbnm,./~@#$%^&QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?"
 ALL_TAGS = [
     "no_commands",
     "only_commands",

@@ -20,17 +20,20 @@ import sys
 import typing
 from functools import wraps
 from pathlib import Path
-from types import FunctionType, ModuleType
+from types import ModuleType
+from typing import Awaitable, Callable
 from uuid import uuid4
 
 import pyrogram.raw.core
 
-from . import utils, validators
+from . import hints, utils, validators
 from .database import Database
 from .inline.core import InlineManager
 from .translations import Strings, Translator
 from .types import (
     Command,
+    CommandP,
+    CommandT,
     ConfigValue,
     CoreOverwriteError,
     CoreUnloadError,
@@ -124,7 +127,7 @@ unrestricted = _pseudo_security
 inline_everyone = _pseudo_security
 
 
-async def stop_placeholder() -> bool:
+async def stop_placeholder() -> typing.Literal[True]:
     return True
 
 
@@ -149,7 +152,7 @@ class InfiniteLoop:
 
     def __init__(
         self,
-        func: FunctionType,
+        func: typing.Callable,
         interval: int,
         autostart: bool,
         wait_before: bool,
@@ -161,10 +164,10 @@ class InfiniteLoop:
         self._stop_clause = stop_clause
         self.autostart = autostart
 
-    def _stop(self, *args, **kwargs):
+    def _stop(self, *args, **kwargs) -> None:
         self._wait_for_stop.set()
 
-    def stop(self, *args, **kwargs):
+    def stop(self, *args, **kwargs) -> asyncio.Task:
         with contextlib.suppress(AttributeError):
             _hikka_client_id_logging_tag = copy.copy(  # noqa: F841
                 self.module_instance.allmodules.client.tg_id
@@ -181,7 +184,7 @@ class InfiniteLoop:
         logger.debug("Loop is not running")
         return asyncio.ensure_future(stop_placeholder())
 
-    def start(self, *args, **kwargs):
+    def start(self, *args, **kwargs) -> None:
         with contextlib.suppress(AttributeError):
             _hikka_client_id_logging_tag = copy.copy(  # noqa: F841
                 self.module_instance.allmodules.client.tg_id
@@ -193,7 +196,7 @@ class InfiniteLoop:
         else:
             logger.debug("Attempted to start already running loop")
 
-    async def actual_loop(self, *args, **kwargs):
+    async def actual_loop(self, *args, **kwargs) -> None:
         # Wait for loader to set attribute
         while not self.module_instance:
             await asyncio.sleep(0.01)
@@ -228,16 +231,16 @@ class InfiniteLoop:
 
         self.status = False
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.stop()
 
 
 def loop(
     interval: int = 5,
-    autostart: bool | None = False,
-    wait_before: bool | None = False,
+    autostart: bool = False,
+    wait_before: bool = False,
     stop_clause: str | None = None,
-) -> FunctionType:
+) -> typing.Callable[[Command], InfiniteLoop]:
     """
     Create new infinite loop from class method
     :param interval: Loop iterations delay
@@ -249,7 +252,7 @@ def loop(
     :attr status: Boolean, describing whether the loop is running
     """
 
-    def wrapped(func):
+    def wrapped(func: Command) -> InfiniteLoop:
         return InfiniteLoop(func, interval, autostart, wait_before, stop_clause)
 
     return wrapped
@@ -266,12 +269,15 @@ LOADED_MODULES_PATH = Path(LOADED_MODULES_DIR)
 LOADED_MODULES_PATH.mkdir(parents=True, exist_ok=True)
 
 
-def translatable_docstring(cls):
+M = typing.TypeVar("M", bound="Module")
+
+
+def translatable_docstring(cls: type[M]) -> type[M]:
     """Decorator that makes triple-quote docstrings translatable"""
 
     @wraps(cls.config_complete)
-    def config_complete(self, *args, **kwargs):
-        def process_decorators(mark: str, obj: str):
+    def config_complete(self: "Module", *args, **kwargs) -> typing.Any:
+        def process_decorators(mark: str, obj: str) -> None:
             nonlocal self
             for attr in dir(func_):
                 if (
@@ -324,13 +330,15 @@ def translatable_docstring(cls):
 tds = translatable_docstring  # Shorter name for modules to use
 
 
-def ratelimit(func: Command) -> Command:
+def ratelimit(func: CommandT[CommandP]) -> CommandT[CommandP]:
     """Decorator that causes ratelimiting for this command to be enforced more strictly"""
-    func.ratelimit = True
+    setattr(func, "ratelimit", True)
     return func
 
 
-def tag(*tags, **kwarg_tags):
+def tag(
+    *tags: str, **kwarg_tags: typing.Any
+) -> typing.Callable[[CommandT[CommandP]], CommandT[CommandP]]:
     """
     Tag function (esp. watchers) with some tags
     Currently available tags:
@@ -388,7 +396,7 @@ def tag(*tags, **kwarg_tags):
     @loader.watcher("no_commands", out=True)
     """
 
-    def inner(func: Command) -> Command:
+    def inner(func: CommandT[CommandP]) -> CommandT[CommandP]:
         for _tag in tags:
             setattr(func, _tag, True)
 
@@ -400,12 +408,14 @@ def tag(*tags, **kwarg_tags):
     return inner
 
 
-def _mark_method(mark: str, *args, **kwargs) -> typing.Callable[..., Command]:
+def _mark_method(
+    mark: str, *args, **kwargs
+) -> typing.Callable[[CommandT[CommandP]], CommandT[CommandP]]:
     """
     Mark method as a method of a class
     """
 
-    def decorator(func: Command) -> Command:
+    def decorator(func: CommandT[CommandP]) -> CommandT[CommandP]:
         setattr(func, mark, True)
         for arg in args:
             setattr(func, arg, True)
@@ -418,14 +428,18 @@ def _mark_method(mark: str, *args, **kwargs) -> typing.Callable[..., Command]:
     return decorator
 
 
-def command(*args, **kwargs):
+def command(
+    *args, **kwargs
+) -> typing.Callable[[CommandT[CommandP]], CommandT[CommandP]]:
     """
     Decorator that marks function as userbot command
     """
     return _mark_method("is_command", *args, **kwargs)
 
 
-def debug_method(*args, **kwargs):
+def debug_method(
+    *args, **kwargs
+) -> typing.Callable[[CommandT[CommandP]], CommandT[CommandP]]:
     """
     Decorator that marks function as IDM (Internal Debug Method)
     :param name: Name of the method
@@ -433,28 +447,36 @@ def debug_method(*args, **kwargs):
     return _mark_method("is_debug_method", *args, **kwargs)
 
 
-def inline_handler(*args, **kwargs):
+def inline_handler(
+    *args, **kwargs
+) -> typing.Callable[[CommandT[CommandP]], CommandT[CommandP]]:
     """
     Decorator that marks function as inline handler
     """
     return _mark_method("is_inline_handler", *args, **kwargs)
 
 
-def watcher(*args, **kwargs):
+def watcher(
+    *args, **kwargs
+) -> typing.Callable[[CommandT[CommandP]], CommandT[CommandP]]:
     """
     Decorator that marks function as watcher
     """
     return _mark_method("is_watcher", *args, **kwargs)
 
 
-def callback_handler(*args, **kwargs):
+def callback_handler(
+    *args, **kwargs
+) -> typing.Callable[[CommandT[CommandP]], CommandT[CommandP]]:
     """
     Decorator that marks function as callback handler
     """
     return _mark_method("is_callback_handler", *args, **kwargs)
 
 
-def raw_handler(*updates: pyrogram.raw.core.TLObject):
+def raw_handler(
+    *updates: pyrogram.raw.core.TLObject,
+) -> typing.Callable[[CommandT[CommandP]], CommandT[CommandP]]:
     """
     Decorator that marks function as raw pyrogram events handler
     Use it to prevent zombie-event-handlers, left by unloaded modules
@@ -463,7 +485,7 @@ def raw_handler(*updates: pyrogram.raw.core.TLObject):
     ⚠️ This feature won't work, if you dynamically declare method with decorator!
     """
 
-    def inner(func: Command) -> Command:
+    def inner(func: CommandT[CommandP]) -> Command:
         func.is_raw_handler = True
         func.updates = updates
         func.id = uuid4().hex
@@ -475,33 +497,27 @@ def raw_handler(*updates: pyrogram.raw.core.TLObject):
 class Modules:
     """Stores all registered modules"""
 
-    def __init__(
-        self,
-        /,
-        client: "HikkaClient",
-        db: Database,
-        translator: Translator,
-    ):
-        self._initial_registration = True
-        self.commands = {}
-        self.inline_handlers = {}
-        self.callback_handlers = {}
-        self.aliases = {}
-        self.modules = []  # skipcq: PTC-W0052
-        self.libraries = []
-        self.watchers = []
-        self._log_handlers = []
-        self._core_commands = []
-        self.__approve = []
-        self.client = client
-        self._db = db
-        self.db = db
-        self.translator = translator
-        self.secure_boot = False
+    def __init__(self, /, client: "HikkaClient", db: Database, translator: Translator):
+        self._initial_registration: bool = True
+        self.commands: dict[str, Command] = {}
+        self.inline_handlers: dict[str, Command] = {}
+        self.callback_handlers: dict[str, Command] = {}
+        self.aliases: dict[str, str] = {}
+        self.modules: list[Module] = []  # skipcq: PTC-W0052
+        self.libraries: list[Library] = []
+        self.watchers: list[Command] = []
+        self._log_handlers = []  # TODO: unused
+        self._core_commands: list[str] = []
+        self.__approve: list[tuple[hints.EntityLike, asyncio.Event]] = []
+        self.client: "HikkaClient" = client
+        self._db: Database = db
+        self.db: Database = db
+        self.translator: Translator = translator
+        self.secure_boot: bool = False
         asyncio.ensure_future(self._junk_collector())
-        self.inline = InlineManager(self.client, self._db, self)
+        self.inline: InlineManager = InlineManager(self.client, self._db, self)
 
-    async def _junk_collector(self):
+    async def _junk_collector(self) -> None:
         """
         Periodically reloads commands, inline handlers, callback handlers and watchers from loaded
         modules to prevent zombie handlers
@@ -665,13 +681,13 @@ class Modules:
 
         return ret
 
-    def add_aliases(self, aliases: dict):
+    def add_aliases(self, aliases: dict) -> None:
         """Saves aliases and applies them to <core>/<file> modules"""
         self.aliases.update(aliases)
         for alias, cmd in aliases.items():
             self.add_alias(alias, cmd)
 
-    def register_raw_handlers(self, instance: Module):
+    def register_raw_handlers(self, instance: Module) -> None:
         """Register event handlers for a module"""
         for name, handler in utils.iter_attrs(instance):
             if getattr(handler, "is_raw_handler", False):
@@ -689,7 +705,7 @@ class Modules:
 
         return self._db.get(main.__name__, "remove_core_protection", False)
 
-    def register_commands(self, instance: Module):
+    def register_commands(self, instance: Module) -> None:
         """Register commands from instance"""
         with contextlib.suppress(AttributeError):
             _hikka_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841
@@ -719,7 +735,7 @@ class Modules:
 
         self.register_inline_stuff(instance)
 
-    def register_inline_stuff(self, instance: Module):
+    def register_inline_stuff(self, instance: Module) -> None:
         for name, func in instance.hikka_inline_handlers.copy().items():
             if name.lower() in self.inline_handlers:
                 if (
@@ -759,7 +775,7 @@ class Modules:
 
             self.callback_handlers.update({name.lower(): func})
 
-    def unregister_inline_stuff(self, instance: Module, purpose: str):
+    def unregister_inline_stuff(self, instance: Module, purpose: str) -> None:
         for name, func in instance.hikka_inline_handlers.copy().items():
             if name.lower() in self.inline_handlers and (
                 hasattr(func, "__self__")
@@ -790,7 +806,7 @@ class Modules:
                     purpose,
                 )
 
-    def register_watchers(self, instance: Module):
+    def register_watchers(self, instance: Module) -> None:
         """Register watcher from instance"""
         with contextlib.suppress(AttributeError):
             _hikka_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841
@@ -826,7 +842,7 @@ class Modules:
         )
 
     @property
-    def get_approved_channel(self):
+    def get_approved_channel(self) -> tuple[hints.EntityLike, asyncio.Event] | None:
         return self.__approve.pop(0) if self.__approve else None
 
     def get_prefix(self, userbot: str | None = None) -> str:
@@ -838,7 +854,7 @@ class Modules:
 
         return self._db.get(key, "command_prefix", default)
 
-    async def complete_registration(self, instance: Module):
+    async def complete_registration(self, instance: Module) -> None:
         """Complete registration of instance"""
         with contextlib.suppress(AttributeError):
             _hikka_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841
@@ -920,12 +936,12 @@ class Modules:
             (_command, None),
         )
 
-    def send_config(self, skip_hook: bool = False):
+    def send_config(self, skip_hook: bool = False) -> None:
         """Configure modules"""
         for mod in self.modules:
             self.send_config_one(mod, skip_hook)
 
-    def send_config_one(self, mod: Module, skip_hook: bool = False):
+    def send_config_one(self, mod: Module, skip_hook: bool = False) -> None:
         """Send config to single instance"""
         with contextlib.suppress(AttributeError):
             _hikka_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841
@@ -993,7 +1009,7 @@ class Modules:
         mod: Module,
         no_self_unload: bool = False,
         from_dlmod: bool = False,
-    ):
+    ) -> None:
         with contextlib.suppress(AttributeError):
             _hikka_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841
 
@@ -1104,7 +1120,7 @@ class Modules:
         logger.debug("Worked: %s", worked)
         return worked
 
-    def unregister_loops(self, instance: Module, purpose: str):
+    def unregister_loops(self, instance: Module, purpose: str) -> None:
         for name, method in utils.iter_attrs(instance):
             if isinstance(method, InfiniteLoop):
                 logger.debug(
@@ -1115,7 +1131,7 @@ class Modules:
                 )
                 method.stop()
 
-    def unregister_commands(self, instance: Module, purpose: str):
+    def unregister_commands(self, instance: Module, purpose: str) -> None:
         for name, cmd in self.commands.copy().items():
             if cmd.__self__.__class__.__name__ == instance.__class__.__name__:
                 logger.debug(
@@ -1129,7 +1145,7 @@ class Modules:
                     if _command == name:
                         del self.aliases[alias]
 
-    def unregister_watchers(self, instance: Module, purpose: str):
+    def unregister_watchers(self, instance: Module, purpose: str) -> None:
         for _watcher in self.watchers.copy():
             if _watcher.__self__.__class__.__name__ == instance.__class__.__name__:
                 logger.debug(
@@ -1140,7 +1156,7 @@ class Modules:
                 )
                 self.watchers.remove(_watcher)
 
-    def unregister_raw_handlers(self, instance: Module, purpose: str):
+    def unregister_raw_handlers(self, instance: Module, purpose: str) -> None:
         """Unregister event handlers for a module"""
         for handler in self.client.hikka_dispatcher.raw_handlers:
             if handler.__self__.__class__.__name__ == instance.__class__.__name__:
@@ -1164,7 +1180,7 @@ class Modules:
         """Remove an alias"""
         return bool(self.aliases.pop(alias.lower().strip(), None))
 
-    async def log(self, *args, **kwargs):
+    async def log(self, *args, **kwargs) -> None:
         """Unnecessary placeholder for logging"""
 
     async def reload_translations(self) -> bool:

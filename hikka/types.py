@@ -75,6 +75,9 @@ ListLike = list | set | tuple
 Command = typing.Callable[..., typing.Awaitable[typing.Any]]
 MessageLike = Message | InlineCall | InlineMessage
 
+CommandP = typing.ParamSpec("CommandP")
+CommandT = typing.Callable[CommandP, typing.Awaitable[None]]
+
 
 class StringLoader(SourceLoader):
     """Load a python module/file from a string"""

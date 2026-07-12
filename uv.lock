@@ -376,7 +376,7 @@ requires-dist = [
     { name = "asyncstdlib", specifier = ">=3.14.0" },
     { name = "emoji", specifier = "==2.15.0" },
     { name = "grapheme", specifier = "==0.6.0" },
-    { name = "kurigram", specifier = "==2.2.24" },
+    { name = "kurigram", url = "https://github.com/KurimuzonAkuma/kurigram/archive/dev.zip" },
     { name = "meval", specifier = "==2.5" },
     { name = "orjson", specifier = "==3.11.9" },
     { name = "psutil", specifier = "==7.2.2" },
@@ -397,15 +397,34 @@ wheels = [
 [[package]]
 name = "kurigram"
 version = "2.2.24"
-source = { registry = "https://pypi.org/simple" }
+source = { url = "https://github.com/KurimuzonAkuma/kurigram/archive/dev.zip" }
 dependencies = [
     { name = "pyaes" },
     { name = "python-socks", extra = ["asyncio"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/93/0a/6cd1ced210b02cabef151aa17c193418528c6d49f9d4368a2e0975d11f96/kurigram-2.2.24.tar.gz", hash = "sha256:535644dcb23696ae7d838a2f8c14675a5b3fa50906d51dc1434a29620d62813b", size = 602931, upload-time = "2026-07-11T11:29:54.136Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/59/e5f953421b8229805a9f63e55accaa215fce126f75cd66e0a909c1d5ff18/kurigram-2.2.24-py3-none-any.whl", hash = "sha256:ec8417c8f767d974bb54cd19966d0057871c1b63faeb096f7a674702e3531824", size = 5799272, upload-time = "2026-07-11T11:29:52.31Z" },
+sdist = { hash = "sha256:0be0b44a28d6a936f8639874353e6036686d7bbd8641eedd7018711680698d40" }
+
+[package.metadata]
+requires-dist = [
+    { name = "hatch", marker = "extra == 'dev'", specifier = "<=1.17.0" },
+    { name = "keyring", marker = "extra == 'dev'", specifier = "<=25.7.0" },
+    { name = "pyaes", specifier = "<=1.6.1" },
+    { name = "pygments", marker = "extra == 'docs'", specifier = "<=2.20.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = "<=9.1.1" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = "<=1.4.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = "<=7.1.0" },
+    { name = "python-socks", extras = ["asyncio"], specifier = "<=2.8.1" },
+    { name = "shibuya", marker = "extra == 'docs'", specifier = "<=2026.5.19" },
+    { name = "sphinx", marker = "extra == 'docs'", specifier = "<=9.1.0" },
+    { name = "sphinx-autobuild", marker = "extra == 'docs'", specifier = "<=2025.8.25" },
+    { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = "<=0.5.2" },
+    { name = "sphinx-design", marker = "extra == 'docs'", specifier = "<=0.7.0" },
+    { name = "sphinx-iconify", marker = "extra == 'docs'", specifier = "<=0.3.0" },
+    { name = "tgcrypto", marker = "extra == 'fast'", specifier = "<=1.2.5" },
+    { name = "twine", marker = "extra == 'dev'", specifier = "<=6.2.0" },
+    { name = "uvloop", marker = "(sys_platform == 'darwin' and extra == 'fast') or (sys_platform == 'linux' and extra == 'fast')", specifier = "<=0.22.1" },
 ]
+provides-extras = ["dev", "docs", "fast"]
 
 [[package]]
 name = "magic-filter"

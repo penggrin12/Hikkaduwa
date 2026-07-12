@@ -8,7 +8,7 @@ dependencies = [
     "asyncstdlib>=3.14.0",
     "emoji==2.15.0",
     "grapheme==0.6.0",
-    "kurigram==2.2.24",
+    "kurigram@https://github.com/KurimuzonAkuma/kurigram/archive/dev.zip",
     "meval==2.5",
     "orjson==3.11.9",
     "psutil==7.2.2",

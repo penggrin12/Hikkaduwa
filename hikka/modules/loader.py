@@ -378,13 +378,7 @@ class LoaderMod(loader.Module):
         ):
             if message.id == msg.id:
                 if utils.can_edit(msg):
-                    await self.client.invoke(
-                        pyrogram.raw.functions.messages.EditMessage(
-                            peer=await self.client.resolve_peer(msg.chat.id),  # type: ignore
-                            id=msg.id,
-                            message="",
-                        )
-                    )
+                    await msg.edit_caption(caption="")
                 msg = await message.answer(text="🌘")
             else:
                 msg = message

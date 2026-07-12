@@ -178,15 +178,8 @@ class List(InlineUnit):
         if isinstance(message, Message) and not silent:
             try:
                 status_message = await (
-                    message.edit if message.outgoing else message.respond
-                )(
-                    "🌘" + self.translator.getkey("inline.opening_list"),
-                    **(
-                        {"reply_to": utils.get_topic(message)}
-                        if message.outgoing
-                        else {}
-                    ),
-                )
+                    message.edit if message.outgoing else message.answer
+                )(text="🌘" + self.translator.getkey("inline.opening_list"))
             except Exception:
                 status_message = None
         else:
@@ -195,14 +188,7 @@ class List(InlineUnit):
         async def answer(msg: str):
             nonlocal message
             if isinstance(message, Message):
-                await (message.edit if message.outgoing else message.respond)(
-                    msg,
-                    **(
-                        {}
-                        if message.outgoing
-                        else {"reply_to": utils.get_topic(message)}
-                    ),
-                )
+                await (message.edit if message.outgoing else message.answer)(text=msg)
             else:
                 await self._client.send_message(message, msg)
 

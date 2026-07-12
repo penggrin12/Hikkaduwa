@@ -104,8 +104,9 @@ class StringLoader(SourceLoader):
 
 
 class Module:
-    allmodules: "Modules"
-    get_string: "Strings"
+    if typing.TYPE_CHECKING:
+        allmodules: "Modules"
+        get_string: "Strings"
 
     strings = {"name": "Unknown"}
 
@@ -152,7 +153,7 @@ class Module:
         self,
         command: str,
         args: str | None = None,
-        peer: EntityLike | None = None,
+        peer: "EntityLike | None" = None,
         message: Message | None = None,
         edit: bool = False,
     ) -> Message:
@@ -321,7 +322,7 @@ class Module:
     async def _approve(
         self,
         call: InlineCall,
-        channel: EntityLike,
+        channel: "EntityLike",
         event: asyncio.Event,
     ):
         from . import utils
@@ -342,7 +343,7 @@ class Module:
     async def _decline(
         self,
         call: InlineCall,
-        channel: EntityLike,
+        channel: "EntityLike",
         event: asyncio.Event,
     ):
         from . import utils
@@ -364,7 +365,7 @@ class Module:
 
     async def request_join(
         self,
-        peer: EntityLike,
+        peer: "EntityLike",
         reason: str,
         assure_joined: bool | None = False,
     ) -> bool:
@@ -662,7 +663,8 @@ class Module:
 class Library:
     """All external libraries must have a class-inheritant from this class"""
 
-    allmodules: "Modules"
+    if typing.TYPE_CHECKING:
+        allmodules: "Modules"
 
     def internal_init(self) -> None:
         self.name = self.__class__.__name__

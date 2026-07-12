@@ -222,7 +222,7 @@ class Database(dict):
     # noinspection PyMethodOverriding
     def get(
         self, owner: str, key: str, default: typing.Any | None = None
-    ) -> JSONSerializable:
+    ) -> "JSONSerializable":
         """Get database key"""
         try:
             value = self[owner][key]
@@ -230,7 +230,7 @@ class Database(dict):
         except KeyError:
             return default
 
-    def set(self, owner: str, key: str, value: JSONSerializable) -> bool:
+    def set(self, owner: str, key: str, value: "JSONSerializable") -> bool:
         """Set database key"""
         if not utils.is_serializable(owner):
             raise RuntimeError(
@@ -260,9 +260,9 @@ class Database(dict):
         self,
         owner: str,
         key: str,
-        default: JSONSerializable | None = None,
+        default: "JSONSerializable | None" = None,
         item_type: typing.Any | None = None,
-    ) -> JSONSerializable | PointerList | PointerDict:
+    ) -> "JSONSerializable | PointerList | PointerDict":
         """Get a pointer to database key"""
         value = self.get(owner, key, default)
         mapping = {

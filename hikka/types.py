@@ -17,13 +17,17 @@ import logging
 import os
 import re
 import sys
+import types
 import typing
 from dataclasses import dataclass, field
 from importlib.abc import SourceLoader
+from typing import cast
 
 import pyrogram
 import requests
 from pyrogram.types import Message
+
+from hikka import utils
 
 from . import version
 from ._reference_finder import replace_all_refs
@@ -95,20 +99,20 @@ class StringLoader(SourceLoader):
         self.data = data.encode("utf-8") if isinstance(data, str) else data
         self.origin = origin
 
-    def get_source(self, _=None) -> str:
+    def get_source(self, fullname: str) -> str | None:
         return self.data.decode("utf-8")
 
-    def get_code(self, fullname: str) -> bytes:
+    def get_code(self, fullname: str) -> types.CodeType | None:
         return (
             compile(source, self.origin, "exec", dont_inherit=True)
             if (source := self.get_data(fullname))
             else None
         )
 
-    def get_filename(self, *args, **kwargs) -> str:
+    def get_filename(self, fullname: str) -> str:
         return self.origin
 
-    def get_data(self, *args, **kwargs) -> bytes:
+    def get_data(self, path: str) -> bytes:
         return self.data
 
 
@@ -177,15 +181,20 @@ class Module:
         if command not in self.allmodules.commands:
             raise ValueError(f"Command {command} not found")
 
-        if not message and not peer:
+        if (not message) and (not peer):
             raise ValueError("Either peer or message must be specified")
 
         cmd = f"{self.get_prefix()}{command} {args or ''}".strip()
 
         message = (
-            (await self._client.send_message(peer, cmd))
-            if peer
-            else (await (message.edit if edit else message.respond)(cmd))
+            (
+                await self._client.send_message(
+                    await utils.entitylike_to_id(self.client, cast("EntityLike", peer)),
+                    cmd,
+                )
+            )
+            if not message
+            else (await (message.edit if edit else message.answer)(cmd))
         )
         await self.allmodules.commands[command](message)
         return message

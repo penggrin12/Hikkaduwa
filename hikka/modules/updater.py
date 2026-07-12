@@ -27,7 +27,7 @@ class UpdaterMod(loader.Module):
 
     strings = {"name": "Updater"}
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "GIT_ORIGIN_URL",
@@ -38,7 +38,7 @@ class UpdaterMod(loader.Module):
         )
 
     @loader.command()
-    async def restart(self, message: Message):
+    async def restart(self, message: Message) -> None:
         args = utils.get_args_raw(message)
         secure_boot = any(trigger in args for trigger in {"--secure-boot", "-sb"})
         try:
@@ -64,10 +64,10 @@ class UpdaterMod(loader.Module):
         except Exception:
             await self.restart_common(message, secure_boot)
 
-    async def inline_restart(self, call: InlineCall, secure_boot: bool = False):
+    async def inline_restart(self, call: InlineCall, secure_boot: bool = False) -> None:
         await self.restart_common(call, secure_boot=secure_boot)
 
-    async def process_restart_message(self, msg_obj: InlineCall | Message):
+    async def process_restart_message(self, msg_obj: InlineCall | Message) -> None:
         self.set(
             "selfupdatemsg",
             (
@@ -81,7 +81,7 @@ class UpdaterMod(loader.Module):
         self,
         msg_obj: InlineCall | Message,
         secure_boot: bool = False,
-    ):
+    ) -> None:
         if (
             hasattr(msg_obj, "form")
             and isinstance(msg_obj.form, dict)
@@ -113,11 +113,11 @@ class UpdaterMod(loader.Module):
         await message._client.terminate()
         restart()
 
-    async def download_common(self):
+    async def download_common(self) -> bool:
         return False
 
     @staticmethod
-    def req_common():
+    def req_common() -> None:
         # Now we have downloaded new code, install requirements
         logger.debug("Installing new requirements...")
         try:
@@ -140,14 +140,14 @@ class UpdaterMod(loader.Module):
             logger.exception("Req install failed")
 
     @loader.command()
-    async def update(self, message: Message):
+    async def update(self, message: Message) -> None:
         return  # TODO: prompt something
 
     async def inline_update(
         self,
         msg_obj: InlineCall | Message,
         hard: bool = False,
-    ):
+    ) -> None:
         # We don't really care about asyncio at this point, as we are shutting down
         if hard:
             subprocess.run(
@@ -168,13 +168,13 @@ class UpdaterMod(loader.Module):
         await self.restart_common(msg_obj)
 
     @loader.command()
-    async def source(self, message: Message):
+    async def source(self, message: Message) -> None:
         await utils.answer(
             message,
             self.get_string("source").format(self.config["GIT_ORIGIN_URL"]),
         )
 
-    async def client_ready(self):
+    async def client_ready(self) -> None:
         if self.get("selfupdatemsg") is not None:
             try:
                 await self.update_complete()
@@ -275,10 +275,10 @@ class UpdaterMod(loader.Module):
                 "Ignoring error and adding folder addition to ignore list"
             )
 
-    async def update_complete(self):
+    async def update_complete(self) -> None:
         logger.debug("Self update successful! Edit message")
 
-    async def full_restart_complete(self, secure_boot: bool = False):
+    async def full_restart_complete(self, secure_boot: bool = False) -> None:
         logger.debug("im complete, dawg")
 
         start = self.get("restart_ts")

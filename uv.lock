@@ -376,7 +376,7 @@ requires-dist = [
     { name = "asyncstdlib", specifier = ">=3.14.0" },
     { name = "emoji", specifier = "==2.15.0" },
     { name = "grapheme", specifier = "==0.6.0" },
-    { name = "kurigram", specifier = "==2.2.23" },
+    { name = "kurigram", specifier = "==2.2.24" },
     { name = "meval", specifier = "==2.5" },
     { name = "orjson", specifier = "==3.11.9" },
     { name = "psutil", specifier = "==7.2.2" },
@@ -396,15 +396,15 @@ wheels = [
 
 [[package]]
 name = "kurigram"
-version = "2.2.23"
+version = "2.2.24"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyaes" },
     { name = "python-socks", extra = ["asyncio"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a1/f3/e93fe48fa937cb681c4a8581f4d75da9e9054e35efedaecc9490fb585b45/kurigram-2.2.23.tar.gz", hash = "sha256:b8ccc23cab2875b25134a01f7c632dd64de334804b60c8cf19f20eb3b2ec5c58", size = 589349, upload-time = "2026-05-21T15:12:37.533Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/0a/6cd1ced210b02cabef151aa17c193418528c6d49f9d4368a2e0975d11f96/kurigram-2.2.24.tar.gz", hash = "sha256:535644dcb23696ae7d838a2f8c14675a5b3fa50906d51dc1434a29620d62813b", size = 602931, upload-time = "2026-07-11T11:29:54.136Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c3/1b/00ca5e8a39dbf7083e8ad37bf0e3062f3126f78ee3f94cda78d77e5883ff/kurigram-2.2.23-py3-none-any.whl", hash = "sha256:3a5806c76acd0f8fdd9cd1e2f65f84c61f8b2650689c7481c5035a8ad26022d9", size = 5690474, upload-time = "2026-05-21T15:12:35.319Z" },
+    { url = "https://files.pythonhosted.org/packages/54/59/e5f953421b8229805a9f63e55accaa215fce126f75cd66e0a909c1d5ff18/kurigram-2.2.24-py3-none-any.whl", hash = "sha256:ec8417c8f767d974bb54cd19966d0057871c1b63faeb096f7a674702e3531824", size = 5799272, upload-time = "2026-07-11T11:29:52.31Z" },
 ]
 
 [[package]]

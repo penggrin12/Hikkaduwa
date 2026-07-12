@@ -211,10 +211,8 @@ help:
   all_header: "🌘 <b>{} mods available ({} hidden):</b>"
   no_mod: "🚫 <b>Specify module to hide</b>"
   hidden_shown: "🌘 <b>{} modules hidden, {} modules shown:</b>\n{}\n{}"
-  support: "{} <b>Link to</b> <a href='https://t.me/hikka_talks'>support chat</a></b>"
   partial_load: "☝️ <b>Userbot is not fully loaded, so not all modules are shown</b>"
   not_exact: "☝️ <b>No exact match occured, so the closest result is shown instead</b>"
-  request_join: "You requested link for Hikka support chat"
   core_notice: "☝️ <b>This is a core module. You can't unload it nor replace</b>"
 
 hikka_info:

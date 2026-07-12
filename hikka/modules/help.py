@@ -303,13 +303,3 @@ class Help(loader.Module):
                 ),
             ),
         )
-
-    @loader.command()
-    async def support(self, message: Message):
-        if message.outgoing:
-            await self.request_join("@hikka_talks", self.get_string("request_join"))
-
-        await utils.answer(
-            message,
-            self.get_string("support").format("🌘"),
-        )

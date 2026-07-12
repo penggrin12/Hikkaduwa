@@ -231,7 +231,9 @@ class TelegramLogsHandler(logging.Handler):
         ).values()
         chunks = list(
             utils.smart_split(
-                text, utils.message_entities_from_raw(module.client, entities), 4096
+                text,
+                await utils.message_entities_from_raw(module.client, entities),
+                4096,
             )
         )
 

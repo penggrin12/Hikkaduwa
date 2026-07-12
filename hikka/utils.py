@@ -568,7 +568,11 @@ async def answer(
         return await (message.edit if edit else message.answer)(
             text=text,
             entities=(
-                message_entities_from_raw(client=message._client, entities=entities)
+                (
+                    await message_entities_from_raw(
+                        client=message._client, entities=entities
+                    )
+                )
                 if entities
                 else None or None
             ),
@@ -1403,13 +1407,31 @@ def find_caller(
     )
 
 
-def message_entities_from_raw(
-    client: "HikkaClient",
-    entities: list[pyrogram.raw.base.MessageEntity],
+async def message_entities_from_raw(
+    client: pyrogram.Client, entities: list[pyrogram.raw.base.MessageEntity]
 ) -> list[pyrogram.types.MessageEntity]:
-    # TODO: users shouldn't be empty
+    users: dict[int, pyrogram.raw.base.User] = {}
+
+    for entity in entities:
+        if (
+            not isinstance(entity, pyrogram.raw.types.InputMessageEntityMentionName)
+        ) or (not hasattr(entity.user_id, "user_id")):
+            continue
+        users[entity.user_id.user_id] = (
+            await client.invoke(
+                pyrogram.raw.functions.users.GetUsers(
+                    id=[
+                        typing.cast(
+                            pyrogram.raw.types.InputUser,
+                            await client.resolve_peer(entity.user_id.user_id),
+                        )
+                    ]
+                )
+            )
+        )[0]
+
     return list(
-        map(lambda x: pyrogram.types.MessageEntity._parse(client, x, {}), entities)
+        map(lambda x: pyrogram.types.MessageEntity._parse(client, x, users), entities)
     )
 
 

@@ -303,7 +303,7 @@ class UpdaterMod(loader.Module):
         if ":" in str(ms):
             chat_id, message_id = ms.split(":")
             chat_id, message_id = int(chat_id), int(message_id)
-            await self.client.edit_message(chat_id, message_id, msg)
+            await self.client.edit_message_text(chat_id, message_id, msg)
             await asyncio.sleep(60)
             await self.client.delete_messages(chat_id, message_id)
             return

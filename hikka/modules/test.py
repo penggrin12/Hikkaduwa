@@ -203,6 +203,7 @@ class TestMod(loader.Module):
 
             return
 
+        # TODO: bad dependency
         logs = self.lookup("evaluator").censor(logs)
 
         logs = BytesIO(logs.encode("utf-16"))
@@ -230,11 +231,11 @@ class TestMod(loader.Module):
                 caption=self.get_string("logs_caption").format(named_lvl, *other),
             )
         else:
-            await self.client.send_file(
-                message.form["chat"],
-                logs,
+            await self.client.send_document(
+                chat_id=message.form["chat"],
+                document=logs,
                 caption=self.get_string("logs_caption").format(named_lvl, *other),
-                reply_to=message.form["top_msg_id"],
+                reply_parameters=utils.get_reply_parameters(message.form["top_msg_id"]),
             )
 
     @loader.command()

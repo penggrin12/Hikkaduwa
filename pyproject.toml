@@ -16,3 +16,9 @@ dependencies = [
     "ruamel-yaml==0.19.1",
     "tgcrypto==1.2.5",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.21",
+    "pyrefly>=1.1.1",
+]

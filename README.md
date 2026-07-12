@@ -45,7 +45,7 @@ developed by [Dan Gazizullin (hikariatama)](https://t.me/hikariatama).
    ```
 3. **Create and activate a virtual environment:**
    ```bash
-   uv sync
+   uv sync --no-dev
    ```
 4. **Run:**
     * Run the userbot for the first time:

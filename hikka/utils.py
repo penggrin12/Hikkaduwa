@@ -55,6 +55,16 @@ from pyrogram.types import Chat, Message, MessageEntity, User
 from . import hints
 from ._internal import fw_protect
 from .inline.types import InlineCall, InlineMessage
+from .platform import (
+    IS_CODESPACES,
+    IS_DOCKER,
+    IS_GOORM,
+    IS_LAVHOST,
+    IS_RAILWAY,
+    IS_TERMUX,
+    IS_WINDOWS,
+    IS_WSL,
+)
 from .types import HikkaReplyMarkup, ListLike, MessageLike, Module
 
 if typing.TYPE_CHECKING:
@@ -851,27 +861,42 @@ def chunks(_list: ListLike, n: int, /) -> list[ListLike]:
 
 def get_named_platform() -> str:
     """
-    Returns formatted platform name
-    :return: Platform name
+    Returns the current platform's name prefixed by an appropriate emoji
     """
-    # from . import main
-    #
-    # if main.IS_WSL:
-    #     return "🍀 WSL"
-    #
-    # if main.IS_TERMUX:
-    #     return "🕶 Termux"
-    #
-    # if main.IS_WINDOWS:
-    #     return "💻 Windows"
+    if IS_WINDOWS:
+        return "🪟 Windows"
+
+    with contextlib.suppress(Exception):
+        if os.path.isfile("/proc/device-tree/model"):
+            with open("/proc/device-tree/model", "r") as f:
+                model = f.read()
+                if "Orange" in model:
+                    return f"🍊 {model}"
+
+                return f"🍇 {model}" if "Raspberry" in model else f"❓ {model}"
+
+    if IS_CODESPACES:
+        return "🐈‍⬛ Codespaces"
+    if IS_DOCKER:
+        return "🐳 Docker"
+    if IS_RAILWAY:
+        return "🚂 Railway"
+    if IS_GOORM:
+        return "🦾 GoormIDE"
+    if IS_LAVHOST:
+        return f"✌️ lavHost {os.environ['LAVHOST']}"
+    if IS_TERMUX:
+        return "🕶 Termux"
+    if IS_WSL:
+        return "🍀 WSL"
 
     return "📻 VDS"
 
 
 def get_platform_emoji() -> str:
     """
-    Returns custom emoji for current platform
-    :return: Emoji entity in string
+    Returns 3 emojis representing the current platform
+    Those emojis are different from what get_named_platform returns
     """
     return "🌘🌘🌘"
 

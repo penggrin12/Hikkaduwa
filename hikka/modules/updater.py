@@ -192,80 +192,39 @@ class UpdaterMod(loader.Module):
         self.set("do_not_create", True)
 
     async def _add_folder(self) -> None:
-        raise NotImplementedError
-        folders: DialogFilters = await self.client(GetDialogFiltersRequest())
+        folders = await self.client.get_folders()
 
-        if any(getattr(folder, "title", None) == "hikka" for folder in folders.filters):
+        if any(folder.name == "hikka" for folder in folders):
             return
 
-        folder_id: int = (
-            max(
-                [f.id for f in folders.filters if isinstance(f, DialogFilter)],
-                default=0,
-            )
-            + 1
+        bot_id_list: list[int | str] = (
+            [self.client.loader.inline.bot_id]
+            if self.client.loader.inline.init_complete
+            else []
         )
 
         try:
-            await self.client(
-                UpdateDialogFilterRequest(
-                    folder_id,
-                    DialogFilter(
-                        folder_id,
-                        title=TextWithEntities(text="hikka", entities=[]),
-                        pinned_peers=(
-                            [
-                                await self.client.get_input_entity(
-                                    self.client.loader.inline.bot_id
-                                )
-                            ]
-                            if self.client.loader.inline.init_complete
-                            else []
-                        ),
-                        include_peers=[
-                            await self.client.get_input_entity(dialog.entity)
-                            async for dialog in self.client.iter_dialogs(
-                                None,
-                                ignore_migrated=True,
-                            )
-                            if dialog.name
-                            in {
-                                "hikka-logs",
-                                "hikka-onload",
-                                "hikka-assets",
-                                "hikka-backups",
-                                "hikka-acc-switcher",
-                                "silent-tags",
-                            }
-                            and dialog.is_channel
-                            and (
-                                dialog.entity.participants_count == 1
-                                or dialog.entity.participants_count == 2
-                                and dialog.name in {"hikka-logs", "silent-tags"}
-                            )
-                            or (
-                                self.client.loader.inline.init_complete
-                                and dialog.entity.id == self.client.loader.inline.bot_id
-                            )
-                            or dialog.entity.id
-                            in [
-                                1554874075,
-                                1697279580,
-                                1679998924,
-                            ]  # official hikka chats
-                        ],
-                        emoticon="🐱",
-                        exclude_peers=[],
-                        contacts=False,
-                        non_contacts=False,
-                        groups=False,
-                        broadcasts=False,
-                        bots=False,
-                        exclude_muted=False,
-                        exclude_read=False,
-                        exclude_archived=False,
-                    ),
-                )
+            await self.client.create_folder(
+                name="hikka",
+                icon="🐱",
+                pinned_chats=bot_id_list,
+                included_chats=(
+                    bot_id_list
+                    + [
+                        x.chat.id
+                        async for x in self.client.get_dialogs()
+                        if x.chat.id
+                        and x.chat.title
+                        in {
+                            "hikka-logs",
+                            "hikka-onload",
+                            "hikka-assets",
+                            "hikka-backups",
+                            "hikka-acc-switcher",
+                            "silent-tags",
+                        }
+                    ]
+                ),
             )
         except Exception:
             logger.critical(

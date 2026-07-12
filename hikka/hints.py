@@ -11,5 +11,5 @@ Entity = types.User | types.Chat
 EntityLike = Phone | Username | PeerID | InputPeer | Peer | Entity
 EntitiesLike = EntityLike | typing.Sequence[EntityLike]
 
-MessageLike = str | types.Message
+MessageLike = str | types.Message  # dupe in types
 MessageIDLike = int | types.Message

@@ -988,7 +988,7 @@ def ascii_face() -> str:
     )
 
 
-def array_sum(array: list[list[_T]], /) -> list[_T]:
+def array_sum(array: typing.Iterable[typing.Iterable[_T]], /) -> list[_T]:
     """
     Performs basic sum operation on array
     :param array: Array to sum

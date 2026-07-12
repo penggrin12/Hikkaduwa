@@ -32,25 +32,30 @@ from pyrogram.types import Chat, Message
 
 from .. import loader, main, utils
 from .._local_storage import RemoteStorage
-from ..inline.types import InlineCall
 from ..types import CoreOverwriteError, CoreUnloadError
+
+if typing.TYPE_CHECKING:
+    from io import BytesIO
+
+    from ..inline.types import InlineCall
+    from ..types import MessageLike
 
 logger = logging.getLogger(__name__)
 
 
 class FakeLock:
-    async def __aenter__(self, *args):
+    async def __aenter__(self, *args) -> None:
         pass
 
-    async def __aexit__(self, *args):
+    async def __aexit__(self, *args) -> None:
         pass
 
 
 class FakeNotifier:
-    def __enter__(self):
+    def __enter__(self) -> None:
         pass
 
-    def __exit__(self, *args):
+    def __exit__(self, *args) -> None:
         pass
 
 
@@ -60,10 +65,10 @@ class LoaderMod(loader.Module):
 
     strings = {"name": "Loader"}
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.fully_loaded = False
         self._links_cache = {}
-        self._storage: RemoteStorage = None
+        self._storage: RemoteStorage | None = None
 
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
@@ -161,7 +166,7 @@ class LoaderMod(loader.Module):
 
         self._db.save()
 
-    def update_modules_in_db(self):
+    def update_modules_in_db(self) -> None:
         if self.allmodules.secure_boot:
             return
 
@@ -213,8 +218,8 @@ class LoaderMod(loader.Module):
                 ],
             )
 
-    async def _get_modules_to_load(self):
-        todo = self.get("loaded_modules", {})
+    async def _get_modules_to_load(self) -> dict:
+        todo = typing.cast(dict, self.get("loaded_modules", {}))
         logger.debug("Loading modules: %s", todo)
         return todo
 
@@ -270,20 +275,18 @@ class LoaderMod(loader.Module):
         main_repo = list(links.pop(self.config["MODULES_REPO"]).values())
         return main_repo + list(dict(ChainMap(*list(links.values()))).values())
 
-    async def _find_link(self, module_name: str) -> str | typing.Literal[False]:
+    async def _find_link(self, module_name: str) -> str | None:
         return next(
             filter(
                 lambda link: link.lower().endswith(f"/{module_name.lower()}.py"),
                 await self.get_links_list(),
             ),
-            False,
+            None,
         )
 
     async def download_and_install(
-        self,
-        module_name: str,
-        message: Message | None = None,
-    ):
+        self, module_name: str, message: Message | None = None
+    ) -> None:
         try:
             blob_link = False
             module_name = module_name.strip()
@@ -303,7 +306,7 @@ class LoaderMod(loader.Module):
                     if message is not None:
                         await utils.answer(message, self.get_string("no_module"))
 
-                    return False
+                    return
 
             if message:
                 message = await utils.answer(
@@ -317,25 +320,20 @@ class LoaderMod(loader.Module):
                 if message is not None:
                     await utils.answer(message, self.get_string("no_module"))
 
-                return False
+                return
 
-            return await self.load_module(
-                r,
-                message,
-                module_name,
-                url,
+            await self.load_module(
+                doc=r,
+                message=message,
+                name=module_name,
+                origin=url,
                 blob_link=blob_link,
             )
+            return
         except Exception:
             logger.exception("Failed to load %s", module_name)
 
-    async def _inline__load(
-        self,
-        call: InlineCall,
-        doc: str,
-        path_: str,
-        mode: str,
-    ):
+    async def _inline__load(self, call: "InlineCall", doc: str, mode: str) -> None:
         save = False
         if mode == "all_yes":
             self._db.set(main.__name__, "permanent_modules_fs", True)
@@ -348,30 +346,23 @@ class LoaderMod(loader.Module):
         elif mode == "once":
             save = True
 
-        await self.load_module(doc, call, origin=path_ or "<string>", save_fs=save)
+        await self.load_module(doc=doc, message=call, save_fs=save)
 
     @loader.command(alias="lm")
-    async def loadmod(self, message: Message):
-        args = utils.get_args_raw(message)
-        if "-fs" in args:
-            force_save = True
-            args = args.replace("-fs", "").strip()
-        else:
-            force_save = False
+    async def loadmod(self, message: Message) -> None:
+        force_save: bool = "-fs" in utils.get_args_raw(message)
 
-        msg = message if message.file else (await message.get_reply_message())
-
-        if msg is None or msg.media is None:
+        msg = message if message.document else message.reply_to_message
+        if msg is None or msg.document is None:
             await utils.answer(message, self.get_string("provide_module"))
             return
 
-        path_ = None
-        doc = await msg.download_media(bytes)
+        file: "BytesIO" = await msg.download(in_memory=True)  # type: ignore
 
         logger.debug("Loading external module...")
 
         try:
-            doc = doc.decode()
+            doc: str = file.getvalue().decode(encoding="utf-8")
         except UnicodeDecodeError:
             await utils.answer(message, self.get_string("bad_unicode"))
             return
@@ -385,70 +376,67 @@ class LoaderMod(loader.Module):
             and not self._db.get(main.__name__, "permanent_modules_fs", False)
             and not force_save
         ):
-            if message.file:
-                await message.edit("")
-                message = await message.respond("🌘", reply_to=utils.get_topic(message))
+            if message.id == msg.id:
+                if utils.can_edit(msg):
+                    await self.client.invoke(
+                        pyrogram.raw.functions.messages.EditMessage(
+                            peer=await self.client.resolve_peer(msg.chat.id),  # type: ignore
+                            id=msg.id,
+                            message="",
+                        )
+                    )
+                msg = await message.answer(text="🌘")
+            else:
+                msg = message
 
             if await self.inline.form(
                 self.get_string("module_fs"),
-                message=message,
+                message=msg,
                 reply_markup=[
                     [
                         {
                             "text": self.get_string("save"),
                             "callback": self._inline__load,
-                            "args": (doc, path_, "once"),
+                            "args": (doc, "once"),
                         },
                         {
                             "text": self.get_string("no_save"),
                             "callback": self._inline__load,
-                            "args": (doc, path_, "no"),
+                            "args": (doc, "no"),
                         },
                     ],
                     [
                         {
                             "text": self.get_string("save_for_all"),
                             "callback": self._inline__load,
-                            "args": (doc, path_, "all_yes"),
+                            "args": (doc, "all_yes"),
                         }
                     ],
                     [
                         {
                             "text": self.get_string("never_save"),
                             "callback": self._inline__load,
-                            "args": (doc, path_, "all_no"),
+                            "args": (doc, "all_no"),
                         }
                     ],
                 ],
             ):
                 return
 
-        if path_ is not None:
-            await self.load_module(
-                doc,
-                message,
-                origin=path_,
-                save_fs=(
-                    force_save
-                    or self._db.get(main.__name__, "permanent_modules_fs", False)
-                    and not self._db.get(main.__name__, "disable_modules_fs", False)
-                ),
-            )
-        else:
-            await self.load_module(
-                doc,
-                message,
-                save_fs=(
-                    force_save
-                    or self._db.get(main.__name__, "permanent_modules_fs", False)
-                    and not self._db.get(main.__name__, "disable_modules_fs", False)
-                ),
-            )
+        await self.load_module(
+            doc=doc,
+            message=msg,
+            save_fs=(
+                force_save
+                or bool(self._db.get(main.__name__, "permanent_modules_fs", False))
+                and not bool(self._db.get(main.__name__, "disable_modules_fs", False))
+            ),
+        )
 
     async def load_module(
         self,
         doc: str,
-        message: Message,
+        message: "MessageLike | None",
         name: str | None = None,
         origin: str = "<string>",
         did_requirements: bool = False,
@@ -502,7 +490,7 @@ class LoaderMod(loader.Module):
 
         blob_link = self.get_string("blob_link") if blob_link else ""
 
-        if utils.check_url(name):
+        if (name is not None) and utils.check_url(name):
             url = copy.deepcopy(name)
         elif utils.check_url(origin):
             url = copy.deepcopy(origin)
@@ -676,7 +664,7 @@ class LoaderMod(loader.Module):
                 if message:
                     await utils.answer(
                         message,
-                        (f"😖 <b>{utils.escape_html(str(e))}</b>"),
+                        f"😖 <b>{utils.escape_html(str(e))}</b>",
                     )
                 return
         except Exception as e:
@@ -696,7 +684,7 @@ class LoaderMod(loader.Module):
             try:
                 self.allmodules.send_config_one(instance)
 
-                async def inner_proxy():
+                async def inner_proxy() -> None:
                     nonlocal instance, message
                     while True:
                         if hasattr(instance, "hikka_wait_channel_approve"):
@@ -825,7 +813,9 @@ class LoaderMod(loader.Module):
         modhelp = ""
 
         if instance.__doc__:
-            modhelp += f"<i>\nℹ️ {utils.escape_html(inspect.getdoc(instance))}</i>\n"
+            modhelp += (
+                f"<i>\nℹ️ {utils.escape_html(inspect.getdoc(instance) or '')}</i>\n"
+            )
 
         subscribe = ""
         subscribe_markup = None
@@ -948,7 +938,7 @@ class LoaderMod(loader.Module):
                 modhelp += self.get_string("ihandler").format(
                     f"@{self.inline.bot_username} {_name}",
                     (
-                        utils.escape_html(inspect.getdoc(fun))
+                        utils.escape_html(inspect.getdoc(fun) or "")
                         if fun.__doc__
                         else self.get_string("undoc")
                     ),
@@ -961,7 +951,7 @@ class LoaderMod(loader.Module):
 
     async def _inline__subscribe(
         self,
-        call: InlineCall,
+        call: "InlineCall",
         entity: int,
         msg: typing.Callable[[], str],
         subscribe: bool,
@@ -1093,7 +1083,7 @@ class LoaderMod(loader.Module):
 
         await utils.answer(message, self.get_string("repo_deleted").format(args))
 
-    async def _inline__clearmodules(self, call: InlineCall):
+    async def _inline__clearmodules(self, call: "InlineCall"):
         self.set("loaded_modules", {})
 
         for file in os.scandir(loader.LOADED_MODULES_DIR):

@@ -44,6 +44,7 @@ if typing.TYPE_CHECKING:
     from .client import HikkaClient
     from .hints import EntityLike
     from .loader import Modules
+    from .validators import Validator
 
 __all__ = [
     "JSONSerializable",
@@ -73,7 +74,7 @@ JSONSerializable = str | int | float | bool | list | dict | None
 HikkaReplyMarkup = list[list[dict]] | list[dict] | dict
 ListLike = list | set | tuple
 Command = typing.Callable[..., typing.Awaitable[typing.Any]]
-MessageLike = Message | InlineCall | InlineMessage
+MessageLike = Message | InlineCall | InlineMessage  # dupe in hints
 
 CommandP = typing.ParamSpec("CommandP")
 CommandT = typing.Callable[CommandP, typing.Awaitable[None]]
@@ -855,19 +856,19 @@ class ConfigValue:
     default: typing.Any = None
     doc: typing.Callable[[], str] | str = "No description"
     value: typing.Any = field(default_factory=_Placeholder)
-    validator: typing.Callable[[JSONSerializable], JSONSerializable] | None = None
+    validator: "Validator | None" = None
     on_change: typing.Callable[[], typing.Awaitable] | typing.Callable | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if isinstance(self.value, _Placeholder):
             self.value = self.default
 
-    def set_no_raise(self, value: typing.Any) -> bool:
+    def set_no_raise(self, value: typing.Any) -> None:
         """
         Sets the config value w/o ValidationError being raised
         Should not be used uninternally
         """
-        return self.__setattr__("value", value, ignore_validation=True)
+        self.__setattr__("value", value, ignore_validation=True)
 
     def __setattr__(
         self,

@@ -267,15 +267,8 @@ class Form(InlineUnit):
         if isinstance(message, Message) and not silent:
             try:
                 status_message = await (
-                    message.edit if message.outgoing else message.answer
-                )(
-                    "🌘" + self.translator.getkey("inline.opening_form"),
-                    **(
-                        {"reply_to": utils.get_topic(message)}
-                        if message.outgoing
-                        else {}
-                    ),
-                )
+                    message.edit if utils.can_edit(message) else message.answer
+                )("🌘" + self.translator.getkey("inline.opening_form"))
             except Exception:
                 status_message = None
         else:

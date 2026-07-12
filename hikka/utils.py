@@ -29,7 +29,6 @@ import functools
 import html
 import inspect
 import io
-import json
 import logging
 import os
 import random
@@ -46,6 +45,7 @@ from urllib.parse import urlparse
 
 import asyncstdlib
 import grapheme
+import orjson
 import pyrogram.errors
 import pyrogram.utils
 import requests
@@ -1239,9 +1239,9 @@ def is_serializable(x: typing.Any, /) -> bool:
     :return: True if object is JSON-serializable, False otherwise
     """
     try:
-        json.dumps(x)
+        orjson.dumps(x)
         return True
-    except Exception:
+    except (TypeError, OverflowError, RecursionError, ValueError):
         return False
 
 

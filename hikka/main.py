@@ -27,7 +27,6 @@ import argparse
 import asyncio
 import collections
 import importlib
-import json
 import logging
 import os
 import random
@@ -35,6 +34,7 @@ import socket
 import typing
 from pathlib import Path
 
+import orjson
 import pyrogram
 from pyrogram import idle
 
@@ -120,7 +120,7 @@ def get_config_key(key: str) -> (str | int | float | dict | list) | typing.Liter
     :return: Value of config key or `False`, if it doesn't exist
     """
     try:
-        return json.loads(CONFIG_PATH.read_text(encoding="utf-8")).get(key, False)
+        return orjson.loads(CONFIG_PATH.read_text(encoding="utf-8")).get(key, False)
     except FileNotFoundError:
         return False
 
@@ -134,7 +134,7 @@ def save_config_key(key: str, value: str | int | float | dict | list) -> bool:
     """
     try:
         # Try to open our newly created json config
-        config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        config = orjson.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     except FileNotFoundError:
         # If it doesn't exist, just default config to none
         # It won't cause problems, bc after new save
@@ -144,7 +144,7 @@ def save_config_key(key: str, value: str | int | float | dict | list) -> bool:
     # Assign config value
     config[key] = value
     # And save config
-    CONFIG_PATH.write_text(json.dumps(config, indent=4))
+    CONFIG_PATH.write_bytes(orjson.dumps(config))
     return True
 
 

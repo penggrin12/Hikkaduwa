@@ -6,11 +6,11 @@
 
 import asyncio
 import collections
-import json
 import logging
 import time
 import typing
 
+import orjson
 import pyrogram
 from pyrogram.errors import ChannelsTooMuch
 from pyrogram.types import Message
@@ -98,8 +98,8 @@ class Database(dict):
     def read(self) -> None:
         """Read database and stores it in self"""
         try:
-            self.update(**json.loads(self._db_file.read_text(encoding="utf-8")))
-        except json.decoder.JSONDecodeError:
+            self.update(**orjson.loads(self._db_file.read_text(encoding="utf-8")))
+        except orjson.JSONDecodeError:
             logger.warning("Database read failed! Creating new one...")
         except FileNotFoundError:
             logger.debug("Database file not found, creating new one...")
@@ -172,9 +172,9 @@ class Database(dict):
             self._revisions.pop()
 
         try:
-            self._db_file.write_text(json.dumps(self, indent=4))
-        except Exception:
-            logger.exception("Database save failed!")
+            self._db_file.write_bytes(orjson.dumps(self))
+        except OSError as e:
+            logger.error("Database save failed!", exc_info=e)
             return False
 
         return True

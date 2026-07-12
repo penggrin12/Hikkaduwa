@@ -3,13 +3,13 @@
 from pyrogram import types
 from pyrogram.raw.base import InputPeer, Peer
 
-Phone = str
-Username = str
-PeerID = int
-Entity = types.User | types.Chat
+Phone: typing.TypeAlias = str
+Username: typing.TypeAlias = str
+PeerID: typing.TypeAlias = int
+Entity: typing.TypeAlias = types.User | types.Chat
 
-EntityLike = Phone | Username | PeerID | InputPeer | Peer | Entity
-EntitiesLike = EntityLike | typing.Sequence[EntityLike]
+EntityLike: typing.TypeAlias = Phone | Username | PeerID | InputPeer | Peer | Entity
+EntitiesLike: typing.TypeAlias = EntityLike | typing.Sequence[EntityLike]
 
-MessageLike = str | types.Message  # dupe in types
-MessageIDLike = int | types.Message
+MessageLike: typing.TypeAlias = str | types.Message  # dupe in types
+MessageIDLike: typing.TypeAlias = int | types.Message

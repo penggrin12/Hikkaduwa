@@ -849,7 +849,7 @@ def get_link(user: User | Chat, /) -> str:
     )
 
 
-def chunks(_list: ListLike, n: int, /) -> list[ListLike]:
+def chunks(_list: typing.Sequence[_T], n: int, /) -> list[typing.Sequence[_T]]:
     """
     Split provided `_list` into chunks of `n`
     :param _list: List to split
@@ -1016,7 +1016,7 @@ def smart_split(
     text: str,
     entities: list[MessageEntity],
     length: int = 4096,
-    split_on: ListLike = ("\n", " "),
+    split_on: typing.Iterable[str] = ("\n", " "),
     min_length: int = 1,
 ) -> typing.Iterator[str]:
     """

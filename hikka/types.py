@@ -70,11 +70,19 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-JSONSerializable = str | int | float | bool | list | dict | None
-HikkaReplyMarkup = list[list[dict]] | list[dict] | dict
-ListLike = list | set | tuple
-Command = typing.Callable[..., typing.Awaitable[typing.Any]]
-MessageLike = Message | InlineCall | InlineMessage  # dupe in hints
+JSONSerializable: typing.TypeAlias = (
+    dict[str, "JSONSerializable"]
+    | list["JSONSerializable"]
+    | str
+    | int
+    | float
+    | bool
+    | None
+)
+HikkaReplyMarkup: typing.TypeAlias = list[list[dict]] | list[dict] | dict
+ListLike: typing.TypeAlias = typing.Sequence  # kept for backwards compat
+Command: typing.TypeAlias = typing.Callable[..., typing.Awaitable[typing.Any]]
+MessageLike: typing.TypeAlias = Message | InlineCall | InlineMessage  # dupe in hints
 
 CommandP = typing.ParamSpec("CommandP")
 CommandT = typing.Callable[CommandP, typing.Awaitable[None]]

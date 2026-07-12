@@ -3,24 +3,38 @@
 # 🌐 https://github.com/hikariatama/Hikka
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
-
+import io
 import logging
+import typing
 
+from aiogram import Bot
 from aiogram.types import (
     CallbackQuery,
     InlineQueryResultArticle,
+    InputFile,
     InputTextMessageContent,
 )
 from aiogram.types import InlineQuery as AiogramInlineQuery
 from aiogram.types import Message as AiogramMessage
+from aiogram.types.input_file import DEFAULT_CHUNK_SIZE
 
 from .. import utils
+
+if typing.TYPE_CHECKING:
+    from hikka.inline.core import InlineManager
 
 logger = logging.getLogger(__name__)
 
 
 class InlineMessage:
     """Aiogram message, sent via inline bot"""
+
+    if typing.TYPE_CHECKING:
+        inline_message_id: str
+        unit_id: str
+        inline_manager: "InlineManager"
+        _units: dict[str, dict]
+        form: dict[str, typing.Any]
 
     def __init__(
         self,
@@ -48,12 +62,14 @@ class InlineMessage:
         if "inline_message_id" in kwargs:
             kwargs.pop("inline_message_id")
 
-        return await self.inline_manager._edit_unit(
+        await self.inline_manager._edit_unit(
             *args,
             unit_id=self.unit_id,
             inline_message_id=self.inline_message_id,
             **kwargs,
         )
+
+        return self
 
     async def delete(self) -> bool:
         return await self.inline_manager._delete_unit_message(
@@ -67,6 +83,14 @@ class InlineMessage:
 
 class BotInlineMessage:
     """Aiogram message, sent through inline bot itself"""
+
+    if typing.TYPE_CHECKING:
+        chat_id: int
+        unit_id: str
+        inline_manager: "InlineManager"
+        message_id: int
+        _units: dict[str, dict]
+        form: dict[str, typing.Any]
 
     def __init__(
         self,
@@ -101,13 +125,15 @@ class BotInlineMessage:
         if "chat_id" in kwargs:
             kwargs.pop("chat_id")
 
-        return await self.inline_manager._edit_unit(
+        await self.inline_manager._edit_unit(
             *args,
             unit_id=self.unit_id,
             chat_id=self.chat_id,
             message_id=self.message_id,
             **kwargs,
         )
+
+        return self
 
     async def delete(self) -> bool:
         return await self.inline_manager._delete_unit_message(
@@ -131,6 +157,9 @@ class BotInlineMessage:
 class InlineCall(CallbackQuery, InlineMessage):
     """Modified version of classic aiogram `CallbackQuery`"""
 
+    if typing.TYPE_CHECKING:
+        original_call: CallbackQuery
+
     def __init__(
         self,
         call: CallbackQuery,
@@ -151,6 +180,9 @@ class InlineCall(CallbackQuery, InlineMessage):
 
 class BotInlineCall(CallbackQuery, BotInlineMessage):
     """Modified version of classic aiogram `CallbackQuery`"""
+
+    if typing.TYPE_CHECKING:
+        original_call: CallbackQuery
 
     def __init__(
         self,
@@ -174,31 +206,36 @@ class BotInlineCall(CallbackQuery, BotInlineMessage):
 class InlineUnit:
     """InlineManager extension type. For internal use only"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Made just for type specification"""
 
 
 class BotMessage(AiogramMessage):
     """Modified version of original Aiogram Message"""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
 
 class InlineQuery(AiogramInlineQuery):
     """Modified version of original Aiogram InlineQuery"""
 
+    if typing.TYPE_CHECKING:
+        inline_query: "InlineQuery"
+        args: str
+
     def __init__(self, inline_query: AiogramInlineQuery):
-        super().__init__(self)
+        AiogramInlineQuery.__init__(self, **inline_query.model_dump())
 
-        for attr in {"id", "from_user", "query", "offset", "chat_type", "location"}:
-            setattr(self, attr, getattr(inline_query, attr, None))
-
-        self.inline_query = inline_query
-        self.args = (
-            self.inline_query.query.split(maxsplit=1)[1]
-            if len(self.inline_query.query.split()) > 1
-            else ""
+        self.__dict__.update(
+            {
+                "inline_query": inline_query,
+                "args": (
+                    inline_query.query.split(maxsplit=1)[1]
+                    if len(inline_query.query.split()) > 1
+                    else ""
+                ),
+            }
         )
 
     @staticmethod
@@ -212,9 +249,9 @@ class InlineQuery(AiogramInlineQuery):
                     "😶‍🌫️ <i>There is nothing here...</i>",
                     parse_mode="HTML",
                 ),
-                thumb_url=thumb_url,
-                thumb_width=128,
-                thumb_height=128,
+                thumbnail_url=thumb_url,
+                thumbnail_width=128,
+                thumbnail_height=128,
             )
         ]
 
@@ -222,10 +259,7 @@ class InlineQuery(AiogramInlineQuery):
         await self.answer(
             self._get_res(
                 "🚫 400",
-                (
-                    "Bad request. You need to pass right arguments, follow module's"
-                    " documentation"
-                ),
+                "Bad request. You need to pass right arguments, follow module's documentation",
                 "https://img.icons8.com/color/344/swearing-male--v1.png",
             ),
             cache_time=0,
@@ -270,3 +304,18 @@ class InlineQuery(AiogramInlineQuery):
             ),
             cache_time=0,
         )
+
+
+class BytesIOInputFile(InputFile):
+    def __init__(self, file: io.BytesIO, chunk_size: int = DEFAULT_CHUNK_SIZE):
+        """
+        :param chunk_size: Uploading chunk size
+        """
+        name: typing.Any | None = getattr(file, "name", None)
+        super().__init__(filename=str(name) if name else None, chunk_size=chunk_size)
+
+        self.file: io.BytesIO = file
+
+    async def read(self, bot: Bot) -> typing.AsyncGenerator[bytes, None]:
+        while chunk := self.file.read(self.chunk_size):
+            yield chunk

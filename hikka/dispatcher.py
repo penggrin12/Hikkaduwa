@@ -328,7 +328,7 @@ class CommandDispatcher:
     ) -> str:
         """
         Handle tags.
-        :param event: The event to handle.
+        :param message: The Message to handle.
         :param func: The function to handle.
         :return: The reason for the tag to fail.
         """
@@ -389,17 +389,19 @@ class CommandDispatcher:
             "mention": lambda: getattr(m, "mentioned", False),
             "no_mention": lambda: not getattr(m, "mentioned", False),
             "startswith": lambda: (
-                isinstance(m, Message) and m.raw_text.startswith(func.startswith)
+                isinstance(m, Message) and m.text and m.text.startswith(func.startswith)
             ),
             "endswith": lambda: (
-                isinstance(m, Message) and m.raw_text.endswith(func.endswith)
+                isinstance(m, Message) and m.text and m.text.endswith(func.endswith)
             ),
-            "contains": lambda: isinstance(m, Message) and func.contains in m.raw_text,
+            "contains": lambda: (
+                isinstance(m, Message) and m.text and func.contains in m.text
+            ),
             "filter": lambda: callable(func.filter) and func.filter(m),
-            "from_id": lambda: getattr(m, "sender_id", None) == func.from_id,
+            "from_id": lambda: m.from_user and m.from_user.id == func.from_id,
             "chat_id": lambda: utils.get_chat_id_keep_minus100(m) == func.chat_id,
             "regex": lambda: (
-                isinstance(m, Message) and re.search(func.regex, m.raw_text)
+                isinstance(m, Message) and m.text and re.search(func.regex, m.text)
             ),
         }
 
@@ -426,11 +428,19 @@ class CommandDispatcher:
 
     async def handle_incoming(self, _, message: Message) -> None:
         """Handle all incoming messages"""
+        if not message.chat:
+            return
         message = utils.censor(message)
 
-        blacklist_chats = self._db.get(main.__name__, "blacklist_chats", [])
-        whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
-        whitelist_modules = self._db.get(main.__name__, "whitelist_modules", [])
+        blacklist_chats = typing.cast(
+            list[str], self._db.get(main.__name__, "blacklist_chats", [])
+        )
+        whitelist_chats = typing.cast(
+            list[str], self._db.get(main.__name__, "whitelist_chats", [])
+        )
+        whitelist_modules = typing.cast(
+            list[str], self._db.get(main.__name__, "whitelist_modules", [])
+        )
 
         if utils.get_chat_id_keep_minus100(message) in blacklist_chats or (
             whitelist_chats
@@ -474,7 +484,7 @@ class CommandDispatcher:
 
             # Avoid weird AttributeErrors in weird dochub modules by settings placeholder
             # of attributes
-            for placeholder in {"text", "raw_text", "out"}:
+            for placeholder in {"text", "outgoing"}:
                 try:
                     if not hasattr(message, placeholder):
                         setattr(message, placeholder, "")

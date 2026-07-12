@@ -21,7 +21,6 @@ import typing
 from functools import wraps
 from pathlib import Path
 from types import ModuleType
-from typing import Awaitable, Callable
 from uuid import uuid4
 
 import pyrogram.raw.core
@@ -1014,7 +1013,7 @@ class Modules:
         if from_dlmod:
             try:
                 if len(inspect.signature(mod.on_dlmod).parameters) == 2:
-                    await mod.on_dlmod(self.client, self._db)
+                    await mod.on_dlmod(self.client, self._db)  # type: ignore
                 else:
                     await mod.on_dlmod()
             except Exception:
@@ -1022,7 +1021,7 @@ class Modules:
 
         try:
             if len(inspect.signature(mod.client_ready).parameters) == 2:
-                await mod.client_ready(self.client, self._db)
+                await mod.client_ready(self.client, self._db)  # type: ignore
             else:
                 await mod.client_ready()
         except SelfUnload as e:
@@ -1187,7 +1186,7 @@ class Modules:
 
         for module in self.modules:
             try:
-                module.config_complete(reload_dynamic_translate=True)
+                module.config_complete(reload_dynamic_translate=True)  # type: ignore
             except Exception as e:
                 logger.debug(
                     "Can't complete dynamic translations reload of %s due to %s",

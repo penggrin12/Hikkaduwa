@@ -8,6 +8,7 @@ import asyncio
 import contextlib
 import copy
 import functools
+import inspect
 import logging
 import os
 import time
@@ -337,7 +338,7 @@ class Gallery(InlineUnit):
             photo_url = callback
         elif isinstance(callback, list):
             photo_url = callback[0]
-        elif asyncio.iscoroutinefunction(callback):
+        elif inspect.iscoroutinefunction(callback):
             photo_url = await callback()
         elif callable(callback):
             photo_url = callback()

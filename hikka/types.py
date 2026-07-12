@@ -111,13 +111,15 @@ class Module:
 
     """There is no help for this module"""
 
-    def config_complete(self):
+    # can also have `reload_dynamic_translate=True`
+    def config_complete(self) -> None:
         """Called when module.config is populated"""
 
-    async def client_ready(self):
+    # can also have `client` and `db` positional parameters
+    async def client_ready(self) -> None:
         """Called after client is ready (after config_loaded)"""
 
-    def internal_init(self):
+    def internal_init(self) -> None:
         """Called after the class is initialized in order to pass the client and db. Do not call it yourself"""
         self.db = self.allmodules.db
         self._db = self.allmodules.db
@@ -129,10 +131,11 @@ class Module:
         self.tg_id = self._client.tg_id
         self._tg_id = self._client.tg_id
 
-    async def on_unload(self):
+    async def on_unload(self) -> None:
         """Called after unloading / reloading module"""
 
-    async def on_dlmod(self):
+    # can also have `client` and `db` positional parameters
+    async def on_dlmod(self) -> None:
         """
         Called after the module is first time loaded with .dlmod or .loadmod
 
@@ -218,35 +221,35 @@ class Module:
         return get_watchers(self)
 
     @commands.setter
-    def commands(self, _):
+    def commands(self, _) -> None:
         pass
 
     @hikka_commands.setter
-    def hikka_commands(self, _):
+    def hikka_commands(self, _) -> None:
         pass
 
     @inline_handlers.setter
-    def inline_handlers(self, _):
+    def inline_handlers(self, _) -> None:
         pass
 
     @hikka_inline_handlers.setter
-    def hikka_inline_handlers(self, _):
+    def hikka_inline_handlers(self, _) -> None:
         pass
 
     @callback_handlers.setter
-    def callback_handlers(self, _):
+    def callback_handlers(self, _) -> None:
         pass
 
     @hikka_callback_handlers.setter
-    def hikka_callback_handlers(self, _):
+    def hikka_callback_handlers(self, _) -> None:
         pass
 
     @watchers.setter
-    def watchers(self, _):
+    def watchers(self, _) -> None:
         pass
 
     @hikka_watchers.setter
-    def hikka_watchers(self, _):
+    def hikka_watchers(self, _) -> None:
         pass
 
     async def animate(
@@ -659,7 +662,9 @@ class Module:
 class Library:
     """All external libraries must have a class-inheritant from this class"""
 
-    def internal_init(self):
+    allmodules: "Modules"
+
+    def internal_init(self) -> None:
         self.name = self.__class__.__name__
         self.db = self.allmodules.db
         self._db = self.allmodules.db
@@ -823,7 +828,7 @@ class ModuleConfig(dict):
         except KeyError:
             return None
 
-    def reload(self):
+    def reload(self) -> None:
         for key in self._config:
             super().__setitem__(key, self._config[key].value)
 
@@ -831,7 +836,7 @@ class ModuleConfig(dict):
         self,
         key: str,
         validator: typing.Callable[[JSONSerializable], JSONSerializable],
-    ):
+    ) -> None:
         self._config[key].validator = validator
 
 
@@ -840,16 +845,6 @@ LibraryConfig = ModuleConfig
 
 class _Placeholder:
     """Placeholder to determine if the default value is going to be set"""
-
-
-async def wrap(func: typing.Callable[[], typing.Awaitable]) -> typing.Any:
-    with contextlib.suppress(Exception):
-        return await func()
-
-
-def syncwrap(func: typing.Callable[[], typing.Any]) -> typing.Any:
-    with contextlib.suppress(Exception):
-        return func()
 
 
 @dataclass(repr=True)
@@ -880,13 +875,11 @@ class ConfigValue:
         ignore_validation: bool = False,
     ):
         if key == "value":
-            try:
+            with contextlib.suppress(Exception):
                 value = ast.literal_eval(value)
-            except Exception:
-                pass
 
             # Convert value to list if it's tuple just not to mess up
-            # with json convertations
+            # with json conversions
             if isinstance(value, (set, tuple)):
                 value = list(value)
 
@@ -934,10 +927,11 @@ class ConfigValue:
         object.__setattr__(self, key, value)
 
         if key == "value" and not ignore_validation and callable(self.on_change):
-            if inspect.iscoroutinefunction(self.on_change):
-                asyncio.ensure_future(wrap(self.on_change))
-            else:
-                syncwrap(self.on_change)
+            with contextlib.suppress(Exception):
+                if inspect.iscoroutinefunction(self.on_change):
+                    asyncio.ensure_future(self.on_change())
+                else:
+                    self.on_change()
 
 
 def _get_members(

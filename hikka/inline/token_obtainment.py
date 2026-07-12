@@ -35,10 +35,10 @@ class TokenObtainment(InlineUnit):
             m = await conv.send_message("/newbot")
             r = await conv.get_response()
 
-            logger.debug(">> %s", m.raw_text)
-            logger.debug("<< %s", r.raw_text)
+            logger.debug(">> %s", m.text)
+            logger.debug("<< %s", r.text)
 
-            if "20" in r.raw_text:
+            if "20" in r.text:
                 return False
 
             await fw_protect()
@@ -67,8 +67,8 @@ class TokenObtainment(InlineUnit):
                 m = await conv.send_message(msg)
                 r = await conv.get_response()
 
-                logger.debug(">> %s", m.raw_text)
-                logger.debug("<< %s", r.raw_text)
+                logger.debug(">> %s", m.text)
+                logger.debug("<< %s", r.text)
 
                 await fw_protect()
 
@@ -80,14 +80,14 @@ class TokenObtainment(InlineUnit):
                 r = await conv.get_response()
 
                 logger.debug(">> <Photo>")
-                logger.debug("<< %s", r.raw_text)
+                logger.debug("<< %s", r.text)
             except Exception:
                 await fw_protect()
                 m = await conv.send_message("/cancel")
                 r = await conv.get_response()
 
-                logger.debug(">> %s", m.raw_text)
-                logger.debug("<< %s", r.raw_text)
+                logger.debug(">> %s", m.text)
+                logger.debug("<< %s", r.text)
 
             await fw_protect()
 
@@ -125,8 +125,8 @@ class TokenObtainment(InlineUnit):
 
             r = await conv.get_response()
 
-            logger.debug(">> %s", m.raw_text)
-            logger.debug("<< %s", r.raw_text)
+            logger.debug(">> %s", m.text)
+            logger.debug("<< %s", r.text)
 
             await fw_protect()
 
@@ -156,8 +156,8 @@ class TokenObtainment(InlineUnit):
                     m = await conv.send_message(button.text)
                     r = await conv.get_response()
 
-                    logger.debug(">> %s", m.raw_text)
-                    logger.debug("<< %s", r.raw_text)
+                    logger.debug(">> %s", m.text)
+                    logger.debug("<< %s", r.text)
 
                     if revoke_token:
                         await fw_protect()
@@ -165,18 +165,18 @@ class TokenObtainment(InlineUnit):
                         m = await conv.send_message("/revoke")
                         r = await conv.get_response()
 
-                        logger.debug(">> %s", m.raw_text)
-                        logger.debug("<< %s", r.raw_text)
+                        logger.debug(">> %s", m.text)
+                        logger.debug("<< %s", r.text)
 
                         await fw_protect()
 
                         m = await conv.send_message(button.text)
                         r = await conv.get_response()
 
-                        logger.debug(">> %s", m.raw_text)
-                        logger.debug("<< %s", r.raw_text)
+                        logger.debug(">> %s", m.text)
+                        logger.debug("<< %s", r.text)
 
-                    token = r.raw_text.splitlines()[1]
+                    token = r.text.splitlines()[1]
 
                     self._db.set("hikka.inline", "bot_token", token)
                     self._token = token
@@ -197,8 +197,8 @@ class TokenObtainment(InlineUnit):
                         m = await conv.send_message(msg)
                         r = await conv.get_response()
 
-                        logger.debug(">> %s", m.raw_text)
-                        logger.debug("<< %s", r.raw_text)
+                        logger.debug(">> %s", m.text)
+                        logger.debug("<< %s", r.text)
 
                     try:
                         await fw_protect()
@@ -210,14 +210,14 @@ class TokenObtainment(InlineUnit):
                         r = await conv.get_response()
 
                         logger.debug(">> <Photo>")
-                        logger.debug("<< %s", r.raw_text)
+                        logger.debug("<< %s", r.text)
                     except Exception:
                         await fw_protect()
                         m = await conv.send_message("/cancel")
                         r = await conv.get_response()
 
-                        logger.debug(">> %s", m.raw_text)
-                        logger.debug("<< %s", r.raw_text)
+                        logger.debug(">> %s", m.text)
+                        logger.debug("<< %s", r.text)
 
                     return True
 

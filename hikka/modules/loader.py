@@ -454,10 +454,10 @@ class LoaderMod(loader.Module):
         did_requirements: bool = False,
         save_fs: bool = False,
         blob_link: bool = False,
-    ):
+    ) -> None:
         if any(
             line.replace(" ", "") == "#scope:ffmpeg" for line in doc.splitlines()
-        ) and os.system("ffmpeg -version 1>/dev/null 2>/dev/null"):
+        ) and (not utils.is_ffmpeg_installed()):
             if isinstance(message, Message):
                 await utils.answer(message, self.get_string("ffmpeg_required"))
             return
@@ -661,7 +661,8 @@ class LoaderMod(loader.Module):
                 kwargs = utils.get_kwargs()
                 kwargs["did_requirements"] = True
 
-                return await self.load_module(**kwargs)  # Try again
+                await self.load_module(**kwargs)  # Try again
+                return
             except CoreOverwriteError as e:
                 await core_overwrite(e)
                 return
@@ -729,21 +730,12 @@ class LoaderMod(loader.Module):
             except CoreOverwriteError as e:
                 await core_overwrite(e)
                 return
-            except loader.LoadError as e:
-                with contextlib.suppress(Exception):
-                    await self.allmodules.unload_module(instance.__class__.__name__)
-
-                with contextlib.suppress(Exception):
-                    self.allmodules.modules.remove(instance)
-
-                if message:
-                    await utils.answer(
-                        message,
-                        (f"😖 <b>{utils.escape_html(str(e))}</b>"),
+            except (loader.LoadError, loader.SelfUnload) as e:
+                if isinstance(e, loader.SelfUnload):
+                    logger.debug(
+                        "Unloading %s, because it raised `SelfUnload`", instance
                     )
-                return
-            except loader.SelfUnload as e:
-                logger.debug("Unloading %s, because it raised `SelfUnload`", instance)
+
                 with contextlib.suppress(Exception):
                     await self.allmodules.unload_module(instance.__class__.__name__)
 
@@ -753,7 +745,7 @@ class LoaderMod(loader.Module):
                 if message:
                     await utils.answer(
                         message,
-                        (f"😖 <b>{utils.escape_html(str(e))}</b>"),
+                        f"😖 <b>{utils.escape_html(str(e))}</b>",
                     )
                 return
             except loader.SelfSuspend as e:

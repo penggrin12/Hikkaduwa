@@ -37,6 +37,7 @@ import re
 import shlex
 import signal
 import string
+import subprocess
 import time
 import typing
 from datetime import timedelta
@@ -44,8 +45,6 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import asyncstdlib
-
-# import git
 import grapheme
 import pyrogram.errors
 import pyrogram.utils
@@ -1527,3 +1526,13 @@ def get_reply_parameters(
         if reply_to_message_id
         else None
     )
+
+
+def is_ffmpeg_installed() -> bool:
+    try:
+        subprocess.run(
+            ["ffmpeg", "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        return True
+    except FileNotFoundError:
+        return False

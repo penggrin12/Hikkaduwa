@@ -22,7 +22,6 @@ from pyrogram.utils import parse_text_entities
 from . import utils
 
 if typing.TYPE_CHECKING:
-    from .client import HikkaClient
     from .types import BotInlineCall, Module
 
 

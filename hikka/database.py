@@ -190,6 +190,7 @@ class Database(dict):
         if isinstance(message, Message) and (not message.document):
             raise Exception("Can't save asset with no document")
 
+        # noinspection PyUnresolvedReferences
         if not (
             msg := await self._client.send_document(
                 chat_id=self._assets,
@@ -212,9 +213,11 @@ class Database(dict):
                 "Tried to fetch asset from non-existing asset channel"
             )
 
-        asset = await self._client.get_messages(self._assets, ids=[asset_id])
+        assets = await self._client.get_messages(
+            chat_id=self._assets, message_ids=[asset_id]
+        )
 
-        return asset[0] if asset else None
+        return assets[0] if assets else None
 
     # noinspection PyMethodOverriding
     def get(

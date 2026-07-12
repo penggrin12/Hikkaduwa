@@ -5,6 +5,7 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
+import base64
 import contextlib
 import functools
 import io
@@ -18,8 +19,10 @@ from copy import deepcopy
 from urllib.parse import urlparse
 
 import pyrogram
+import pyrogram.errors
 import pyrogram.utils
 from aiogram.exceptions import (
+    TelegramAPIError,
     TelegramBadRequest,
     TelegramNotFound,
     TelegramRetryAfter,
@@ -28,7 +31,6 @@ from aiogram.types import (
     CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    InputFile,
     InputMediaAnimation,
     InputMediaAudio,
     InputMediaDocument,
@@ -36,13 +38,35 @@ from aiogram.types import (
     InputMediaVideo,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from pyrogram.raw.base import reply_markup
 
 from .. import utils
 from ..types import HikkaReplyMarkup
-from .types import InlineCall, InlineUnit
+from .types import BytesIOInputFile, InlineCall, InlineUnit
 
 logger = logging.getLogger(__name__)
+
+
+def _unpack_inline_message_id(inline_message_id: str) -> tuple[int, int, int]:
+    """
+    :returns: (dc_id, message_id, chat_id)
+    """
+
+    # len(buff):
+    # supergroup = 24
+    # group & dm = 20
+
+    typing.cast(str, None)
+
+    padded: str = inline_message_id + "=" * (-len(inline_message_id) % 4)
+    buff: bytes = base64.urlsafe_b64decode(padded)
+
+    if len(buff) == 20:
+        return struct.unpack("<iii", buff[:12])
+    elif len(buff) == 24:
+        # noinspection SpellCheckingInspection
+        dc_id, chat_id, message_id, access_hash = struct.unpack("<iqiq", buff)
+        return dc_id, message_id, chat_id
+    raise ValueError("Invalid inline message id")
 
 
 class Utils(InlineUnit):
@@ -83,11 +107,9 @@ class Utils(InlineUnit):
                 if "callback" not in button:
                     if button.get("action") == "close":
                         button["callback"] = self._close_unit_handler
-
-                    if button.get("action") == "unload":
+                    elif button.get("action") == "unload":
                         button["callback"] = self._unload_unit_handler
-
-                    if button.get("action") == "answer":
+                    elif button.get("action") == "answer":
                         if not button.get("message"):
                             logger.error(
                                 "Button %s has no `message` to answer with", button
@@ -386,16 +408,16 @@ class Utils(InlineUnit):
             media.name = "upload.mp4"
 
         if isinstance(media, io.BytesIO):
-            media = InputFile(media)
+            media = BytesIOInputFile(media)
 
         if file:
-            media = InputMediaDocument(media, caption=text, parse_mode="HTML")
+            media = InputMediaDocument(media=media, caption=text, parse_mode="HTML")
         elif photo:
-            media = InputMediaPhoto(media, caption=text, parse_mode="HTML")
+            media = InputMediaPhoto(media=media, caption=text, parse_mode="HTML")
         elif audio:
             if isinstance(audio, dict):
                 media = InputMediaAudio(
-                    audio["url"],
+                    media=audio["url"],
                     title=audio.get("title"),
                     performer=audio.get("performer"),
                     duration=audio.get("duration"),
@@ -404,14 +426,14 @@ class Utils(InlineUnit):
                 )
             else:
                 media = InputMediaAudio(
-                    audio,
+                    media=audio,
                     caption=text,
                     parse_mode="HTML",
                 )
         elif video:
-            media = InputMediaVideo(media, caption=text, parse_mode="HTML")
+            media = InputMediaVideo(media=media, caption=text, parse_mode="HTML")
         elif gif:
-            media = InputMediaAnimation(media, caption=text, parse_mode="HTML")
+            media = InputMediaAnimation(media=media, caption=text, parse_mode="HTML")
 
         if media is None and text is None and reply_markup:
             try:
@@ -532,7 +554,8 @@ class Utils(InlineUnit):
                     chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
                 )
-            except Exception:
+            except TelegramAPIError as e:
+                logging.error("Failed to delete an inline message", exc_info=e)
                 return False
 
             return True
@@ -540,7 +563,8 @@ class Utils(InlineUnit):
         if chat_id and message_id:
             try:
                 await self.bot.delete_message(chat_id=chat_id, message_id=message_id)
-            except Exception:
+            except TelegramAPIError as e:
+                logging.error("Failed to delete an inline message", exc_info=e)
                 return False
 
             return True
@@ -549,16 +573,18 @@ class Utils(InlineUnit):
             unit_id = call.unit_id
 
         try:
-            # TODO
-            x = pyrogram.utils.unpack_inline_message_id(
+            _, message_id, chat_id = _unpack_inline_message_id(
                 self._units[unit_id]["inline_message_id"]
             )
+            # it seems to always need a -100 prefix if its negative
+            # should it be in the helper function?
+            if chat_id < 0:
+                chat_id = pyrogram.utils.ZERO_CHANNEL_ID + chat_id
 
-            message_id = x.id
-
-            await self._client.delete_messages(x.owner_id, [message_id])
+            await self._client.delete_messages(chat_id, [message_id])
             await self._unload_unit(unit_id)
-        except Exception:
+        except pyrogram.errors.RPCError as e:
+            logging.error("Failed to delete an inline message", exc_info=e)
             return False
 
         return True

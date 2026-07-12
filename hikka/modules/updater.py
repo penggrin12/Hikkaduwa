@@ -150,7 +150,9 @@ class UpdaterMod(loader.Module):
     ):
         # We don't really care about asyncio at this point, as we are shutting down
         if hard:
-            os.system(f"cd {utils.get_base_dir()} && cd .. && git reset --hard HEAD")
+            subprocess.run(
+                f"cd {utils.get_base_dir()} && cd .. && git reset --hard HEAD"
+            )
 
         with contextlib.suppress(Exception):
             msg_obj = await utils.answer(msg_obj, self.get_string("downloading"))

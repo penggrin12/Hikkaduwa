@@ -30,10 +30,10 @@ class InlineStuff(loader.Module):
 
     @loader.watcher("out", "only_inline", contains="Opening gallery...")
     async def gallery_watcher(self, message: Message):
-        if message.via_bot_id != self.inline.bot_id:
+        if (message.via_bot_id != self.inline.bot_id) or (not message.text):
             return
 
-        id_ = re.search(r"#id: ([a-zA-Z0-9]+)", message.raw_text)[1]
+        id_ = re.search(r"#id: ([a-zA-Z0-9]+)", message.text)[1]
 
         await message.delete()
 

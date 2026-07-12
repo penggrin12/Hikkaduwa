@@ -5,7 +5,6 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
-import atexit
 import logging
 import os
 import random
@@ -17,7 +16,7 @@ import typing
 from .platform import IS_WINDOWS
 
 
-async def fw_protect():
+async def fw_protect() -> None:
     await asyncio.sleep(random.randint(1000, 3000) / 1000)
 
 
@@ -31,7 +30,7 @@ def get_startup_callback() -> typing.Callable:
     )
 
 
-def restart_windows_test():
+def restart_windows_test() -> None:
     # TODO
     subprocess.run(
         [
@@ -47,7 +46,7 @@ def restart_windows_test():
     )
 
 
-def die():
+def die() -> None:
     """Platform-dependent way to kill the current process group"""
     if IS_WINDOWS:
         os.kill(os.getpid(), signal.SIGTERM)
@@ -56,7 +55,7 @@ def die():
     os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
 
 
-def restart():
+def restart() -> None:
     if "HIKKA_DO_NOT_RESTART" in os.environ:
         print("Got in a loop, exiting.")
         sys.exit(0)

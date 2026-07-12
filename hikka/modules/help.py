@@ -274,17 +274,16 @@ class Help(loader.Module):
                 else:
                     plain_ += [tmp]
 
+        hidden_mods_count = sum(
+            module.__class__.__name__ in hidden for module in self.allmodules.modules
+        ) + len(no_commands_)
+        core_mods_count = len(core_)
+        visible_mods_count = (
+            len(self.allmodules.modules) - hidden_mods_count - core_mods_count
+        )
+
         reply = self.get_string("all_header").format(
-            len(self.allmodules.modules),
-            (
-                0
-                if force
-                else sum(
-                    module.__class__.__name__ in hidden
-                    for module in self.allmodules.modules
-                )
-                + len(no_commands_)
-            ),
+            visible_mods_count, core_mods_count, hidden_mods_count
         )
 
         plain_.sort(key=lambda x: x.split()[1])

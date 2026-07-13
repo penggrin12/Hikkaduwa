@@ -150,7 +150,7 @@ class Utils(InlineUnit):
                     elif "callback" in button:
                         line += [
                             InlineKeyboardButton(
-                                text=button["text"],
+                                text=str(button["text"]),
                                 callback_data=button["_callback_data"],
                             )
                         ]

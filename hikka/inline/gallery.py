@@ -404,14 +404,14 @@ class Gallery(InlineUnit):
                 inline_message_id=call.inline_message_id,
                 reply_markup=self._gallery_markup(unit_id),
             )
-            await call.answer("✅ Slideshow on")
+            await call.answer("✅ Slideshow on").as_(self.bot)
         else:
             del self._units[unit_id]["slideshow"]
             await self.bot.edit_message_reply_markup(
                 inline_message_id=call.inline_message_id,
                 reply_markup=self._gallery_markup(unit_id),
             )
-            await call.answer("🚫 Slideshow off")
+            await call.answer("🚫 Slideshow off").as_(self.bot)
             return
 
         asyncio.ensure_future(
@@ -659,7 +659,7 @@ class Gallery(InlineUnit):
                         ext = None
 
                     args = {
-                        "thumb_url": "https://img.icons8.com/fluency/344/loading.png",
+                        "thumbnail_url": "https://img.icons8.com/fluency/344/loading.png",
                         "caption": self._get_caption(unit["uid"], index=0),
                         "parse_mode": "HTML",
                         "reply_markup": self._gallery_markup(unit["uid"]),

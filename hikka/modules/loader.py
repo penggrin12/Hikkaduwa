@@ -23,6 +23,7 @@ import typing
 import uuid
 from collections import ChainMap
 from importlib.machinery import ModuleSpec
+from io import TextIOWrapper
 from subprocess import PIPE
 from urllib.parse import urlparse
 
@@ -362,7 +363,9 @@ class LoaderMod(loader.Module):
         logger.debug("Loading external module...")
 
         try:
-            doc: str = file.getvalue().decode(encoding="utf-8")
+            t = TextIOWrapper(buffer=file, encoding="utf-8-sig", newline=None)
+            t.seek(0)
+            doc: str = t.read()
         except UnicodeDecodeError:
             await utils.answer(message, self.get_string("bad_unicode"))
             return

@@ -647,7 +647,9 @@ class Modules:
             (
                 value()
                 for value in vars(module).values()
-                if inspect.isclass(value) and issubclass(value, Module)
+                if inspect.isclass(value)
+                and issubclass(value, Module)
+                and (value is not Module)
             ),
             None,
         )

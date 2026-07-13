@@ -50,6 +50,7 @@ import pyrogram.errors
 import pyrogram.utils
 import requests
 from aiogram.types import Message as AiogramMessage
+from pyrogram.enums import MessageMediaType
 from pyrogram.types import Chat, Message, MessageEntity, User
 
 from . import hints
@@ -1342,8 +1343,10 @@ def get_kwargs() -> dict[str, typing.Any]:
     :return: kwargs
     """
     # https://stackoverflow.com/a/65927265/19170642
-    keys, _, _, values = inspect.getargvalues(inspect.currentframe().f_back)
-    return {key: values[key] for key in keys if key != "self"}
+    if (not (frame := inspect.currentframe())) or (not (frame := frame.f_back)):
+        return {}
+    keys, _, _, values = inspect.getargvalues(frame)
+    return {key: values[key] for key in keys if key not in frozenset({"self", "cls"})}
 
 
 def mime_type(message: Message) -> str:
@@ -1352,11 +1355,19 @@ def mime_type(message: Message) -> str:
     :param message: Message with document
     :return: Mime type or empty string if not present
     """
-    return (
-        ""
-        if not isinstance(message, Message) or not getattr(message, "media", False)
-        else getattr(getattr(message, "media", False), "mime_type", False) or ""
-    )
+    # TODO: only need the prefix for how we're using it
+    if (not isinstance(message, Message)) or (message.media is None):
+        return ""
+
+    match message.media:
+        case MessageMediaType.PHOTO:
+            return "image/"
+        case MessageMediaType.VIDEO:
+            return "video/"
+        case MessageMediaType.AUDIO:
+            return "audio/"
+        case _:
+            return ""
 
 
 def find_caller(

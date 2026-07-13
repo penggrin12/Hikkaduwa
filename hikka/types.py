@@ -934,12 +934,13 @@ class ConfigValue:
                         "Float": 0.0,
                     }
 
-                    if self.validator.internal_id in defaults:
+                    # noinspection PyTypeChecker
+                    if (
+                        value := defaults.get(self.validator.internal_id, None)
+                    ) is not None:
                         logger.debug(
-                            "Config value was None, so it was reset to %s",
-                            defaults[self.validator.internal_id],
+                            "Config value was None, so it was reset to %s", value
                         )
-                        value = defaults[self.validator.internal_id]
 
             # This attribute will tell the `Loader` to save this value in db
             self._save_marker = True

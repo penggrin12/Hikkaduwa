@@ -77,7 +77,7 @@ class HikkaConfigMod(loader.Module):
             self.lookup(mod).config[option] = query
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.get_string("validation_error").format(e.args[0]),
+                self.get_string("validation_error").format(e.msg),
                 reply_markup={
                     "text": self.get_string("try_again"),
                     "callback": self.inline__configure_option,
@@ -152,7 +152,7 @@ class HikkaConfigMod(loader.Module):
             self.lookup(mod).config[option] = value
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.get_string("validation_error").format(e.args[0]),
+                self.get_string("validation_error").format(e.msg),
                 reply_markup={
                     "text": self.get_string("try_again"),
                     "callback": self.inline__configure_option,
@@ -281,7 +281,7 @@ class HikkaConfigMod(loader.Module):
             self.lookup(mod).config[option] = self.lookup(mod).config[option] + query
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.get_string("validation_error").format(e.args[0]),
+                self.get_string("validation_error").format(e.msg),
                 reply_markup={
                     "text": self.get_string("try_again"),
                     "callback": self.inline__configure_option,
@@ -346,7 +346,7 @@ class HikkaConfigMod(loader.Module):
                 )
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.get_string("validation_error").format(e.args[0]),
+                self.get_string("validation_error").format(e.msg),
                 reply_markup={
                     "text": self.get_string("try_again"),
                     "callback": self.inline__configure_option,
@@ -455,7 +455,7 @@ class HikkaConfigMod(loader.Module):
             self.lookup(mod).config[option] = value
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.get_string("validation_error").format(e.args[0]),
+                self.get_string("validation_error").format(e.msg),
                 reply_markup={
                     "text": self.get_string("try_again"),
                     "callback": self.inline__configure_option,
@@ -505,7 +505,7 @@ class HikkaConfigMod(loader.Module):
             self.lookup(mod).config.reload()
         except loader.validators.ValidationError as e:
             await call.edit(
-                self.get_string("validation_error").format(e.args[0]),
+                self.get_string("validation_error").format(e.msg),
                 reply_markup={
                     "text": self.get_string("try_again"),
                     "callback": self.inline__configure_option,

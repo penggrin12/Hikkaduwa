@@ -26,6 +26,10 @@ class ValidationError(Exception):
     It will be shown in .config, if user tries to set incorrect value
     """
 
+    def __init__(self, msg: str = "Unknown") -> None:
+        self.msg: str = msg
+        super().__init__(self.msg)
+
 
 class Validator:
     """
@@ -54,7 +58,7 @@ class Validator:
         self,
         validator: typing.Callable,
         doc: str | dict | None = None,
-        _internal_id: int | None = None,
+        _internal_id: str | None = None,
     ):
         self.validate = validator
 
@@ -71,7 +75,15 @@ class Boolean(Validator):
     `1`, `"1"` etc. will be automatically converted to bool
     """
 
-    def __init__(self):
+    TRUE: frozenset = frozenset(
+        {True, "True", "true", "1", "yes", "Yes", "on", "On", "y", "Y"}
+    )
+    FALSE: frozenset = frozenset(
+        {False, "False", "false", "0", "no", "No", "off", "Off", "n", "N"}
+    )
+    TRUEFALSE: frozenset = TRUE.union(FALSE)
+
+    def __init__(self) -> None:
         super().__init__(
             self._validate,
             translator.getdict("validators.boolean"),
@@ -80,12 +92,9 @@ class Boolean(Validator):
 
     @staticmethod
     def _validate(value: ConfigAllowedTypes, /) -> bool:
-        true = ["True", "true", "1", 1, True, "yes", "Yes", "on", "On", "y", "Y"]
-        false = ["False", "false", "0", 0, False, "no", "No", "off", "Off", "n", "N"]
-        if value not in true + false:
+        if value not in Boolean.TRUEFALSE:
             raise ValidationError("Passed value must be a boolean")
-
-        return value in true
+        return value in Boolean.TRUE
 
 
 class Integer(Validator):
@@ -277,7 +286,6 @@ class MultiChoice(Validator):
 class Series(Validator):
     """
     Represents the series of value (simply `list`)
-    :param separator: With which separator values must be separated
     :param validator: Internal validator for each sequence value
     :param min_len: Minimal number of series items to be passed
     :param max_len: Maximum number of series items to be passed
@@ -292,6 +300,8 @@ class Series(Validator):
         fixed_len: int | None = None,
     ):
         def trans(lang: str) -> str:
+            if (not validator) or (not validator.doc):
+                return "Unknown"
             return validator.doc.get(lang, validator.doc["en"])
 
         _each = (
@@ -372,12 +382,15 @@ class Series(Validator):
                 except ValidationError:
                     raise ValidationError(
                         f"Passed value ({value}) contains invalid item"
-                        f" ({str(item).strip()}), which must be {validator.doc['en']}"
+                        f" ({str(item).strip()}), which must be {validator.doc['en'] if validator.doc else 'Unknown'}"
                     )
 
         value = list(filter(lambda x: x, value))
 
         return value
+
+
+List: typing.TypeAlias = Series
 
 
 class Link(Validator):

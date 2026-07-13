@@ -9,18 +9,21 @@ import logging
 import time
 import typing
 
-from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
+from aiogram.types import InlineQueryResultArticle, InputTextMessageContent
 
 from .. import utils
 from .types import InlineUnit
 
+if typing.TYPE_CHECKING:
+    from aiogram.types import InlineQuery
+
 logger = logging.getLogger(__name__)
 
 
-class QueryGallery(InlineUnit):
-    async def query_gallery(
+class InlineQueryGallery(InlineUnit):
+    async def __call__(
         self,
-        query: InlineQuery,
+        query: "InlineQuery",
         items: list[dict[str, typing.Any]],
         *,
         force_me: bool = False,
@@ -34,7 +37,7 @@ class QueryGallery(InlineUnit):
                       Each dict *must* has a:
                           - `title` - The title of the result
                           - `description` - Short description of the result
-                          - `next_handler` - Inline gallery handler. Callback or awaitable
+                          - `next_handler` - Inline gallery handler. NextHandlerCallback
                       Each dict *can* has a:
                           - `caption` - Caption of photo. Defaults to `""`
                           - `force_me` - Whether the button must be accessed only by owner. Defaults to `False`
@@ -78,8 +81,8 @@ class QueryGallery(InlineUnit):
                 and "next_handler" in i
                 and (
                     callable(i["next_handler"])
-                    or inspect.iscoroutinefunction(i)
-                    or isinstance(i, list)
+                    or inspect.iscoroutinefunction(i["next_handler"])
+                    or isinstance(i["next_handler"], list)
                 )
                 and isinstance(i["title"], str)
                 and isinstance(i["description"], str)
@@ -92,7 +95,7 @@ class QueryGallery(InlineUnit):
         result = []
         for i in items:
             if "thumb_handler" not in i:
-                photo_url = await self._call_photo(i["next_handler"])
+                photo_url = await self._manager.gallery._call_photo(i["next_handler"])
                 if not photo_url:
                     return False
 
@@ -106,7 +109,7 @@ class QueryGallery(InlineUnit):
                     )
                     continue
             else:
-                photo_url = await self._call_photo(i["thumb_handler"])
+                photo_url = await self._manager.gallery._call_photo(i["thumb_handler"])
                 if not photo_url:
                     return False
 
@@ -122,7 +125,7 @@ class QueryGallery(InlineUnit):
 
             id_ = utils.rand(16)
 
-            self._custom_map[id_] = {
+            self._manager._custom_map[id_] = {
                 "handler": i["next_handler"],
                 "ttl": round(time.time()) + 120,
                 **({"always_allow": always_allow} if always_allow else {}),

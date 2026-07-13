@@ -206,8 +206,8 @@ class BotInlineCall(CallbackQuery, BotInlineMessage):
 class InlineUnit:
     """InlineManager extension type. For internal use only"""
 
-    def __init__(self) -> None:
-        """Made just for type specification"""
+    def __init__(self, manager: "InlineManager") -> None:
+        self._manager: "InlineManager" = manager
 
 
 class BotMessage(AiogramMessage):

@@ -7,7 +7,6 @@
 import asyncio
 import logging
 import re
-import typing
 
 import pyrogram.errors
 
@@ -15,22 +14,17 @@ from .. import utils
 from .._internal import fw_protect
 from .types import InlineUnit
 
-if typing.TYPE_CHECKING:
-    from ..client import HikkaClient
-    from ..database import Database
-
 logger = logging.getLogger(__name__)
 
 
-class TokenObtainment(InlineUnit):
-    _client: "HikkaClient"
-    _db: "Database"
-
+class InlineTokenObtainment(InlineUnit):
     async def _create_bot(self) -> None:
         logger.info("User doesn't have bot, attempting creating new one")
         # TODO: no conversation in pyrogram
         return
-        async with self._client.conversation("@BotFather", exclusive=False) as conv:
+        async with self._manager._client.conversation(
+            "@BotFather", exclusive=False
+        ) as conv:
             await fw_protect()
             m = await conv.send_message("/newbot")
             r = await conv.get_response()
@@ -43,22 +37,20 @@ class TokenObtainment(InlineUnit):
 
             await fw_protect()
 
-            if self._db.get("hikka.inline", "custom_bot", False):
-                username = self._db.get("hikka.inline", "custom_bot").strip("@")
-                username = f"@{username}"
+            db_username = self._manager._db.get("hikka.inline", "custom_bot", None)
+            if isinstance(db_username, str):
+                username = f"@{db_username.strip('@')}"
                 try:
-                    await self._client.get_entity(username)
+                    await self._manager._client.get_chat(username)
                 except ValueError:
                     pass
                 else:
-                    uid = utils.rand(6)
-                    username = f"@hikka_{uid}_bot"
+                    username = f"@hikka_{utils.rand(6)}_bot"
             else:
-                uid = utils.rand(6)
-                username = f"@hikka_{uid}_bot"
+                username = f"@hikka_{utils.rand(6)}_bot"
 
             for msg in [
-                f"🌘 Hikkaduwa Userbot of {self._name}"[:64],
+                f"🌘 Hikkaduwa Userbot of {self._manager._name}"[:64],
                 username,
                 "/setuserpic",
                 username,
@@ -98,7 +90,7 @@ class TokenObtainment(InlineUnit):
         create_new_if_needed: bool = True,
         revoke_token: bool = False,
     ) -> bool:
-        if self._token:
+        if self._manager._token:
             return True
 
         logger.info("Bot token not found in db, attempting search in BotFather")
@@ -106,20 +98,18 @@ class TokenObtainment(InlineUnit):
         # TODO: no conversation in pyrogram
         return False
 
-        if not self._db.get(__name__, "no_mute", False):
-            await utils.dnd(
-                self._client,
-                await self._client.get_entity("@BotFather"),
-                True,
-            )
-            self._db.set(__name__, "no_mute", True)
+        if not self._manager._db.get(__name__, "no_mute", False):
+            await utils.dnd(self._manager._client, "@BotFather", True)
+            self._manager._db.set(__name__, "no_mute", True)
 
-        async with self._client.conversation("@BotFather", exclusive=False) as conv:
+        async with self._manager._client.conversation(
+            "@BotFather", exclusive=False
+        ) as conv:
             try:
                 await fw_protect()
                 m = await conv.send_message("/token")
             except pyrogram.errors.YouBlockedUser:
-                await self._client.unblock_user("@BotFather")
+                await self._manager._client.unblock_user("@BotFather")
                 await fw_protect()
                 m = await conv.send_message("/token")
 
@@ -137,14 +127,14 @@ class TokenObtainment(InlineUnit):
 
             for row in r.reply_markup.rows:
                 for button in row.buttons:
-                    if self._db.get(
+                    if self._manager._db.get(
                         "hikka.inline", "custom_bot", False
-                    ) and self._db.get(
+                    ) and self._manager._db.get(
                         "hikka.inline", "custom_bot", False
                     ) != button.text.strip("@"):
                         continue
 
-                    if not self._db.get(
+                    if not self._manager._db.get(
                         "hikka.inline",
                         "custom_bot",
                         False,
@@ -178,8 +168,8 @@ class TokenObtainment(InlineUnit):
 
                     token = r.text.splitlines()[1]
 
-                    self._db.set("hikka.inline", "bot_token", token)
-                    self._token = token
+                    self._manager._db.set("hikka.inline", "bot_token", token)
+                    self._manager._token = token
 
                     await fw_protect()
 
@@ -228,15 +218,15 @@ class TokenObtainment(InlineUnit):
         if not is_token_asserted:
             self.init_complete = False
         else:
-            await self.register_manager(ignore_token_checks=True)
+            await self._manager.register_manager(ignore_token_checks=True)
 
     async def _dp_revoke_token(self, already_initialised: bool = True) -> None:
         if already_initialised:
-            await self._stop()
+            await self._manager._stop()
             logger.error("Got polling conflict. Attempting token revocation...")
 
-        self._db.set("hikka.inline", "bot_token", None)
-        self._token = None
+        self._manager._db.set("hikka.inline", "bot_token", None)
+        self._manager._token = None
         if already_initialised:
             asyncio.ensure_future(self._reassert_token())
         else:

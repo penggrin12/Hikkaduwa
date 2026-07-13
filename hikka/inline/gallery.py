@@ -28,6 +28,7 @@ from aiogram.types import (
     InputMediaPhoto,
 )
 from pyrogram.types import Message
+from typing_extensions import assert_never
 
 from .. import main, utils
 from ..types import HikkaReplyMarkup
@@ -35,9 +36,13 @@ from .types import InlineMessage, InlineUnit
 
 logger = logging.getLogger(__name__)
 
+NextHandlerCallback: typing.TypeAlias = (
+    typing.Callable[[], typing.Awaitable[str] | str] | list[str]
+)
+
 
 class ListGalleryHelper:
-    def __init__(self, lst: list[str]):
+    def __init__(self, lst: list[str]) -> None:
         self.lst = lst
         self._current_index = -1
 
@@ -49,11 +54,11 @@ class ListGalleryHelper:
         return self.lst[index % len(self.lst)]
 
 
-class Gallery(InlineUnit):
-    async def gallery(
+class InlineGallery(InlineUnit):
+    async def __call__(
         self,
         message: Message | int,
-        next_handler: typing.Callable | list[str],
+        next_handler: NextHandlerCallback,
         caption: list[str] | str | typing.Callable = "",
         *,
         custom_buttons: HikkaReplyMarkup | None = None,
@@ -72,7 +77,7 @@ class Gallery(InlineUnit):
         Send inline gallery to chat
         :param caption: Caption for photo, or callable, returning caption
         :param message: Where to send inline. Can be either `Message` or `int`
-        :param next_handler: Callback function, which must return url for next photo or list with photo urls
+        :param next_handler: Callback function (optionally async), which must return url for next photo or list with photo urls
         :param custom_buttons: Custom buttons to add above native ones
         :param force_me: Either this gallery buttons must be pressed only by owner scope or no
         :param always_allow: Users, that are allowed to press buttons in addition to previous rules
@@ -94,9 +99,9 @@ class Gallery(InlineUnit):
         :return: If gallery is sent, returns :obj:`InlineMessage`, otherwise returns `False`
         """
         with contextlib.suppress(AttributeError):
-            _hikka_client_id_logging_tag = copy.copy(self._client.tg_id)  # noqa: F841
+            _hikka_client_id_logging_tag = copy.copy(self._manager._client.tg_id)  # noqa: F841
 
-        custom_buttons = self._validate_markup(custom_buttons)
+        custom_buttons = self._manager.utils._validate_markup(custom_buttons)
 
         if not (
             isinstance(caption, str)
@@ -199,20 +204,21 @@ class Gallery(InlineUnit):
             if isinstance(next_handler, ListGalleryHelper):
                 photo_url = next_handler.lst
             else:
-                photo_url = await self._call_photo(next_handler)
-                if not photo_url:
+                if not (photo_url := await self._call_photo(next_handler)):
                     return False
         except Exception:
             logger.exception("Error while parsing first photo in gallery")
             return False
 
-        self._units[unit_id] = {
+        self._manager._units[unit_id] = {
             "type": "gallery",
             "caption": caption,
             "caller": message,
             "chat": None,
             "message_id": None,
-            "top_msg_id": utils.get_topic(message),
+            "top_msg_id": (
+                utils.get_topic(message) if isinstance(message, Message) else None
+            ),
             "uid": unit_id,
             "photo_url": photo_url if isinstance(photo_url, str) else photo_url[0],
             "next_handler": next_handler,
@@ -231,16 +237,14 @@ class Gallery(InlineUnit):
             **({"custom_buttons": custom_buttons} if custom_buttons else {}),
         }
 
-        self._custom_map[btn_call_data] = {
-            "handler": asyncio.coroutine(
-                functools.partial(
-                    self._gallery_page,
-                    unit_id=unit_id,
-                )
+        self._manager._custom_map[btn_call_data] = {
+            "handler": functools.partial(
+                self._gallery_page,
+                unit_id=unit_id,
             ),
             **(
-                {"ttl": self._units[unit_id]["ttl"]}
-                if "ttl" in self._units[unit_id]
+                {"ttl": self._manager._units[unit_id]["ttl"]}
+                if "ttl" in self._manager._units[unit_id]
                 else {}
             ),
             **({"always_allow": always_allow} if always_allow else {}),
@@ -253,7 +257,7 @@ class Gallery(InlineUnit):
             try:
                 status_message = await (
                     message.edit if message.outgoing else message.answer
-                )(text="🌘" + self.translator.getkey("inline.opening_gallery"))
+                )(text="🌘" + self._manager.translator.getkey("inline.opening_gallery"))
             except Exception:
                 status_message = None
         else:
@@ -264,29 +268,31 @@ class Gallery(InlineUnit):
             if isinstance(message, Message):
                 await (message.edit if message.outgoing else message.answer)(text=msg)
             else:
-                await self._client.send_message(message, msg)
+                await self._manager._client.send_message(message, msg)
 
         try:
-            m = await self._invoke_unit(unit_id, message)
+            m = await self._manager._invoke_unit(unit_id, message)
         except pyrogram.errors.ChatSendInlineForbidden:
-            await answer(self.translator.getkey("inline.inline403"))
+            await answer(self._manager.translator.getkey("inline.inline403"))
+            del self._manager._units[unit_id]
+            return False
         except Exception:
             logger.exception("Error sending inline gallery")
 
-            del self._units[unit_id]
+            del self._manager._units[unit_id]
 
             if _reattempt:
                 logger.exception("Can't send gallery")
 
-                del self._units[unit_id]
+                del self._manager._units[unit_id]
                 await answer(
-                    self.translator.getkey("inline.invoke_failed_logs").format(
+                    self._manager.translator.getkey("inline.invoke_failed_logs").format(
                         utils.escape_html(
                             "\n".join(traceback.format_exc().splitlines()[1:])
                         )
                     )
-                    if self._db.get(main.__name__, "inlinelogs", True)
-                    else self.translator.getkey("inline.invoke_failed")
+                    if self._manager._db.get(main.__name__, "inlinelogs", True)
+                    else self._manager.translator.getkey("inline.invoke_failed")
                 )
 
                 return False
@@ -294,32 +300,30 @@ class Gallery(InlineUnit):
             kwargs = utils.get_kwargs()
             kwargs["_reattempt"] = True
 
-            return await self.gallery(**kwargs)
+            return await self(**kwargs)
 
-        await self._units[unit_id]["future"].wait()
-        del self._units[unit_id]["future"]
+        await self._manager._units[unit_id]["future"].wait()
+        del self._manager._units[unit_id]["future"]
 
-        self._units[unit_id]["chat"] = utils.get_chat_id_keep_minus100(m)
-        self._units[unit_id]["message_id"] = m.id
+        self._manager._units[unit_id]["chat"] = utils.get_chat_id_keep_minus100(m)
+        self._manager._units[unit_id]["message_id"] = m.id
 
         if isinstance(message, Message) and message.outgoing:
-            await message.delete()
-
-        if status_message and not message.outgoing:
-            await status_message.delete()
+            if message.outgoing:
+                await message.delete()
+            elif status_message:
+                await status_message.delete()
 
         if not isinstance(next_handler, ListGalleryHelper):
             asyncio.ensure_future(self._load_gallery_photos(unit_id))
 
-        return InlineMessage(self, unit_id, self._units[unit_id]["inline_message_id"])
+        return InlineMessage(
+            self._manager, unit_id, self._manager._units[unit_id]["inline_message_id"]
+        )
 
-    async def _call_photo(
-        self,
-        callback: typing.Callable[[], typing.Awaitable[str]]
-        | typing.Callable[[], str]
-        | list[str],
-    ) -> str | typing.Literal[False]:
-        """Parses photo url from `callback`. Returns url on success, otherwise `False`"""
+    @staticmethod
+    async def _call_photo(callback: NextHandlerCallback) -> str | list[str] | None:
+        """Parses photo url from `callback`. Returns url or a list of urls on success, otherwise `None`"""
         if isinstance(callback, str):
             photo_url = callback
         elif isinstance(callback, list):
@@ -329,6 +333,8 @@ class Gallery(InlineUnit):
         elif callable(callback):
             photo_url = callback()
         else:
+            if typing.TYPE_CHECKING:
+                assert_never(callback)
             logger.error(
                 (
                     "Invalid type for `next_handler`. Expected `str`, `list` or"
@@ -350,115 +356,67 @@ class Gallery(InlineUnit):
 
         return photo_url
 
-    async def _load_gallery_photos(self, unit_id: str):
+    async def _load_gallery_photos(self, unit_id: str) -> None:
         """Preloads photo. Should be called via ensure_future"""
-        unit = self._units[unit_id]
+        unit = self._manager._units[unit_id]
 
         photo_url = await self._call_photo(unit["next_handler"])
+        if not photo_url:
+            return
 
-        self._units[unit_id]["photos"] += (
+        self._manager._units[unit_id]["photos"] += (
             [photo_url] if isinstance(photo_url, str) else photo_url
         )
 
-        unit = self._units[unit_id]
+        unit = self._manager._units[unit_id]
 
         if unit.get("preload", False) and len(unit["photos"]) - unit[
             "current_index"
         ] < unit.get("preload", False):
             asyncio.ensure_future(self._load_gallery_photos(unit_id))
 
-    async def _gallery_slideshow_loop(
-        self,
-        call: CallbackQuery,
-        unit_id: str | None = None,
-    ):
+    async def _gallery_slideshow_loop(self, call: CallbackQuery, unit_id: str) -> None:
         while True:
             await asyncio.sleep(7)
 
-            unit = self._units[unit_id]
+            unit = self._manager._units[unit_id]
 
-            if unit_id not in self._units or not unit.get("slideshow", False):
+            if unit_id not in self._manager._units or not unit.get("slideshow", False):
                 return
 
             if unit["current_index"] + 1 >= len(unit["photos"]) and isinstance(
                 unit["next_handler"],
                 ListGalleryHelper,
             ):
-                del self._units[unit_id]["slideshow"]
-                self._units[unit_id]["current_index"] -= 1
+                del self._manager._units[unit_id]["slideshow"]
+                self._manager._units[unit_id]["current_index"] -= 1
 
             await self._gallery_page(
                 call,
-                self._units[unit_id]["current_index"] + 1,
+                self._manager._units[unit_id]["current_index"] + 1,
                 unit_id=unit_id,
             )
 
-    async def _gallery_slideshow(
-        self,
-        call: CallbackQuery,
-        unit_id: str | None = None,
-    ):
-        if not self._units[unit_id].get("slideshow", False):
-            self._units[unit_id]["slideshow"] = True
-            await self.bot.edit_message_reply_markup(
+    async def _gallery_slideshow(self, call: CallbackQuery, unit_id: str) -> None:
+        if not self._manager._units[unit_id].get("slideshow", False):
+            self._manager._units[unit_id]["slideshow"] = True
+            await self._manager.bot.edit_message_reply_markup(
                 inline_message_id=call.inline_message_id,
                 reply_markup=self._gallery_markup(unit_id),
             )
-            await call.answer("✅ Slideshow on").as_(self.bot)
+            await call.answer("✅ Slideshow on").as_(self._manager.bot)
         else:
-            del self._units[unit_id]["slideshow"]
-            await self.bot.edit_message_reply_markup(
+            del self._manager._units[unit_id]["slideshow"]
+            await self._manager.bot.edit_message_reply_markup(
                 inline_message_id=call.inline_message_id,
                 reply_markup=self._gallery_markup(unit_id),
             )
-            await call.answer("🚫 Slideshow off").as_(self.bot)
+            await call.answer("🚫 Slideshow off").as_(self._manager.bot)
             return
 
-        asyncio.ensure_future(
-            self._gallery_slideshow_loop(
-                call,
-                unit_id,
-            )
-        )
+        asyncio.ensure_future(self._gallery_slideshow_loop(call, unit_id))
 
-    async def _gallery_back(
-        self,
-        call: CallbackQuery,
-        unit_id: str | None = None,
-    ):
-        queue = self._units[unit_id]["photos"]
-
-        if not queue:
-            await call.answer("No way back", show_alert=True)
-            return
-
-        self._units[unit_id]["current_index"] -= 1
-
-        if self._units[unit_id]["current_index"] < 0:
-            self._units[unit_id]["current_index"] = 0
-            await call.answer("No way back")
-            return
-
-        try:
-            await self.bot.edit_message_media(
-                inline_message_id=call.inline_message_id,
-                media=self._get_current_media(unit_id),
-                reply_markup=self._gallery_markup(unit_id),
-            )
-        except TelegramRetryAfter as e:
-            await call.answer(
-                f"Got FloodWait. Wait for {e.retry_after} seconds",
-                show_alert=True,
-            )
-        except Exception:
-            logger.exception("Exception while trying to edit media")
-            await call.answer("Error occurred", show_alert=True)
-            return
-
-    def _get_current_media(
-        self,
-        unit_id: str,
-    ) -> InputMediaPhoto | InputMediaAnimation:
+    def _get_current_media(self, unit_id: str) -> InputMediaPhoto | InputMediaAnimation:
         """Return current media, which should be updated in gallery"""
         media = self._get_next_photo(unit_id)
         try:
@@ -467,12 +425,12 @@ class Gallery(InlineUnit):
         except Exception:
             ext = None
 
-        if self._units[unit_id].get("gif", False) or ext in {".gif", ".mp4"}:
+        if self._manager._units[unit_id].get("gif", False) or ext in {".gif", ".mp4"}:
             return InputMediaAnimation(
                 media=media,
                 caption=self._get_caption(
                     unit_id,
-                    index=self._units[unit_id]["current_index"],
+                    index=self._manager._units[unit_id]["current_index"],
                 ),
                 parse_mode="HTML",
             )
@@ -481,70 +439,80 @@ class Gallery(InlineUnit):
             media=media,
             caption=self._get_caption(
                 unit_id,
-                index=self._units[unit_id]["current_index"],
+                index=self._manager._units[unit_id]["current_index"],
             ),
             parse_mode="HTML",
         )
 
     async def _gallery_page(
-        self,
-        call: CallbackQuery,
-        page: int | str,
-        unit_id: str | None = None,
-    ):
+        self, call: CallbackQuery, page: int | str, unit_id: str | None = None
+    ) -> None:
+        if not unit_id:
+            return
+
         if page == "slideshow":
             await self._gallery_slideshow(call, unit_id)
             return
 
         if page == "close":
-            await self._delete_unit_message(call, unit_id=unit_id)
+            await self._manager.utils._delete_unit_message(call, unit_id=unit_id)
             return
+
+        if isinstance(page, str):
+            raise ValueError(
+                '`page` cannot be a string unless its either "slideshow" or "close"'
+            )
 
         if page < 0:
             await call.answer("No way back")
             return
 
-        if page > len(self._units[unit_id]["photos"]) - 1 and isinstance(
-            self._units[unit_id]["next_handler"], ListGalleryHelper
+        if page > len(self._manager._units[unit_id]["photos"]) - 1 and isinstance(
+            self._manager._units[unit_id]["next_handler"], ListGalleryHelper
         ):
             await call.answer("No way forward")
             return
 
-        self._units[unit_id]["current_index"] = page
-        if not isinstance(self._units[unit_id]["next_handler"], ListGalleryHelper):
-            if self._units[unit_id]["current_index"] >= len(
-                self._units[unit_id]["photos"]
+        self._manager._units[unit_id]["current_index"] = page
+        if not isinstance(
+            self._manager._units[unit_id]["next_handler"], ListGalleryHelper
+        ):
+            if self._manager._units[unit_id]["current_index"] >= len(
+                self._manager._units[unit_id]["photos"]
             ):
                 await self._load_gallery_photos(unit_id)
 
-            if self._units[unit_id]["current_index"] >= len(
-                self._units[unit_id]["photos"]
+            if self._manager._units[unit_id]["current_index"] >= len(
+                self._manager._units[unit_id]["photos"]
             ):
                 await call.answer("Can't load next photo")
                 return
 
             if (
-                len(self._units[unit_id]["photos"])
-                - self._units[unit_id]["current_index"]
-                < self._units[unit_id].get("preload", 0) // 2
+                len(self._manager._units[unit_id]["photos"])
+                - self._manager._units[unit_id]["current_index"]
+                < self._manager._units[unit_id].get("preload", 0) // 2
             ):
                 logger.debug("Started preload for gallery %s", unit_id)
                 asyncio.ensure_future(self._load_gallery_photos(unit_id))
 
         try:
-            await self.bot.edit_message_media(
+            await self._manager.bot.edit_message_media(
                 inline_message_id=call.inline_message_id,
                 media=self._get_current_media(unit_id),
                 reply_markup=self._gallery_markup(unit_id),
             )
         except TelegramBadRequest:
             logger.debug("Error fetching photo content, attempting load next one")
-            del self._units[unit_id]["photos"][self._units[unit_id]["current_index"]]
-            self._units[unit_id]["current_index"] -= 1
-            return await self._gallery_page(call, page, unit_id)
+            del self._manager._units[unit_id]["photos"][
+                self._manager._units[unit_id]["current_index"]
+            ]
+            self._manager._units[unit_id]["current_index"] -= 1
+            await self._gallery_page(call, page, unit_id)
+            return
         except TelegramRetryAfter as e:
             await call.answer(
-                f"Got FloodWait. Wait for {e.timeout} seconds",
+                f"Got FloodWait. Wait for {e.retry_after} seconds",
                 show_alert=True,
             )
             return
@@ -556,38 +524,39 @@ class Gallery(InlineUnit):
     def _get_next_photo(self, unit_id: str) -> str:
         """Returns next photo"""
         try:
-            return self._units[unit_id]["photos"][self._units[unit_id]["current_index"]]
+            return self._manager._units[unit_id]["photos"][
+                self._manager._units[unit_id]["current_index"]
+            ]
         except IndexError:
             logger.error(
                 "Got IndexError in `_get_next_photo`. %s / %s",
-                self._units[unit_id]["current_index"],
-                len(self._units[unit_id]["photos"]),
+                self._manager._units[unit_id]["current_index"],
+                len(self._manager._units[unit_id]["photos"]),
             )
-            return self._units[unit_id]["photos"][0]
+            return self._manager._units[unit_id]["photos"][0]
 
     def _get_caption(self, unit_id: str, index: int = 0) -> str:
-        """Calls and returns caption for gallery"""
-        caption = self._units[unit_id].get("caption", "")
+        """Find the caption for gallery"""
+        caption: str | typing.Callable[[], typing.Any] | ListGalleryHelper | None = (
+            self._manager._units[unit_id].get("caption", None)
+        )
         if isinstance(caption, ListGalleryHelper):
             return caption.by_index(index)
+        if callable(caption):
+            caption_val: object = caption()
+            caption = str(caption_val) if caption_val is not None else None
 
-        return (
-            caption
-            if isinstance(caption, str)
-            else caption()
-            if callable(caption)
-            else ""
-        )
+        return caption or ""
 
-    def _gallery_markup(self, unit_id: str) -> InlineKeyboardMarkup:
+    def _gallery_markup(self, unit_id: str) -> InlineKeyboardMarkup | None:
         """Generates aiogram markup for `gallery`"""
         callback = functools.partial(self._gallery_page, unit_id=unit_id)
-        unit = self._units[unit_id]
-        return self.generate_markup(
+        unit = self._manager._units[unit_id]
+        return self._manager.utils.generate_markup(
             (
                 (
                     unit.get("custom_buttons", [])
-                    + self.build_pagination(
+                    + self._manager.utils.build_pagination(
                         unit_id=unit_id,
                         callback=callback,
                         total_pages=len(unit["photos"]),
@@ -645,9 +614,9 @@ class Gallery(InlineUnit):
         )
 
     async def _gallery_inline_handler(self, inline_query: InlineQuery):
-        for unit in self._units.copy().values():
+        for unit in self._manager._units.copy().values():
             if (
-                inline_query.from_user.id == self._me
+                inline_query.from_user.id == self._manager._me
                 and inline_query.query == unit["uid"]
                 and unit["type"] == "gallery"
             ):
@@ -678,6 +647,6 @@ class Gallery(InlineUnit):
                         cache_time=0,
                     )
                 except Exception as e:
-                    if unit["uid"] in self._error_events:
-                        self._error_events[unit["uid"]].set()
-                        self._error_events[unit["uid"]] = e
+                    if unit["uid"] in self._manager._error_events:
+                        self._manager._error_events[unit["uid"]].event.set()
+                        self._manager._error_events[unit["uid"]].exception = e

@@ -31,8 +31,8 @@ from .types import InlineMessage, InlineUnit
 logger = logging.getLogger(__name__)
 
 
-class List(InlineUnit):
-    async def list(
+class InlineList(InlineUnit):
+    async def __call__(
         self,
         message: Message | int,
         strings: list[str],
@@ -66,9 +66,9 @@ class List(InlineUnit):
         :return: If list is sent, returns :obj:`InlineMessage`, otherwise returns `False`
         """
         with contextlib.suppress(AttributeError):
-            _hikka_client_id_logging_tag = copy.copy(self._client.tg_id)  # noqa: F841
+            _hikka_client_id_logging_tag = copy.copy(self._manager._client.tg_id)  # noqa: F841
 
-        custom_buttons = self._validate_markup(custom_buttons)
+        custom_buttons = self._manager.utils._validate_markup(custom_buttons)
 
         if not isinstance(manual_security, bool):
             logger.error(
@@ -138,12 +138,14 @@ class List(InlineUnit):
 
         unit_id = utils.rand(16)
 
-        self._units[unit_id] = {
+        self._manager._units[unit_id] = {
             "type": "list",
             "caller": message,
             "chat": None,
             "message_id": None,
-            "top_msg_id": utils.get_topic(message),
+            "top_msg_id": (
+                utils.get_topic(message) if isinstance(message, Message) else None
+            ),
             "uid": unit_id,
             "current_index": 0,
             "strings": strings,
@@ -159,14 +161,14 @@ class List(InlineUnit):
 
         btn_call_data = utils.rand(10)
 
-        self._custom_map[btn_call_data] = {
+        self._manager._custom_map[btn_call_data] = {
             "handler": functools.partial(
                 self._list_page,
                 unit_id=unit_id,
             ),
             **(
-                {"ttl": self._units[unit_id]["ttl"]}
-                if "ttl" in self._units[unit_id]
+                {"ttl": self._manager._units[unit_id]["ttl"]}
+                if "ttl" in self._manager._units[unit_id]
                 else {}
             ),
             **({"always_allow": always_allow} if always_allow else {}),
@@ -179,7 +181,7 @@ class List(InlineUnit):
             try:
                 status_message = await (
                     message.edit if message.outgoing else message.answer
-                )(text="🌘" + self.translator.getkey("inline.opening_list"))
+                )(text="🌘" + self._manager.translator.getkey("inline.opening_list"))
             except Exception:
                 status_message = None
         else:
@@ -190,65 +192,69 @@ class List(InlineUnit):
             if isinstance(message, Message):
                 await (message.edit if message.outgoing else message.answer)(text=msg)
             else:
-                await self._client.send_message(message, msg)
+                await self._manager._client.send_message(message, msg)
 
         try:
-            m = await self._invoke_unit(unit_id, message)
+            m = await self._manager._invoke_unit(unit_id, message)
         except pyrogram.errors.ChatSendInlineForbidden:
-            await answer(self.translator.getkey("inline.inline403"))
+            await answer(self._manager.translator.getkey("inline.inline403"))
+            del self._manager._units[unit_id]
+            return False
         except Exception:
             logger.exception("Can't send list")
 
-            del self._units[unit_id]
+            del self._manager._units[unit_id]
             await answer(
-                self.translator.getkey("inline.invoke_failed_logs").format(
+                self._manager.translator.getkey("inline.invoke_failed_logs").format(
                     utils.escape_html(
                         "\n".join(traceback.format_exc().splitlines()[1:])
                     )
                 )
-                if self._db.get(main.__name__, "inlinelogs", True)
-                else self.translator.getkey("inline.invoke_failed")
+                if self._manager._db.get(main.__name__, "inlinelogs", True)
+                else self._manager.translator.getkey("inline.invoke_failed")
             )
 
             return False
 
-        await self._units[unit_id]["future"].wait()
-        del self._units[unit_id]["future"]
+        await self._manager._units[unit_id]["future"].wait()
+        del self._manager._units[unit_id]["future"]
 
-        self._units[unit_id]["chat"] = utils.get_chat_id_keep_minus100(m)
-        self._units[unit_id]["message_id"] = m.id
+        self._manager._units[unit_id]["chat"] = utils.get_chat_id_keep_minus100(m)
+        self._manager._units[unit_id]["message_id"] = m.id
 
         if isinstance(message, Message) and message.outgoing:
-            await message.delete()
+            if message.outgoing:
+                await message.delete()
+            elif status_message:
+                await status_message.delete()
 
-        if status_message and not message.outgoing:
-            await status_message.delete()
-
-        return InlineMessage(self, unit_id, self._units[unit_id]["inline_message_id"])
+        return InlineMessage(
+            self._manager, unit_id, self._manager._units[unit_id]["inline_message_id"]
+        )
 
     async def _list_page(
-        self,
-        call: CallbackQuery,
-        page: int | str,
-        unit_id: str = None,
-    ):
+        self, call: CallbackQuery, page: int | str, unit_id: str
+    ) -> None:
         if page == "close":
-            await self._delete_unit_message(call, unit_id=unit_id)
+            await self._manager.utils._delete_unit_message(call, unit_id=unit_id)
             return
 
-        if self._units[unit_id]["current_index"] < 0 or page >= len(
-            self._units[unit_id]["strings"]
+        if isinstance(page, str):
+            raise ValueError('`page` cannot be a string unless its "close"')
+
+        if self._manager._units[unit_id]["current_index"] < 0 or page >= len(
+            self._manager._units[unit_id]["strings"]
         ):
             await call.answer("Can't go to this page", show_alert=True)
             return
 
-        self._units[unit_id]["current_index"] = page
+        self._manager._units[unit_id]["current_index"] = page
 
         try:
-            await self.bot.edit_message_text(
+            await self._manager.bot.edit_message_text(
                 inline_message_id=call.inline_message_id,
-                text=self.sanitise_text(
-                    self._units[unit_id]["strings"][
+                text=self._manager.utils.sanitise_text(
+                    self._manager._units[unit_id]["strings"][
                         self._units[unit_id]["current_index"]
                     ]
                 ),
@@ -265,23 +271,23 @@ class List(InlineUnit):
             await call.answer("Error occurred", show_alert=True)
             return
 
-    def _list_markup(self, unit_id: str) -> InlineKeyboardMarkup:
+    def _list_markup(self, unit_id: str) -> InlineKeyboardMarkup | None:
         """Generates aiogram markup for `list`"""
         callback = functools.partial(self._list_page, unit_id=unit_id)
-        return self.generate_markup(
-            self._units[unit_id].get("custom_buttons", [])
-            + self.build_pagination(
+        return self._manager.utils.generate_markup(
+            self._manager._units[unit_id].get("custom_buttons", [])
+            + self._manager.utils.build_pagination(
                 callback=callback,
-                total_pages=len(self._units[unit_id]["strings"]),
+                total_pages=len(self._manager._units[unit_id]["strings"]),
                 unit_id=unit_id,
             )
             + [[{"text": "🔻 Close", "callback": callback, "args": ("close",)}]],
         )
 
     async def _list_inline_handler(self, inline_query: InlineQuery):
-        for unit in self._units.copy().values():
+        for unit in self._manager._units.copy().values():
             if (
-                inline_query.from_user.id == self._me
+                inline_query.from_user.id == self._manager._me
                 and inline_query.query == unit["uid"]
                 and unit["type"] == "list"
             ):
@@ -292,7 +298,9 @@ class List(InlineUnit):
                                 id=utils.rand(20),
                                 title="Hikkaduwa",
                                 input_message_content=InputTextMessageContent(
-                                    message_text=self.sanitise_text(unit["strings"][0]),
+                                    message_text=self._manager.utils.sanitise_text(
+                                        unit["strings"][0]
+                                    ),
                                     parse_mode="HTML",
                                     disable_web_page_preview=True,
                                 ),
@@ -302,6 +310,6 @@ class List(InlineUnit):
                         cache_time=60,
                     )
                 except Exception as e:
-                    if unit["uid"] in self._error_events:
-                        self._error_events[unit["uid"]].set()
-                        self._error_events[unit["uid"]] = e
+                    if unit["uid"] in self._manager._error_events:
+                        self._manager._error_events[unit["uid"]].event.set()
+                        self._manager._error_events[unit["uid"]].exception = e

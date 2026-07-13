@@ -12,7 +12,8 @@ from .types import InlineUnit
 logger = logging.getLogger(__name__)
 
 
-class BotPM(InlineUnit):
+# TODO: unused?
+class InlineBotPM(InlineUnit):
     def set_fsm_state(
         self,
         user: str | int,
@@ -46,9 +47,9 @@ class BotPM(InlineUnit):
             return False
 
         if state:
-            self.fsm[str(user)] = state
-        elif str(user) in self.fsm:
-            del self.fsm[str(user)]
+            self._manager.fsm[str(user)] = state
+        elif str(user) in self._manager.fsm:
+            del self._manager.fsm[str(user)]
 
         return True
 
@@ -70,6 +71,6 @@ class BotPM(InlineUnit):
             )
             return False
 
-        return self.fsm.get(str(user), False)
+        return self._manager.fsm.get(str(user), False)
 
     gs = get_fsm_state

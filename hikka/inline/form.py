@@ -56,8 +56,8 @@ class Placeholder:
     """Placeholder"""
 
 
-class Form(InlineUnit):
-    async def form(
+class InlineForm(InlineUnit):
+    async def __call__(
         self,
         text: str,
         message: Message | int,
@@ -108,7 +108,7 @@ class Form(InlineUnit):
         :return: If form is sent, returns :obj:`InlineMessage`, otherwise returns `False`
         """
         with contextlib.suppress(AttributeError):
-            _hikka_client_id_logging_tag = copy.copy(self._client.tg_id)  # noqa: F841
+            _hikka_client_id_logging_tag = copy.copy(self._manager._client.tg_id)  # noqa: F841
 
         if reply_markup is None:
             reply_markup = []
@@ -123,7 +123,7 @@ class Form(InlineUnit):
             )
             return False
 
-        text = self.sanitise_text(text)
+        text = self._manager.utils.sanitise_text(text)
 
         if not isinstance(silent, bool):
             logger.error(
@@ -244,7 +244,7 @@ class Form(InlineUnit):
             logger.error("You passed two or more exclusive parameters simultaneously")
             return False
 
-        reply_markup = self._validate_markup(reply_markup) or []
+        reply_markup = self._manager.utils._validate_markup(reply_markup) or []
 
         if not isinstance(force_me, bool):
             logger.error(
@@ -268,7 +268,7 @@ class Form(InlineUnit):
             try:
                 status_message = await (
                     message.edit if utils.can_edit(message) else message.answer
-                )("🌘" + self.translator.getkey("inline.opening_form"))
+                )("🌘" + self._manager.translator.getkey("inline.opening_form"))
             except Exception:
                 status_message = None
         else:
@@ -279,7 +279,9 @@ class Form(InlineUnit):
         if not reply_markup and not ttl:
             logger.debug("Patching form reply markup with empty data")
             base_reply_markup = copy.deepcopy(reply_markup) or None
-            reply_markup = self._validate_markup({"text": "­", "data": "­"})
+            reply_markup = self._manager.utils._validate_markup(
+                {"text": "­", "data": "­"}
+            )
         else:
             base_reply_markup = Placeholder()
 
@@ -296,7 +298,7 @@ class Form(InlineUnit):
             )
             ttl = 10 * 60
 
-        self._units[unit_id] = {
+        self._manager._units[unit_id] = {
             "type": "form",
             "text": text,
             "buttons": reply_markup,
@@ -327,43 +329,45 @@ class Form(InlineUnit):
             if isinstance(message, Message):
                 await (message.edit if message.outgoing else message.answer)(text=msg)
             else:
-                await self._client.send_message(message, msg)
+                await self._manager._client.send_message(message, msg)
 
         try:
-            m = await self._invoke_unit(unit_id, message)
+            m: Message = await self._manager._invoke_unit(unit_id, message)
         except pyrogram.errors.ChatSendInlineForbidden:
-            await answer(self.translator.getkey("inline.inline403"))
+            await answer(self._manager.translator.getkey("inline.inline403"))
+            del self._manager._units[unit_id]
+            return False
         except Exception:
             logger.exception("Can't send form")
 
-            del self._units[unit_id]
+            del self._manager._units[unit_id]
             await answer(
-                self.translator.getkey("inline.invoke_failed_logs").format(
+                self._manager.translator.getkey("inline.invoke_failed_logs").format(
                     utils.escape_html(
                         "\n".join(traceback.format_exc().splitlines()[1:])
                     )
                 )
-                if self._db.get(main.__name__, "inlinelogs", True)
-                else self.translator.getkey("inline.invoke_failed")
+                if self._manager._db.get(main.__name__, "inlinelogs", True)
+                else self._manager.translator.getkey("inline.invoke_failed")
             )
 
             return False
 
-        await self._units[unit_id]["future"].wait()
-        del self._units[unit_id]["future"]
+        await self._manager._units[unit_id]["future"].wait()
+        del self._manager._units[unit_id]["future"]
 
-        self._units[unit_id]["chat"] = utils.get_chat_id_keep_minus100(m)
-        self._units[unit_id]["message_id"] = m.id
+        self._manager._units[unit_id]["chat"] = utils.get_chat_id_keep_minus100(m)
+        self._manager._units[unit_id]["message_id"] = m.id
 
         if isinstance(message, Message) and message.outgoing:
-            await message.delete()
+            if message.outgoing:
+                await message.delete()
+            elif status_message:
+                await status_message.delete()
 
-        if status_message and not message.outgoing:
-            await status_message.delete()
+        inline_message_id = self._manager._units[unit_id]["inline_message_id"]
 
-        inline_message_id = self._units[unit_id]["inline_message_id"]
-
-        msg = InlineMessage(self, unit_id, inline_message_id)
+        msg = InlineMessage(self._manager, unit_id, inline_message_id)
 
         if not isinstance(base_reply_markup, Placeholder):
             await msg.edit(text, reply_markup=base_reply_markup)
@@ -376,16 +380,14 @@ class Form(InlineUnit):
         except IndexError:
             return
 
-        for unit in self._units.copy().values():
+        for unit in self._manager._units.copy().values():
             for button in utils.array_sum(unit.get("buttons", [])):
                 if (
                     "_switch_query" in button
                     and "input" in button
                     and button["_switch_query"] == query
                     and inline_query.from_user.id
-                    in [self._me]
-                    + self._client.hikka_dispatcher.security._owner
-                    + unit.get("always_allow", [])
+                    in [self._manager._me] + unit.get("always_allow", [])
                 ):
                     await inline_query.answer(
                         [
@@ -393,16 +395,17 @@ class Form(InlineUnit):
                                 id=utils.rand(20),
                                 title=button["input"],
                                 description=(
-                                    self.translator.getkey("inline.keep_id").format(
-                                        random.choice(VERIFICATION_EMOJIS)
-                                    )
+                                    self._manager.translator.getkey(
+                                        "inline.keep_id"
+                                    ).format(random.choice(VERIFICATION_EMOJIS))
                                 ),
                                 input_message_content=InputTextMessageContent(
                                     message_text=(
                                         "🔄 <b>Transferring value to"
                                         " userbot...</b>\n<i>This message will be"
                                         " deleted automatically</i>"
-                                        if inline_query.from_user.id == self._me
+                                        if inline_query.from_user.id
+                                        == self._manager._me
                                         else "🔄 <b>Transferring value to userbot...</b>"
                                     ),
                                     parse_mode="HTML",
@@ -415,12 +418,12 @@ class Form(InlineUnit):
                     return
 
         if (
-            inline_query.query not in self._units
-            or self._units[inline_query.query]["type"] != "form"
+            inline_query.query not in self._manager._units
+            or self._manager._units[inline_query.query]["type"] != "form"
         ):
             return
 
-        form = self._units[inline_query.query]
+        form = self._manager._units[inline_query.query]
         try:
             if "photo" in form:
                 await inline_query.answer(
@@ -435,7 +438,7 @@ class Form(InlineUnit):
                             thumbnail_url=(
                                 "https://img.icons8.com/cotton/452/moon-satellite.png"
                             ),
-                            reply_markup=self.generate_markup(
+                            reply_markup=self._manager.utils.generate_markup(
                                 form["uid"],
                             ),
                         )
@@ -454,7 +457,7 @@ class Form(InlineUnit):
                             thumbnail_url=(
                                 "https://img.icons8.com/cotton/452/moon-satellite.png"
                             ),
-                            reply_markup=self.generate_markup(
+                            reply_markup=self._manager.utils.generate_markup(
                                 form["uid"],
                             ),
                         )
@@ -475,7 +478,7 @@ class Form(InlineUnit):
                                 "https://img.icons8.com/cotton/452/moon-satellite.png"
                             ),
                             mime_type="video/mp4",
-                            reply_markup=self.generate_markup(
+                            reply_markup=self._manager.utils.generate_markup(
                                 form["uid"],
                             ),
                         )
@@ -493,7 +496,7 @@ class Form(InlineUnit):
                             parse_mode="HTML",
                             document_url=form["file"],
                             mime_type=form["mime_type"],
-                            reply_markup=self.generate_markup(
+                            reply_markup=self._manager.utils.generate_markup(
                                 form["uid"],
                             ),
                         )
@@ -508,7 +511,7 @@ class Form(InlineUnit):
                             latitude=form["location"][0],
                             longitude=form["location"][1],
                             title="Hikkaduwa",
-                            reply_markup=self.generate_markup(
+                            reply_markup=self._manager.utils.generate_markup(
                                 form["uid"],
                             ),
                         )
@@ -526,7 +529,7 @@ class Form(InlineUnit):
                             title=form["audio"].get("title", "Hikkaduwa"),
                             performer=form["audio"].get("performer"),
                             audio_duration=form["audio"].get("duration"),
-                            reply_markup=self.generate_markup(
+                            reply_markup=self._manager.utils.generate_markup(
                                 form["uid"],
                             ),
                         )
@@ -544,12 +547,14 @@ class Form(InlineUnit):
                                 parse_mode="HTML",
                                 disable_web_page_preview=True,
                             ),
-                            reply_markup=self.generate_markup(inline_query.query),
+                            reply_markup=self._manager.utils.generate_markup(
+                                inline_query.query
+                            ),
                         )
                     ],
                     cache_time=0,
                 )
         except Exception as e:
-            if form["uid"] in self._error_events:
-                self._error_events[form["uid"]].set()
-                self._error_events[form["uid"]] = e
+            if form["uid"] in self._manager._error_events:
+                self._manager._error_events[form["uid"]].event.set()
+                self._manager._error_events[form["uid"]].exception = e

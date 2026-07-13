@@ -18,9 +18,6 @@ import typing
 from copy import deepcopy
 from urllib.parse import urlparse
 
-import pyrogram
-import pyrogram.errors
-import pyrogram.utils
 from aiogram.exceptions import (
     TelegramAPIError,
     TelegramBadRequest,
@@ -28,7 +25,6 @@ from aiogram.exceptions import (
     TelegramRetryAfter,
 )
 from aiogram.types import (
-    CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     InputMediaAnimation,
@@ -38,10 +34,16 @@ from aiogram.types import (
     InputMediaVideo,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from pyrogram.errors import RPCError
+from pyrogram.utils import ZERO_CHANNEL_ID
 
 from .. import utils
-from ..types import HikkaReplyMarkup
-from .types import BytesIOInputFile, InlineCall, InlineUnit
+from .types import BytesIOInputFile, InlineUnit
+
+if typing.TYPE_CHECKING:
+    from aiogram.types import CallbackQuery
+
+    from ..types import HikkaReplyMarkup, InlineCall
 
 logger = logging.getLogger(__name__)
 
@@ -69,10 +71,10 @@ def _unpack_inline_message_id(inline_message_id: str) -> tuple[int, int, int]:
     raise ValueError("Invalid inline message id")
 
 
-class Utils(InlineUnit):
+class InlineUtils(InlineUnit):
     def _generate_markup(
         self,
-        markup_obj: HikkaReplyMarkup | str | None,
+        markup_obj: "HikkaReplyMarkup | str | None",
     ) -> InlineKeyboardMarkup | None:
         """Generate markup for form or list of `dict`s"""
         if not markup_obj:
@@ -84,7 +86,7 @@ class Utils(InlineUnit):
         kb = InlineKeyboardBuilder()
 
         map_ = (
-            self._units[markup_obj]["buttons"]
+            self._manager._units[markup_obj]["buttons"]
             if isinstance(markup_obj, str)
             else markup_obj
         )
@@ -155,7 +157,7 @@ class Utils(InlineUnit):
                             )
                         ]
                         if setup_callbacks:
-                            self._custom_map[button["_callback_data"]] = {
+                            self._manager._custom_map[button["_callback_data"]] = {
                                 "handler": button["callback"],
                                 **(
                                     {"always_allow": button["always_allow"]}
@@ -226,7 +228,7 @@ class Utils(InlineUnit):
                         "passed wrong type combination for button. "
                         "Contact developer of module."
                     )
-                    return False
+                    return None
 
             kb.row(*line)
 
@@ -234,13 +236,15 @@ class Utils(InlineUnit):
 
     generate_markup = _generate_markup
 
-    async def _close_unit_handler(self, call: InlineCall):
+    async def _close_unit_handler(self, call: "InlineCall"):
         await call.delete()
 
-    async def _unload_unit_handler(self, call: InlineCall):
+    async def _unload_unit_handler(self, call: "InlineCall"):
         await call.unload()
 
-    async def _answer_unit_handler(self, call: InlineCall, text: str, show_alert: bool):
+    async def _answer_unit_handler(
+        self, call: "InlineCall", text: str, show_alert: bool
+    ):
         await call.answer(text, show_alert=show_alert)
 
     def _reverse_method_lookup(self, needle: typing.Callable, /) -> str | None:
@@ -248,20 +252,22 @@ class Utils(InlineUnit):
             (
                 name
                 for name, method in itertools.chain(
-                    self._allmodules.inline_handlers.items(),
-                    self._allmodules.callback_handlers.items(),
+                    self._manager._allmodules.inline_handlers.items(),
+                    self._manager._allmodules.callback_handlers.items(),
                 )
                 if method == needle
             ),
             None,
         )
 
-    async def check_inline_security(self, *, func: typing.Callable, user: int) -> bool:
+    async def check_inline_security(
+        self, *, func: typing.Callable | None = None, user: int
+    ) -> bool:
         """Checks if user with id `user` is allowed to run function `func`"""
-        return user == self._client._tg_id
+        return user == self._manager._client._tg_id
 
     def normalize_markup(
-        self, reply_markup: HikkaReplyMarkup
+        self, reply_markup: "HikkaReplyMarkup"
     ) -> list[list[dict[str, typing.Any]]]:
         if isinstance(reply_markup, dict):
             return [[reply_markup]]
@@ -269,9 +275,9 @@ class Utils(InlineUnit):
         if isinstance(reply_markup, list) and any(
             isinstance(i, dict) for i in reply_markup
         ):
-            return [reply_markup]
+            return [reply_markup]  # type: ignore
 
-        return reply_markup
+        return reply_markup  # type: ignore
 
     _normalize_markup = normalize_markup
 
@@ -288,7 +294,7 @@ class Utils(InlineUnit):
     async def _edit_unit(
         self,
         text: str | None = None,
-        reply_markup: HikkaReplyMarkup | None = None,
+        reply_markup: "HikkaReplyMarkup | None" = None,
         *,
         photo: str | None = None,
         file: str | None = None,
@@ -300,7 +306,7 @@ class Utils(InlineUnit):
         disable_security: bool | None = None,
         always_allow: list[int] | None = None,
         disable_web_page_preview: bool = True,
-        query: CallbackQuery | None = None,
+        query: "CallbackQuery | None" = None,
         unit_id: str | None = None,
         inline_message_id: str | None = None,
         chat_id: int | None = None,
@@ -356,8 +362,8 @@ class Utils(InlineUnit):
             logger.error("You passed two or more exclusive parameters simultaneously")
             return False
 
-        if unit_id is not None and unit_id in self._units:
-            unit = self._units[unit_id]
+        if unit_id is not None and unit_id in self._manager._units:
+            unit = self._manager._units[unit_id]
 
             unit["buttons"] = reply_markup
 
@@ -437,7 +443,7 @@ class Utils(InlineUnit):
 
         if media is None and text is None and reply_markup:
             try:
-                await self.bot.edit_message_reply_markup(
+                await self._manager.bot.edit_message_reply_markup(
                     **(
                         {"inline_message_id": inline_message_id}
                         if inline_message_id
@@ -456,7 +462,7 @@ class Utils(InlineUnit):
 
         if media is None:
             try:
-                await self.bot.edit_message_text(
+                await self._manager.bot.edit_message_text(
                     text,
                     **(
                         {"inline_message_id": inline_message_id}
@@ -475,10 +481,11 @@ class Utils(InlineUnit):
                 await asyncio.sleep(e.retry_after)
                 return await self._edit_unit(**utils.get_kwargs())
             except TelegramNotFound:
-                with contextlib.suppress(Exception):
-                    await query.answer(
-                        "I should have edited some message, but it is deleted :("
-                    )
+                if query:
+                    with contextlib.suppress(Exception):
+                        await query.answer(
+                            "I should have edited some message, but it is deleted :("
+                        )
 
                 return False
             except TelegramBadRequest as e:
@@ -493,7 +500,7 @@ class Utils(InlineUnit):
                     raise
 
                 try:
-                    await self.bot.edit_message_caption(
+                    await self._manager.bot.edit_message_caption(
                         caption=text,
                         **(
                             {"inline_message_id": inline_message_id}
@@ -514,7 +521,7 @@ class Utils(InlineUnit):
                 return True
 
         try:
-            await self.bot.edit_message_media(
+            await self._manager.bot.edit_message_media(
                 **(
                     {"inline_message_id": inline_message_id}
                     if inline_message_id
@@ -542,7 +549,7 @@ class Utils(InlineUnit):
 
     async def _delete_unit_message(
         self,
-        call: CallbackQuery | None = None,
+        call: "CallbackQuery | None" = None,
         unit_id: str | None = None,
         chat_id: int | None = None,
         message_id: int | None = None,
@@ -550,7 +557,7 @@ class Utils(InlineUnit):
         """Params `self`, `unit_id` are for internal use only, do not try to pass them"""
         if getattr(getattr(call, "message", None), "chat", None):
             try:
-                await self.bot.delete_message(
+                await self._manager.bot.delete_message(
                     chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
                 )
@@ -562,7 +569,9 @@ class Utils(InlineUnit):
 
         if chat_id and message_id:
             try:
-                await self.bot.delete_message(chat_id=chat_id, message_id=message_id)
+                await self._manager.bot.delete_message(
+                    chat_id=chat_id, message_id=message_id
+                )
             except TelegramAPIError as e:
                 logging.error("Failed to delete an inline message", exc_info=e)
                 return False
@@ -574,16 +583,16 @@ class Utils(InlineUnit):
 
         try:
             _, message_id, chat_id = _unpack_inline_message_id(
-                self._units[unit_id]["inline_message_id"]
+                self._manager._units[unit_id]["inline_message_id"]
             )
             # it seems to always need a -100 prefix if its negative
             # should it be in the helper function?
             if chat_id < 0:
-                chat_id = pyrogram.utils.ZERO_CHANNEL_ID + chat_id
+                chat_id = ZERO_CHANNEL_ID + chat_id
 
-            await self._client.delete_messages(chat_id, [message_id])
+            await self._manager._client.delete_messages(chat_id, [message_id])
             await self._unload_unit(unit_id)
-        except pyrogram.errors.RPCError as e:
+        except RPCError as e:
             logging.error("Failed to delete an inline message", exc_info=e)
             return False
 
@@ -592,13 +601,13 @@ class Utils(InlineUnit):
     async def _unload_unit(self, unit_id: str) -> bool:
         """Params `self`, `unit_id` are for internal use only, do not try to pass them"""
         try:
-            if "on_unload" in self._units[unit_id] and callable(
-                self._units[unit_id]["on_unload"]
+            if "on_unload" in self._manager._units[unit_id] and callable(
+                self._manager._units[unit_id]["on_unload"]
             ):
-                self._units[unit_id]["on_unload"]()
+                self._manager._units[unit_id]["on_unload"]()
 
-            if unit_id in self._units:
-                del self._units[unit_id]
+            if unit_id in self._manager._units:
+                del self._manager._units[unit_id]
             else:
                 return False
         except Exception:
@@ -615,7 +624,9 @@ class Utils(InlineUnit):
     ) -> list[list[dict[str, typing.Any]]]:
         # Based on https://github.com/pystorage/pykeyboard/blob/master/pykeyboard/inline_pagination_keyboard.py#L4
         if current_page is None:
-            current_page = self._units[unit_id]["current_index"] + 1
+            if unit_id is None:
+                raise ValueError("unit_id cannot be None if current_page is None")
+            current_page = self._manager._units[unit_id]["current_index"] + 1
 
         if total_pages <= 5:
             return [
@@ -724,9 +735,8 @@ class Utils(InlineUnit):
         ]
 
     def _validate_markup(
-        self,
-        buttons: HikkaReplyMarkup | None,
-    ) -> list[list[dict[str, typing.Any]]]:
+        self, buttons: "HikkaReplyMarkup | None" = None
+    ) -> list[list[dict[str, typing.Any]]] | None:
         if buttons is None:
             buttons = []
 

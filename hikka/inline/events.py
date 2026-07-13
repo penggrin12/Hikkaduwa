@@ -4,14 +4,13 @@
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
+import contextlib
 import inspect
 import logging
 import typing
 from asyncio import Event
 
 from aiogram.types import (
-    CallbackQuery,
-    ChosenInlineResult,
     InlineQueryResultArticle,
     InlineQueryResultDocument,
     InlineQueryResultGif,
@@ -19,22 +18,25 @@ from aiogram.types import (
     InlineQueryResultVideo,
     InputTextMessageContent,
 )
-from aiogram.types import InlineQuery as AiogramInlineQuery
 from aiogram.types import Message as AiogramMessage
 
 from .. import utils
 from .types import BotInlineCall, InlineCall, InlineQuery, InlineUnit
 
+if typing.TYPE_CHECKING:
+    from aiogram.types import CallbackQuery, ChosenInlineResult, InlineQueryResultUnion
+    from aiogram.types import InlineQuery as AiogramInlineQuery
+
 logger = logging.getLogger(__name__)
 
 
-class Events(InlineUnit):
-    async def _message_handler(self, message: AiogramMessage):
+class InlineEvents(InlineUnit):
+    async def _message_handler(self, message: AiogramMessage) -> None:
         """Processes incoming messages"""
         if message.chat.type != "private" or message.text == "/start hikka init":
             return
 
-        for mod in self._allmodules.modules:
+        for mod in self._manager._allmodules.modules:
             if (
                 not hasattr(mod, "aiogram_watcher")
                 or message.text == "/start"
@@ -47,22 +49,27 @@ class Events(InlineUnit):
             except Exception:
                 logger.exception("Error on running aiogram watcher!")
 
-    async def _inline_handler(self, inline_query: AiogramInlineQuery):
+    async def _inline_handler(self, inline_query: "AiogramInlineQuery") -> None:
         """Inline query handler (forms' calls)"""
         if not (query := inline_query.query):
             await self._query_help(inline_query)
             return
 
         cmd = query.split()[0].lower()
-        if cmd in self._allmodules.inline_handlers and await self.check_inline_security(
-            func=self._allmodules.inline_handlers[cmd],
-            user=inline_query.from_user.id,
+        if (
+            cmd in self._manager._allmodules.inline_handlers
+            and await self._manager.utils.check_inline_security(
+                func=self._manager._allmodules.inline_handlers[cmd],
+                user=inline_query.from_user.id,
+            )
         ):
             instance = InlineQuery(inline_query)
 
             try:
                 if not (
-                    result := await self._allmodules.inline_handlers[cmd](instance)
+                    result := await self._manager._allmodules.inline_handlers[cmd](
+                        instance
+                    )
                 ):
                     return
             except Exception:
@@ -105,17 +112,21 @@ class Events(InlineUnit):
                         (
                             InlineQueryResultArticle(
                                 id=utils.rand(20),
-                                title=self.sanitise_text(res["title"]),
-                                description=self.sanitise_text(res.get("description")),
+                                title=self._manager.utils.sanitise_text(res["title"]),
+                                description=self._manager.utils.sanitise_text(
+                                    res.get("description")
+                                ),
                                 input_message_content=InputTextMessageContent(
-                                    message_text=self.sanitise_text(res["message"]),
+                                    message_text=self._manager.utils.sanitise_text(
+                                        res["message"]
+                                    ),
                                     parse_mode="HTML",
                                     disable_web_page_preview=True,
                                 ),
                                 thumbnail_url=res.get("thumb"),
                                 thumbnail_width=128,
                                 thumbnail_height=128,
-                                reply_markup=self.generate_markup(
+                                reply_markup=self._manager.utils.generate_markup(
                                     res.get("reply_markup")
                                 ),
                             )
@@ -123,15 +134,19 @@ class Events(InlineUnit):
                             else (
                                 InlineQueryResultPhoto(
                                     id=utils.rand(20),
-                                    title=self.sanitise_text(res.get("title")),
-                                    description=self.sanitise_text(
+                                    title=self._manager.utils.sanitise_text(
+                                        res.get("title")
+                                    ),
+                                    description=self._manager.utils.sanitise_text(
                                         res.get("description")
                                     ),
-                                    caption=self.sanitise_text(res.get("caption")),
+                                    caption=self._manager.utils.sanitise_text(
+                                        res.get("caption")
+                                    ),
                                     parse_mode="HTML",
                                     thumbnail_url=res.get("thumb", res["photo"]),
                                     photo_url=res["photo"],
-                                    reply_markup=self.generate_markup(
+                                    reply_markup=self._manager.utils.generate_markup(
                                         res.get("reply_markup")
                                     ),
                                 )
@@ -139,12 +154,16 @@ class Events(InlineUnit):
                                 else (
                                     InlineQueryResultGif(
                                         id=utils.rand(20),
-                                        title=self.sanitise_text(res.get("title")),
-                                        caption=self.sanitise_text(res.get("caption")),
+                                        title=self._manager.utils.sanitise_text(
+                                            res.get("title")
+                                        ),
+                                        caption=self._manager.utils.sanitise_text(
+                                            res.get("caption")
+                                        ),
                                         parse_mode="HTML",
                                         thumbnail_url=res.get("thumb", res["gif"]),
                                         gif_url=res["gif"],
-                                        reply_markup=self.generate_markup(
+                                        reply_markup=self._manager.utils.generate_markup(
                                             res.get("reply_markup")
                                         ),
                                     )
@@ -152,11 +171,13 @@ class Events(InlineUnit):
                                     else (
                                         InlineQueryResultVideo(
                                             id=utils.rand(20),
-                                            title=self.sanitise_text(res.get("title")),
-                                            description=self.sanitise_text(
+                                            title=self._manager.utils.sanitise_text(
+                                                res.get("title")
+                                            ),
+                                            description=self._manager.utils.sanitise_text(
                                                 res.get("description")
                                             ),
-                                            caption=self.sanitise_text(
+                                            caption=self._manager.utils.sanitise_text(
                                                 res.get("caption")
                                             ),
                                             parse_mode="HTML",
@@ -165,25 +186,27 @@ class Events(InlineUnit):
                                             ),
                                             video_url=res["video"],
                                             mime_type="video/mp4",
-                                            reply_markup=self.generate_markup(
+                                            reply_markup=self._manager.utils.generate_markup(
                                                 res.get("reply_markup")
                                             ),
                                         )
                                         if "video" in res
                                         else InlineQueryResultDocument(
                                             id=utils.rand(20),
-                                            title=self.sanitise_text(res.get("title")),
-                                            description=self.sanitise_text(
+                                            title=self._manager.utils.sanitise_text(
+                                                res.get("title")
+                                            ),
+                                            description=self._manager.utils.sanitise_text(
                                                 res.get("description")
                                             ),
-                                            caption=self.sanitise_text(
+                                            caption=self._manager.utils.sanitise_text(
                                                 res.get("caption")
                                             ),
                                             parse_mode="HTML",
                                             thumbnail_url=res.get("thumb", res["file"]),
                                             document_url=res["file"],
                                             mime_type=res["mime_type"],
-                                            reply_markup=self.generate_markup(
+                                            reply_markup=self._manager.utils.generate_markup(
                                                 res.get("reply_markup")
                                             ),
                                         )
@@ -202,38 +225,40 @@ class Events(InlineUnit):
                 )
                 return
 
-        await self._form_inline_handler(inline_query)
-        await self._gallery_inline_handler(inline_query)
-        await self._list_inline_handler(inline_query)
+        await self._manager.form._form_inline_handler(inline_query)
+        await self._manager.gallery._gallery_inline_handler(inline_query)
+        await self._manager.list._list_inline_handler(inline_query)
 
     async def _callback_query_handler(
         self,
-        call: CallbackQuery,
+        call: "CallbackQuery",
         reply_markup: list[list[dict[str, typing.Any]]] | None = None,
-    ):
+    ) -> typing.Any | None:  # TODO: does it actually need to return anything?
         """Callback query handler (buttons' presses)"""
-        if reply_markup is None:
-            reply_markup = []
 
-        for func in self._allmodules.callback_handlers.values():
-            if await self.check_inline_security(func=func, user=call.from_user.id):
-                try:
-                    await func(
-                        (
-                            BotInlineCall
-                            if getattr(getattr(call, "message", None), "chat", None)
-                            else InlineCall
-                        )(call, self, None)
-                    )
-                except Exception:
-                    logger.exception("Error on running callback watcher!")
-                    await call.answer(
-                        "Error occurred while processing request. More info in logs",
-                        show_alert=True,
-                    )
-                    continue
+        if not (
+            await self._manager.utils.check_inline_security(user=call.from_user.id)
+        ):
+            return
 
-        for unit_id, unit in self._units.copy().items():
+        for func in self._manager._allmodules.callback_handlers.values():
+            try:
+                await func(
+                    (
+                        BotInlineCall
+                        if getattr(getattr(call, "message", None), "chat", None)
+                        else InlineCall
+                    )(call, self._manager, None)  # TODO: unit_id cant be None
+                )
+            except Exception:
+                logger.exception("Error on running callback watcher!")
+                await call.answer(
+                    "Error occurred while processing request. More info in logs",
+                    show_alert=True,
+                )
+                continue
+
+        for unit_id, unit in self._manager._units.copy().items():
             for button in utils.array_sum(unit.get("buttons", [])):
                 if not isinstance(button, dict):
                     logger.warning(
@@ -243,80 +268,62 @@ class Events(InlineUnit):
                     continue
 
                 if button.get("_callback_data") == call.data:
-                    if (
-                        button.get("disable_security", False)
-                        or unit.get("disable_security", False)
-                        or (
-                            unit.get("force_me", False)
-                            and call.from_user.id == self._me
-                        )
-                    ):
-                        pass
-                    elif call.from_user.id not in (
-                        [self._client._tg_id]
-                        + unit.get("always_allow", [])
-                        + button.get("always_allow", [])
-                    ):
-                        await call.answer(self.translator.getkey("inline.button403"))
-                        return
-
                     try:
                         result = await button["callback"](
                             (
                                 BotInlineCall
                                 if getattr(getattr(call, "message", None), "chat", None)
                                 else InlineCall
-                            )(call, self, unit_id),
+                            )(call, self._manager, unit_id),
                             *button.get("args", []),
                             **button.get("kwargs", {}),
                         )
                     except Exception:
                         logger.exception("Error on running callback watcher!")
                         await call.answer(
-                            (
-                                "Error occurred while processing request. More info in"
-                                " logs"
-                            ),
+                            "Error occurred while processing request. More info in logs",
                             show_alert=True,
                         )
-                        return
+                        return None
 
                     return result
 
-        if call.data in self._custom_map:
-            if self._custom_map[call.data].get("disable_security", False) or (
-                self._custom_map[call.data].get("force_me", False)
-                and call.from_user.id == self._me
-            ):
-                pass
-            elif (call.from_user.id != self._client._tg_id) and (
-                call.from_user.id
-                not in self._custom_map[call.data].get("always_allow", [])
-            ):
-                await call.answer(self.translator.getkey("inline.button403"))
-                return
+        if call.data not in self._manager._custom_map:
+            return None
 
-            await self._custom_map[call.data]["handler"](
-                (
-                    BotInlineCall
-                    if getattr(getattr(call, "message", None), "chat", None)
-                    else InlineCall
-                )(call, self, None),
-                *self._custom_map[call.data].get("args", []),
-                **self._custom_map[call.data].get("kwargs", {}),
-            )
-            return
+        if self._manager._custom_map[call.data].get("disable_security", False) or (
+            self._manager._custom_map[call.data].get("force_me", False)
+            and call.from_user.id == self._manager._me
+        ):
+            pass
+        elif (call.from_user.id != self._manager._client._tg_id) and (
+            call.from_user.id
+            not in self._manager._custom_map[call.data].get("always_allow", [])
+        ):
+            await call.answer(self._manager.translator.getkey("inline.button403"))
+            return None
+
+        await self._manager._custom_map[call.data]["handler"](
+            (
+                BotInlineCall
+                if getattr(getattr(call, "message", None), "chat", None)
+                else InlineCall
+            )(call, self._manager, None),  # TODO: unit_id cant be None
+            *self._manager._custom_map[call.data].get("args", []),
+            **self._manager._custom_map[call.data].get("kwargs", {}),
+        )
+        return None
 
     async def _chosen_inline_handler(
         self,
-        chosen_inline_query: ChosenInlineResult,
-    ):
+        chosen_inline_query: "ChosenInlineResult",
+    ) -> typing.Any | None:  # TODO: does it actually need to return anything?:
         query = chosen_inline_query.query
 
         if not query:
-            return
+            return None
 
-        for unit_id, unit in self._units.items():
+        for unit_id, unit in self._manager._units.items():
             if (
                 unit_id == query
                 and "future" in unit
@@ -324,22 +331,22 @@ class Events(InlineUnit):
             ):
                 unit["inline_message_id"] = chosen_inline_query.inline_message_id
                 unit["future"].set()
-                return
+                return None
 
-        for unit_id, unit in self._units.copy().items():
+        for unit_id, unit in self._manager._units.copy().items():
             for button in utils.array_sum(unit.get("buttons", [])):
                 if (
                     "_switch_query" in button
                     and "input" in button
                     and button["_switch_query"] == query.split()[0]
                     and chosen_inline_query.from_user.id
-                    in [self._me] + unit.get("always_allow", [])
+                    in [self._manager._me] + unit.get("always_allow", [])
                 ):
                     query = query.split(maxsplit=1)[1] if len(query.split()) > 1 else ""
 
                     try:
                         return await button["handler"](
-                            InlineCall(chosen_inline_query, self, unit_id),
+                            InlineCall(chosen_inline_query, self._manager, unit_id),
                             query,
                             *button.get("args", []),
                             **button.get("kwargs", {}),
@@ -348,21 +355,20 @@ class Events(InlineUnit):
                         logger.exception(
                             "Exception while running chosen query watcher!"
                         )
-                        return
+                        return None
 
-    async def _query_help(self, inline_query: InlineQuery):
-        _help = []
-        for name, fun in self._allmodules.inline_handlers.items():
-            if not await self.check_inline_security(
+    async def _query_help(self, inline_query: "AiogramInlineQuery") -> None:
+        _help: list[tuple["InlineQueryResultUnion", str]] = []
+        for name, fun in self._manager._allmodules.inline_handlers.items():
+            if not await self._manager.utils.check_inline_security(
                 func=fun,
                 user=inline_query.from_user.id,
             ):
                 continue
 
-            try:
-                doc = inspect.getdoc(fun)
-            except Exception:
-                doc = "🦥 No docs"
+            doc: str = "🦥 No docs"
+            with contextlib.suppress(Exception):
+                doc = inspect.getdoc(fun) or doc
 
             try:
                 thumb = getattr(fun, "thumb_url", None) or fun.__self__.hikka_meta_pic
@@ -375,11 +381,15 @@ class Events(InlineUnit):
                 (
                     InlineQueryResultArticle(
                         id=utils.rand(20),
-                        title=self.translator.getkey("inline.command").format(name),
+                        title=self._manager.translator.getkey("inline.command").format(
+                            name
+                        ),
                         description=doc,
                         input_message_content=InputTextMessageContent(
                             message_text=(
-                                self.translator.getkey("inline.command_msg").format(
+                                self._manager.translator.getkey(
+                                    "inline.command_msg"
+                                ).format(
                                     utils.escape_html(name),
                                     utils.escape_html(doc),
                                 )
@@ -390,15 +400,17 @@ class Events(InlineUnit):
                         thumbnail_url=thumb,
                         thumbnail_width=128,
                         thumbnail_height=128,
-                        reply_markup=self.generate_markup(
+                        reply_markup=self._manager.utils.generate_markup(
                             {
-                                "text": self.translator.getkey("inline.run_command"),
+                                "text": self._manager.translator.getkey(
+                                    "inline.run_command"
+                                ),
                                 "switch_inline_query_current_chat": f"{name} ",
                             }
                         ),
                     ),
                     (
-                        f"🎹 <code>@{self.bot_username} {utils.escape_html(name)}</code>"
+                        f"🎹 <code>@{self._manager.bot_username} {utils.escape_html(name)}</code>"
                         f" - {utils.escape_html(doc)}\n"
                     ),
                 )
@@ -409,10 +421,14 @@ class Events(InlineUnit):
                 [
                     InlineQueryResultArticle(
                         id=utils.rand(20),
-                        title=self.translator.getkey("inline.show_inline_cmds"),
-                        description=self.translator.getkey("inline.no_inline_cmds"),
+                        title=self._manager.translator.getkey(
+                            "inline.show_inline_cmds"
+                        ),
+                        description=self._manager.translator.getkey(
+                            "inline.no_inline_cmds"
+                        ),
                         input_message_content=InputTextMessageContent(
-                            message_text=self.translator.getkey(
+                            message_text=self._manager.translator.getkey(
                                 "inline.no_inline_cmds_msg"
                             ),
                             parse_mode="HTML",
@@ -433,15 +449,17 @@ class Events(InlineUnit):
             [
                 InlineQueryResultArticle(
                     id=utils.rand(20),
-                    title=self.translator.getkey("inline.show_inline_cmds"),
+                    title=self._manager.translator.getkey("inline.show_inline_cmds"),
                     description=(
-                        self.translator.getkey("inline.inline_cmds").format(len(_help))
+                        self._manager.translator.getkey("inline.inline_cmds").format(
+                            len(_help)
+                        )
                     ),
                     input_message_content=InputTextMessageContent(
                         message_text=(
-                            self.translator.getkey("inline.inline_cmds_msg").format(
-                                "\n".join(map(lambda x: x[1], _help))
-                            )
+                            self._manager.translator.getkey(
+                                "inline.inline_cmds_msg"
+                            ).format("\n".join(map(lambda x: x[1], _help)))
                         ),
                         parse_mode="HTML",
                         disable_web_page_preview=True,

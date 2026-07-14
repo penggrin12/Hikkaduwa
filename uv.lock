@@ -382,7 +382,7 @@ requires-dist = [
     { name = "asyncstdlib", specifier = ">=3.14.0" },
     { name = "emoji", specifier = "==2.15.0" },
     { name = "grapheme", specifier = "==0.6.0" },
-    { name = "kurigram", url = "https://github.com/KurimuzonAkuma/kurigram/archive/dev.zip" },
+    { name = "kurigram", git = "https://github.com/KurimuzonAkuma/kurigram.git?rev=11439f3" },
     { name = "meval", specifier = "==2.5" },
     { name = "orjson", specifier = "==3.11.9" },
     { name = "psutil", specifier = "==7.2.2" },
@@ -409,34 +409,11 @@ wheels = [
 [[package]]
 name = "kurigram"
 version = "2.2.24"
-source = { url = "https://github.com/KurimuzonAkuma/kurigram/archive/dev.zip" }
+source = { git = "https://github.com/KurimuzonAkuma/kurigram.git?rev=11439f3#11439f338015e91ba89879564fa4dd339bc6223e" }
 dependencies = [
     { name = "pyaes" },
     { name = "python-socks", extra = ["asyncio"] },
 ]
-sdist = { hash = "sha256:0be0b44a28d6a936f8639874353e6036686d7bbd8641eedd7018711680698d40" }
-
-[package.metadata]
-requires-dist = [
-    { name = "hatch", marker = "extra == 'dev'", specifier = "<=1.17.0" },
-    { name = "keyring", marker = "extra == 'dev'", specifier = "<=25.7.0" },
-    { name = "pyaes", specifier = "<=1.6.1" },
-    { name = "pygments", marker = "extra == 'docs'", specifier = "<=2.20.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = "<=9.1.1" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = "<=1.4.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = "<=7.1.0" },
-    { name = "python-socks", extras = ["asyncio"], specifier = "<=2.8.1" },
-    { name = "shibuya", marker = "extra == 'docs'", specifier = "<=2026.5.19" },
-    { name = "sphinx", marker = "extra == 'docs'", specifier = "<=9.1.0" },
-    { name = "sphinx-autobuild", marker = "extra == 'docs'", specifier = "<=2025.8.25" },
-    { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = "<=0.5.2" },
-    { name = "sphinx-design", marker = "extra == 'docs'", specifier = "<=0.7.0" },
-    { name = "sphinx-iconify", marker = "extra == 'docs'", specifier = "<=0.3.0" },
-    { name = "tgcrypto", marker = "extra == 'fast'", specifier = "<=1.2.5" },
-    { name = "twine", marker = "extra == 'dev'", specifier = "<=6.2.0" },
-    { name = "uvloop", marker = "(sys_platform == 'darwin' and extra == 'fast') or (sys_platform == 'linux' and extra == 'fast')", specifier = "<=0.22.1" },
-]
-provides-extras = ["dev", "docs", "fast"]
 
 [[package]]
 name = "magic-filter"

@@ -1,8 +1,7 @@
 # Hikkaduwa Userbot
 
-Hikkaduwa is a powerful and modular Telegram userbot. This fork, maintained
-by [Penggrin](https://github.com/penggrin12), aims to be a **lightweight version** of the upstream Hikka project
-developed by [Dan Gazizullin (hikariatama)](https://t.me/hikariatama).
+A powerful and modular Telegram userbot. This fork aims to be a more **developer-friendly** version
+of the no longer mantained upstream project developed by [Daniil Gazizullin (hikariatama)](https://github.com/hikariatama).
 
 ![Lines of code](https://img.shields.io/endpoint?url=https://ghloc.vercel.app/api/penggrin12/Hikkaduwa/badge?filter=.py$&style=flat&logoColor=white&label=Lines%20of%20Code)
 ![GitHub Open issues](https://img.shields.io/github/issues/penggrin12/Hikkaduwa)
@@ -20,19 +19,18 @@ developed by [Dan Gazizullin (hikariatama)](https://t.me/hikariatama).
 * **Code Evaluation:** Evaluate Python code on the fly.
 * **Advanced Logging:** Configurable logging levels and Telegram log forwarding.
 * **Help System:** Get help for specific modules or list all available commands.
-* **Translations:** Supports multiple languages through language packs.
 * **Aliases:** Create custom shortcuts for commands.
 * **Watchers:** Automate actions based on incoming/outgoing messages with various filters.
 
 ## Requirements
 
 * **Python:** 3.10 or higher
-* **UV:** The `uv` package installer is
+* **uv:** The `uv` package installer is
   recommended ([Installation Guide](https://github.com/astral-sh/uv#installation)).
 * **Telegram API Credentials:** API ID and API Hash from <https://my.telegram.org>.
 * **Dependencies:** See `pyproject.toml` for the full list (includes `kurigram`, `aiogram`, `requests`, etc.). These are
   installed automatically by `uv`.
-* **FFMPEG:** (Optional) Required by some modules for media processing.
+* **FFmpeg:** (Optional) Required by some modules for media processing.
 
 ## Installation & Setup
 
@@ -72,6 +70,6 @@ the [LICENSE](https://www.gnu.org/licenses/agpl-3.0.html) file for details.
 
 ## Authors & Credits
 
-* **Fork Developer:** [Penggrin](https://github.com/penggrin12)
-* **Upstream GitHub Repository:** [https://github.com/hikariatama/hikka](https://github.com/beveiled/hikka)
-* **Upstream Developer:** [Dan Gazizullin (hikariatama)](https://t.me/hikariatama)
+* **Fork's Maintainer:** [Penggrin](https://github.com/penggrin12)
+* **Upstream GitHub Repository:** [https://github.com/hikariatama/hikka](https://github.com/hikariatama/hikka)
+* **Upstream Developer:** [Daniil Gazizullin (hikariatama)](https://t.me/hikariatama)

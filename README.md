@@ -26,7 +26,7 @@ developed by [Dan Gazizullin (hikariatama)](https://t.me/hikariatama).
 
 ## Requirements
 
-* **Python:** 3.10 or higher (haven't yet tested on <3.12)
+* **Python:** 3.10 or higher
 * **UV:** The `uv` package installer is
   recommended ([Installation Guide](https://github.com/astral-sh/uv#installation)).
 * **Telegram API Credentials:** API ID and API Hash from <https://my.telegram.org>.

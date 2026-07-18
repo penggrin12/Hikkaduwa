@@ -62,7 +62,7 @@ class InlineMessage:
         if "inline_message_id" in kwargs:
             kwargs.pop("inline_message_id")
 
-        await self.inline_manager._edit_unit(
+        await self.inline_manager.utils._edit_unit(
             *args,
             unit_id=self.unit_id,
             inline_message_id=self.inline_message_id,
@@ -72,13 +72,13 @@ class InlineMessage:
         return self
 
     async def delete(self) -> bool:
-        return await self.inline_manager._delete_unit_message(
+        return await self.inline_manager.utils._delete_unit_message(
             self,
             unit_id=self.unit_id,
         )
 
     async def unload(self) -> bool:
-        return await self.inline_manager._unload_unit(unit_id=self.unit_id)
+        return await self.inline_manager.utils._unload_unit(unit_id=self.unit_id)
 
 
 class BotInlineMessage:
@@ -125,7 +125,7 @@ class BotInlineMessage:
         if "chat_id" in kwargs:
             kwargs.pop("chat_id")
 
-        await self.inline_manager._edit_unit(
+        await self.inline_manager.utils._edit_unit(
             *args,
             unit_id=self.unit_id,
             chat_id=self.chat_id,
@@ -136,7 +136,7 @@ class BotInlineMessage:
         return self
 
     async def delete(self) -> bool:
-        return await self.inline_manager._delete_unit_message(
+        return await self.inline_manager.utils._delete_unit_message(
             self,
             unit_id=self.unit_id,
             chat_id=self.chat_id,
@@ -147,7 +147,7 @@ class BotInlineMessage:
         if "unit_id" in kwargs:
             kwargs.pop("unit_id")
 
-        return await self.inline_manager._unload_unit(
+        return await self.inline_manager.utils._unload_unit(
             *args,
             unit_id=self.unit_id,
             **kwargs,

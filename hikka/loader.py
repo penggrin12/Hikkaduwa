@@ -141,8 +141,6 @@ VALID_PIP_PACKAGES = re.compile(
     re.MULTILINE,
 )
 
-USER_INSTALL = "PIP_TARGET" not in os.environ and "VIRTUAL_ENV" not in os.environ
-
 
 class InfiniteLoop:
     _task = None

@@ -28,6 +28,7 @@ import requests
 from pyrogram.types import Message
 
 from hikka import utils
+from hikka._pip import Pip, PipException
 
 from . import version
 from ._reference_finder import replace_all_refs
@@ -490,7 +491,7 @@ class Module:
         """
 
         from . import utils  # Avoiding circular import
-        from .loader import USER_INSTALL, VALID_PIP_PACKAGES
+        from .loader import VALID_PIP_PACKAGES
         from .translations import Strings
 
         def _raise(e: Exception):
@@ -563,23 +564,10 @@ class Module:
             if not requirements or _did_requirements:
                 _raise(e)
 
-            pip = await asyncio.create_subprocess_exec(
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "--upgrade",
-                "-q",
-                "--disable-pip-version-check",
-                "--no-warn-script-location",
-                *["--user"] if USER_INSTALL else [],
-                *requirements,
-            )
-
-            rc = await pip.wait()
-
-            if rc != 0:
-                _raise(e)
+            try:
+                await Pip.install(*requirements)
+            except PipException as e2:
+                _raise(e2)
 
             importlib.invalidate_caches()
 

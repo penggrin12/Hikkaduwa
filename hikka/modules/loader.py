@@ -31,6 +31,8 @@ import pyrogram.errors
 import requests
 from pyrogram.types import Chat, Message
 
+from hikka._pip import Pip, PipException
+
 from .. import loader, main, utils
 from .._local_storage import RemoteStorage
 from ..types import CoreOverwriteError, CoreUnloadError
@@ -608,36 +610,20 @@ class LoaderMod(loader.Module):
                         ),
                     )
 
-                pip = await asyncio.create_subprocess_exec(
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "-q",
-                    "--disable-pip-version-check",
-                    "--no-warn-script-location",
-                    *["--user"] if loader.USER_INSTALL else [],
-                    *requirements,
-                    stderr=PIPE,
-                )
-
-                rc = await pip.wait()
-
-                if rc != 0:
-                    logger.error((await pip.stderr.read()).decode("utf-8"))
+                try:
+                    await Pip.install(*requirements)
+                except PipException as e:
+                    logger.error(e.stderr)
 
                     if message is not None:
-                        if "com.termux" in os.environ.get("PREFIX", ""):
-                            await utils.answer(
-                                message,
-                                self.get_string("requirements_failed_termux"),
-                            )
-                        else:
-                            await utils.answer(
-                                message,
-                                self.get_string("requirements_failed"),
-                            )
+                        await utils.answer(
+                            message,
+                            self.get_string(
+                                "requirements_failed_termux"
+                                if "com.termux" in os.environ.get("PREFIX", "")
+                                else "requirements_failed"
+                            ),
+                        )
 
                     return
 

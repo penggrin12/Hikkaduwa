@@ -113,60 +113,6 @@ class UpdaterMod(loader.Module):
         await message._client.terminate()
         restart()
 
-    async def download_common(self) -> bool:
-        return False
-
-    @staticmethod
-    def req_common() -> None:
-        # Now we have downloaded new code, install requirements
-        logger.debug("Installing new requirements...")
-        try:
-            subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "-r",
-                    os.path.join(
-                        os.path.dirname(utils.get_base_dir()),
-                        "requirements.txt",
-                    ),
-                    "--user",
-                ],
-                check=True,
-            )
-        except subprocess.CalledProcessError:
-            logger.exception("Req install failed")
-
-    @loader.command()
-    async def update(self, message: Message) -> None:
-        return  # TODO: prompt something
-
-    async def inline_update(
-        self,
-        msg_obj: InlineCall | Message,
-        hard: bool = False,
-    ) -> None:
-        # We don't really care about asyncio at this point, as we are shutting down
-        if hard:
-            subprocess.run(
-                f"cd {utils.get_base_dir()} && cd .. && git reset --hard HEAD"
-            )
-
-        with contextlib.suppress(Exception):
-            msg_obj = await utils.answer(msg_obj, self.get_string("downloading"))
-
-        req_update = await self.download_common()
-
-        with contextlib.suppress(Exception):
-            msg_obj = await utils.answer(msg_obj, self.get_string("installing"))
-
-        if req_update:
-            self.req_common()
-
-        await self.restart_common(msg_obj)
-
     @loader.command()
     async def source(self, message: Message) -> None:
         await utils.answer(
@@ -175,12 +121,6 @@ class UpdaterMod(loader.Module):
         )
 
     async def client_ready(self) -> None:
-        if self.get("selfupdatemsg") is not None:
-            try:
-                await self.update_complete()
-            except Exception:
-                logger.exception("Failed to complete update!")
-
         if self.get("do_not_create", False):
             return
 
@@ -233,9 +173,6 @@ class UpdaterMod(loader.Module):
                 "- User got floodwait\n"
                 "Ignoring error and adding folder addition to ignore list"
             )
-
-    async def update_complete(self) -> None:
-        logger.debug("Self update successful! Edit message")
 
     async def full_restart_complete(self, secure_boot: bool = False) -> None:
         logger.debug("im complete, dawg")
